@@ -1,0 +1,15 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@/aplibs-audioobjects-@APLIBS_AUDIOOBJECTS_MAJORMINOR@
+toolsdir=${exec_prefix}/bin
+
+
+Name: aplibs-audioobjects-@APLIBS_AUDIOOBJECTS_MAJORMINOR@
+Description: Audio Objects library
+Requires.private: @APLIBS_AUDIOOBJECTS_PKG_DEPS@
+Version: @VERSION@
+Libs: -L${libdir} -lap-audioobjects-@APLIBS_AUDIOOBJECTS_MAJORMINOR@
+Cflags: -I${includedir}
+
+
