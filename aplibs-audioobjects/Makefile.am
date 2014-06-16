@@ -9,11 +9,13 @@ libap_audioobjects_@APLIBS_AUDIOOBJECTS_MAJORMINOR@_la_LDFLAGS =	\
 
 libap_audioobjects_@APLIBS_AUDIOOBJECTS_MAJORMINOR@_la_LIBADD =	\
 	$(APLIBSDSP_LIBS)											\
+	$(APLIBSRENDER_LIBS)										\
 	$(TINYXML_LIBS)
 
 libap_audioobjects_@APLIBS_AUDIOOBJECTS_MAJORMINOR@_la_CPPFLAGS =	\
 	$(APLIBS_AUDIOOBJECTS_CFLAGS)									\
 	$(APLIBSDSP_CFLAGS)												\
+	$(APLIBSRENDER_CFLAGS)											\
 	$(TINYXML_CFLAGS)
 
 libap_audioobjects_@APLIBS_AUDIOOBJECTS_MAJORMINOR@_la_SOURCES =	\
@@ -23,6 +25,7 @@ libap_audioobjects_@APLIBS_AUDIOOBJECTS_MAJORMINOR@_la_SOURCES =	\
 	ADMRIFFFile.cpp													\
 	crc32.cpp														\
 	mt19937ar.c														\
+	PlaybackEngine.cpp												\
 	RIFFChunk.cpp													\
 	RIFFChunks.cpp													\
 	RIFFFile.cpp													\
@@ -36,6 +39,7 @@ pkginclude_HEADERS =							\
 	ADMRIFFFile.h								\
 	crc32.h										\
 	mt19937ar.h									\
+	PlaybackEngine.h							\
 	RIFFChunk_Definitions.h						\
 	RIFFChunk.h									\
 	RIFFChunks.h								\

@@ -53,7 +53,14 @@ dnl aplibs-dsp is required
 APLIBS_DSP_VER="0.1.1.0"
 PKG_CHECK_MODULES(APLIBSDSP, aplibs-dsp-0.1 >= $APLIBS_DSP_VER, HAVE_APLIBS_DSP=yes, HAVE_APLIBS_DSP=no)
 if test "x${HAVE_APLIBS_DSP}" != xyes ; then
-  AC_MSG_ERROR([aplibs-dsp-1.2 >= $APLIBS_DSP_VER is required])
+  AC_MSG_ERROR([aplibs-dsp-0.1 >= $APLIBS_DSP_VER is required])
+fi
+
+dnl aplibs-render is required
+APLIBS_RENDER_VER="0.1.0.0"
+PKG_CHECK_MODULES(APLIBSRENDER, aplibs-render-0.1 >= $APLIBS_RENDER_VER, HAVE_APLIBS_RENDER=yes, HAVE_APLIBS_RENDER=no)
+if test "x${HAVE_APLIBS_RENDER}" != xyes ; then
+  AC_MSG_ERROR([aplibs-render-0.1 >= $APLIBS_RENDER_VER is required])
 fi
 
 dnl tinyxml is required
