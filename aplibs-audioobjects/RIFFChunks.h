@@ -2,9 +2,8 @@
 #ifndef __RIFF_CHUNKS__
 #define __RIFF_CHUNKS__
 
-#include <aplibs-dsp/SoundFileAttributes.h>
-
 #include "RIFFChunk.h"
+#include "SoundFileAttributes.h"
 
 /*--------------------------------------------------------------------------------*/
 /** Chunk specific handling

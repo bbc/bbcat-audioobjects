@@ -6,7 +6,8 @@
 #include <string>
 
 #include <aplibs-dsp/misc.h>
-#include <aplibs-dsp/SoundFileAttributes.h>
+
+#include "SoundFileAttributes.h"
 
 /*--------------------------------------------------------------------------------*/
 /** Class for handling RIFF file chunks (used in WAV/AIFF/AIFC files)

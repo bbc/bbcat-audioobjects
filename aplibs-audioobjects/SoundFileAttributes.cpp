@@ -4,7 +4,7 @@
 #include <string.h>
 
 #define DEBUG_LEVEL 1
-#include <aplibs-dsp/SoundFileAttributes.h>
+#include "SoundFileAttributes.h"
 
 SoundFile::SoundFile() : fp(NULL)
 {

@@ -1,10 +1,9 @@
 #ifndef __ADM_AUDIO_OBJECT_FILE__
 #define __ADM_AUDIO_OBJECT_FILE__
 
-#include <aplibs-dsp/SoundFileWithPosition.h>
-
 #include "ADMData.h"
 #include "ADMObjects.h"
+#include "SoundFileWithPosition.h"
 
 class ADMAudioFileSamples : public SoundFileSamplesWithPosition {
 public:

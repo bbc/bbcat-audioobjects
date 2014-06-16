@@ -4,9 +4,10 @@
 #include <vector>
 
 #include <aplibs-dsp/misc.h>
-#include <aplibs-dsp/SoundFileAttributes.h>
 #include <aplibs-dsp/PositionCursor.h>
 #include <aplibs-dsp/3DPosition.h>
+
+#include "SoundFileAttributes.h"
 
 class SoundFileSamplesWithPosition : public SoundFileSamples {
 public:
