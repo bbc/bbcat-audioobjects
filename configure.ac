@@ -67,7 +67,7 @@ dnl tinyxml is required
 TINYXML_VER="2.6.2"
 PKG_CHECK_MODULES(TINYXML, tinyxml >= $TINYXML_VER, HAVE_TINYXML=yes, HAVE_TINYXML=no)
 if test "x${HAVE_TINYXML}" != xyes ; then
-  AC_MSG_ERROR([tinyxml >= $APLIBS_DSP_VER is required])
+  AC_MSG_ERROR([tinyxml >= $TINYXML_VER is required])
 fi
 
 # Checks for typedefs, structures, and compiler characteristics.
