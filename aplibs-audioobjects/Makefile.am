@@ -3,18 +3,20 @@ pkgincludedir = $(includedir)/aplibs-audioobjects-@APLIBS_AUDIOOBJECTS_MAJORMINO
 lib_LTLIBRARIES = libap-audioobjects-@APLIBS_AUDIOOBJECTS_MAJORMINOR@.la
 
 libap_audioobjects_@APLIBS_AUDIOOBJECTS_MAJORMINOR@_la_LDFLAGS =	\
-	-no-undefined											\
-	-version-info $(APLIBS_AUDIOOBJECTS_LIBVERSION)				\
+	-no-undefined													\
+	-version-info $(APLIBS_AUDIOOBJECTS_LIBVERSION)					\
      $(APLIBS_AUDIOOBJECTS_LDFLAGS)
 
-libap_audioobjects_@APLIBS_AUDIOOBJECTS_MAJORMINOR@_la_LIBADD = 	\
-	$(APLIBSDSP_LIBS)
+libap_audioobjects_@APLIBS_AUDIOOBJECTS_MAJORMINOR@_la_LIBADD =	\
+	$(APLIBSDSP_LIBS)											\
+	$(TINYXML_LIBS)
 
 libap_audioobjects_@APLIBS_AUDIOOBJECTS_MAJORMINOR@_la_CPPFLAGS =	\
 	$(APLIBS_AUDIOOBJECTS_CFLAGS)									\
-	$(APLIBSDSP_CFLAGS)
+	$(APLIBSDSP_CFLAGS)												\
+	$(TINYXML_CFLAGS)
 
-libap_audioobjects_@APLIBS_AUDIOOBJECTS_MAJORMINOR@_la_SOURCES = 	\
+libap_audioobjects_@APLIBS_AUDIOOBJECTS_MAJORMINOR@_la_SOURCES =	\
 	ADMAudioFileSamples.cpp											\
 	ADMData.cpp														\
 	ADMObjects.cpp													\
@@ -24,9 +26,10 @@ libap_audioobjects_@APLIBS_AUDIOOBJECTS_MAJORMINOR@_la_SOURCES = 	\
 	RIFFChunk.cpp													\
 	RIFFChunks.cpp													\
 	RIFFFile.cpp													\
-	SoundFileAttributes.cpp
+	SoundFileAttributes.cpp											\
+	TinyXMLADMData.cpp
 
-pkginclude_HEADERS = 							\
+pkginclude_HEADERS =							\
 	ADMAudioFileSamples.h						\
 	ADMData.h									\
 	ADMObjects.h								\
@@ -38,7 +41,8 @@ pkginclude_HEADERS = 							\
 	RIFFChunks.h								\
 	RIFFFile.h									\
 	SoundFileAttributes.h						\
-	SoundFileWithPosition.h
+	SoundFileWithPosition.h						\
+	TinyXMLADMData.h
 
 noinst_HEADERS =
 

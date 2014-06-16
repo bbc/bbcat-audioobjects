@@ -56,6 +56,13 @@ if test "x${HAVE_APLIBS_DSP}" != xyes ; then
   AC_MSG_ERROR([aplibs-dsp-1.2 >= $APLIBS_DSP_VER is required])
 fi
 
+dnl tinyxml is required
+TINYXML_VER="2.6.2"
+PKG_CHECK_MODULES(TINYXML, tinyxml >= $TINYXML_VER, HAVE_TINYXML=yes, HAVE_TINYXML=no)
+if test "x${HAVE_TINYXML}" != xyes ; then
+  AC_MSG_ERROR([tinyxml >= $APLIBS_DSP_VER is required])
+fi
+
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_SIZE_T
 AX_CREATE_STDINT_H([aplibs-audioobjects/aplibs-audioobjects-stdint.h])
