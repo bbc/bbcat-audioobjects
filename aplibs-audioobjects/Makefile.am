@@ -8,14 +8,14 @@ libap_audioobjects_@APLIBS_AUDIOOBJECTS_MAJORMINOR@_la_LDFLAGS =	\
      $(APLIBS_AUDIOOBJECTS_LDFLAGS)
 
 libap_audioobjects_@APLIBS_AUDIOOBJECTS_MAJORMINOR@_la_LIBADD =	\
-	$(APLIBSDSP_LIBS)											\
-	$(APLIBSRENDER_LIBS)										\
+	$(APLIBS_DSP_LIBS)											\
+	$(APLIBS_RENDER_LIBS)										\
 	$(TINYXML_LIBS)
 
 libap_audioobjects_@APLIBS_AUDIOOBJECTS_MAJORMINOR@_la_CPPFLAGS =	\
 	$(APLIBS_AUDIOOBJECTS_CFLAGS)									\
-	$(APLIBSDSP_CFLAGS)												\
-	$(APLIBSRENDER_CFLAGS)											\
+	$(APLIBS_DSP_CFLAGS)											\
+	$(APLIBS_RENDER_CFLAGS)											\
 	$(TINYXML_CFLAGS)
 
 libap_audioobjects_@APLIBS_AUDIOOBJECTS_MAJORMINOR@_la_SOURCES =	\
