@@ -5,6 +5,8 @@
 #include "RIFFChunk.h"
 #include "SoundFileAttributes.h"
 
+BBC_AUDIOTOOLBOX_START
+
 /*--------------------------------------------------------------------------------*/
 /** Chunk specific handling
  */
@@ -221,5 +223,7 @@ protected:
  */
 /*--------------------------------------------------------------------------------*/
 extern void RegisterRIFFChunkProviders();
+
+BBC_AUDIOTOOLBOX_END
 
 #endif

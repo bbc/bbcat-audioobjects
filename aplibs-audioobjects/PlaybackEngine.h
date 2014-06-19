@@ -8,6 +8,8 @@
 
 #include "SoundFileAttributes.h"
 
+BBC_AUDIOTOOLBOX_START
+
 /*--------------------------------------------------------------------------------*/
 /** Object to play out a list of audio files, updating the positions to the
  * specified renderer
@@ -83,5 +85,7 @@ protected:
 	std::vector<SoundFileSamples *> list;
 	std::vector<SoundFileSamples *>::iterator it;
 };
+
+BBC_AUDIOTOOLBOX_END
 
 #endif

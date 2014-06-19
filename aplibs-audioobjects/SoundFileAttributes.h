@@ -7,6 +7,8 @@
 
 #include <aplibs-dsp/SoundFormatConversions.h>
 
+BBC_AUDIOTOOLBOX_START
+
 class SoundFile {
 public:
 	SoundFile();
@@ -111,5 +113,7 @@ protected:
 	uint_t				  samplebufferframes;
 	bool				  readonly;
 };
+
+BBC_AUDIOTOOLBOX_END
 
 #endif

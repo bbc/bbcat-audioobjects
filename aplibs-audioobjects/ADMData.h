@@ -9,6 +9,8 @@
 
 #include "ADMObjects.h"
 
+BBC_AUDIOTOOLBOX_START
+
 class ADMData {
 public:
 	ADMData();
@@ -99,5 +101,7 @@ protected:
 
 	static std::vector<PROVIDER> providerlist;
 };
+
+BBC_AUDIOTOOLBOX_END
 
 #endif

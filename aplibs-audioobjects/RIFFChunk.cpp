@@ -9,6 +9,8 @@
 #include "RIFFChunk.h"
 #include "RIFFFile.h"
 
+BBC_AUDIOTOOLBOX_START
+
 std::map<uint32_t, RIFFChunk::PROVIDER> RIFFChunk::providermap;
 
 /*--------------------------------------------------------------------------------*/
@@ -258,3 +260,5 @@ bool RIFFChunk::SwapLittleEndian()
 	static const bool swap = MACHINE_IS_BIG_ENDIAN;
 	return swap;		// true if machine is bit-endian and therefore little-endian data should be swapped
 }
+
+BBC_AUDIOTOOLBOX_END

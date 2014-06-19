@@ -8,6 +8,8 @@
 
 #include "RIFFChunks.h"
 
+BBC_AUDIOTOOLBOX_START
+
 /*--------------------------------------------------------------------------------*/
 /** 
  *
@@ -66,13 +68,15 @@ protected:
 	virtual void UpdateSamplePosition() {}
 
 protected:
-	SoundFile			  *file;
-	uint8_t	 		  	  filetype;
+	SoundFile		  *file;
+	uint8_t	 		  filetype;
 	const SoundFormat *fileformat;
-	SoundFileSamples      *filesamples;
+	SoundFileSamples  *filesamples;
 
 	std::vector<RIFFChunk *>		chunklist;
 	std::map<uint32_t, RIFFChunk *> chunkmap;
 };
+
+BBC_AUDIOTOOLBOX_END
 
 #endif

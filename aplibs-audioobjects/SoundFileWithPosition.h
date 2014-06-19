@@ -9,6 +9,8 @@
 
 #include "SoundFileAttributes.h"
 
+BBC_AUDIOTOOLBOX_START
+
 class SoundFileSamplesWithPosition : public SoundFileSamples {
 public:
 	SoundFileSamplesWithPosition() : SoundFileSamples() {}
@@ -25,5 +27,7 @@ public:
 protected:
 	std::vector<PositionCursor *> cursors;
 };
+
+BBC_AUDIOTOOLBOX_END
 
 #endif

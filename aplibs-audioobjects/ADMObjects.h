@@ -10,6 +10,8 @@
 #include <aplibs-dsp/misc.h>
 #include <aplibs-dsp/PositionCursor.h>
 
+BBC_AUDIOTOOLBOX_START
+
 /*----------------------------------------------------------------------------------------------------*/
 /** ADM objects
  */
@@ -1671,5 +1673,7 @@ protected:
 	const std::vector<ADMAudioBlockFormat *> *blockformats;
 	uint_t blockindex;
 };
+
+BBC_AUDIOTOOLBOX_END
 
 #endif

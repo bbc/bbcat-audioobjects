@@ -9,6 +9,8 @@
 
 using namespace std;
 
+BBC_AUDIOTOOLBOX_START
+
 PlaybackEngine::PlaybackEngine() : renderer(new SoundRenderer()),
 								   channels(0),
 								   nsamples(1024),
@@ -182,3 +184,5 @@ void PlaybackEngine::UpdatePositions(bool initial)
 	UNUSED_PARAMETER(samplerate);
 #endif
 }
+
+BBC_AUDIOTOOLBOX_END

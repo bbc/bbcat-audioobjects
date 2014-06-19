@@ -5,6 +5,8 @@
 #include "ADMObjects.h"
 #include "SoundFileWithPosition.h"
 
+BBC_AUDIOTOOLBOX_START
+
 class ADMAudioFileSamples : public SoundFileSamplesWithPosition {
 public:
 	ADMAudioFileSamples(const ADMData *iadm, const SoundFileSamples *isamples, const ADMAudioObject *obj = NULL);
@@ -20,5 +22,6 @@ protected:
 	const ADMData *adm;
 };
 
-#endif
+BBC_AUDIOTOOLBOX_END
 
+#endif

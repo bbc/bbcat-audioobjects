@@ -20,6 +20,8 @@
 
 using namespace std;
 
+BBC_AUDIOTOOLBOX_START
+
 /*----------------------------------------------------------------------------------------------------*/
 
 #if SERIALIZE_AS_TEXT
@@ -2446,3 +2448,5 @@ bool ADMTrackCursor::Seek(uint64_t t)
 
 	return (blockindex != oldindex);
 }
+
+BBC_AUDIOTOOLBOX_END

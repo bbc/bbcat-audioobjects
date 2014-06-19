@@ -3,6 +3,8 @@
 
 #include "crc32.h"
 
+BBC_AUDIOTOOLBOX_START
+
 static const uint32_t g_CRCtable[] = {
   0x00000000ul, 0x77073096ul, 0xEE0E612Cul, 0x990951BAul, 0x076DC419ul, 0x706AF48Ful, 
   0xE963A535ul, 0x9E6495A3ul, 0x0EDB8832ul, 0x79DCB8A4ul, 0xE0D5E91Eul, 0x97D2D988ul, 
@@ -63,3 +65,5 @@ uint32_t CRC32(const unsigned char *buffer, uint32_t buffer_length, uint32_t crc
 	
   return crc;
 }
+
+BBC_AUDIOTOOLBOX_END

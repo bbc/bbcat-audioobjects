@@ -9,6 +9,8 @@
 
 #include "SoundFileAttributes.h"
 
+BBC_AUDIOTOOLBOX_START
+
 /*--------------------------------------------------------------------------------*/
 /** Class for handling RIFF file chunks (used in WAV/AIFF/AIFC files)
  *
@@ -206,5 +208,6 @@ protected:
 	static std::map<uint32_t,PROVIDER> providermap;
 };
 
-#endif
+BBC_AUDIOTOOLBOX_END
 
+#endif

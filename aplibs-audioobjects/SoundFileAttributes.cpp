@@ -6,6 +6,8 @@
 #define DEBUG_LEVEL 1
 #include "SoundFileAttributes.h"
 
+BBC_AUDIOTOOLBOX_START
+
 SoundFile::SoundFile() : fp(NULL)
 {
 }
@@ -219,3 +221,5 @@ void SoundFileSamples::UpdateData()
 		SetClip(newclip);
 	}
 }
+
+BBC_AUDIOTOOLBOX_END

@@ -7,6 +7,8 @@
 #include "RIFFFile.h"
 #include "ADMData.h"
 
+BBC_AUDIOTOOLBOX_START
+
 class ADMRIFFFile : public RIFFFile {
 public:
 	ADMRIFFFile();
@@ -23,5 +25,7 @@ protected:
 protected:
 	ADMData *adm;
 };
+
+BBC_AUDIOTOOLBOX_END
 
 #endif

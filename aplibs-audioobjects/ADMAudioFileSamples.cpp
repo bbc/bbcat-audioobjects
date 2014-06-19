@@ -8,6 +8,8 @@
 
 using namespace std;
 
+BBC_AUDIOTOOLBOX_START
+
 ADMAudioFileSamples::ADMAudioFileSamples(const ADMData *iadm, const SoundFileSamples *isamples, const ADMAudioObject *obj) : SoundFileSamplesWithPosition(isamples),
 																															 adm(iadm)
 {
@@ -62,4 +64,4 @@ void ADMAudioFileSamples::UpdatePosition()
 	}
 }
 
-
+BBC_AUDIOTOOLBOX_END

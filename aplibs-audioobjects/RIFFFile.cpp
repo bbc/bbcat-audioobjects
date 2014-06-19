@@ -10,6 +10,8 @@
 
 using namespace std;
 
+BBC_AUDIOTOOLBOX_START
+
 RIFFFile::RIFFFile() : file(NULL),
 					   filetype(FileType_Unknown),
 					   fileformat(NULL),
@@ -108,3 +110,5 @@ void RIFFFile::Close()
 	chunklist.clear();
 	chunkmap.clear();
 }
+
+BBC_AUDIOTOOLBOX_END

@@ -3,12 +3,15 @@
 
 #include "ADMData.h"
 
+class TiXmlNode;
+
+BBC_AUDIOTOOLBOX_START
+
 /*--------------------------------------------------------------------------------*/
 /** An implementation of ADMData using the TinyXML library (GPL)
  */
 /*--------------------------------------------------------------------------------*/
 
-class TiXmlNode;
 class TinyXMLADMData : public ADMData {
 public:
 	TinyXMLADMData();
@@ -59,5 +62,7 @@ protected:
 		return new TinyXMLADMData();
 	}
 };
+
+BBC_AUDIOTOOLBOX_END
 
 #endif

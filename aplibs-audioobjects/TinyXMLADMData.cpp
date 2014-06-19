@@ -11,6 +11,8 @@
 
 using namespace std;
 
+BBC_AUDIOTOOLBOX_START
+
 TinyXMLADMData::TinyXMLADMData()
 {
 	// no special construction required
@@ -224,3 +226,5 @@ void TinyXMLADMData::CollectObjects(const TiXmlNode *node)
 		}
 	}
 }
+
+BBC_AUDIOTOOLBOX_END

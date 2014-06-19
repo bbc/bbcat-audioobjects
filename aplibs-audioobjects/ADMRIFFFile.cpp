@@ -13,6 +13,8 @@
 
 using namespace std;
 
+BBC_AUDIOTOOLBOX_START
+
 ADMRIFFFile::ADMRIFFFile() : RIFFFile(),
 							 adm(ADMData::Create())
 {
@@ -91,3 +93,4 @@ void ADMRIFFFile::UpdateSamplePosition()
 {
 }
 
+BBC_AUDIOTOOLBOX_END

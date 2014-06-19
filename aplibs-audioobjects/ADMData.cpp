@@ -12,6 +12,8 @@
 
 using namespace std;
 
+BBC_AUDIOTOOLBOX_START
+
 vector<ADMData::PROVIDER> ADMData::providerlist;
 
 ADMData::ADMData()
@@ -458,3 +460,4 @@ void ADMData::Serialize(uint8_t *dst, uint_t& len) const
 	ADMObject::SerializeObjectCRC(dst, len, len0);
 }
 
+BBC_AUDIOTOOLBOX_END

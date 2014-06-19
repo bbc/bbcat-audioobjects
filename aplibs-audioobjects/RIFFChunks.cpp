@@ -10,6 +10,8 @@
 #include "RIFFChunk_Definitions.h"
 #include "RIFFFile.h"
 
+BBC_AUDIOTOOLBOX_START
+
 /*--------------------------------------------------------------------------------*/
 /** RIFF chunk - the first chunk of any WAVE file
  *
@@ -224,3 +226,5 @@ void RegisterRIFFChunkProviders()
 	RIFFaxmlChunk::Register();
 	RIFFdataChunk::Register();
 }
+
+BBC_AUDIOTOOLBOX_END

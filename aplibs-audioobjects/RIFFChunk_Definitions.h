@@ -3,6 +3,8 @@
 
 #include <aplibs-dsp/misc.h>
 
+BBC_AUDIOTOOLBOX_START
+
 typedef PACKEDSTRUCT {
 	uint8_t Count;
 	uint8_t String[1];
@@ -87,5 +89,7 @@ typedef PACKEDSTRUCT {
 } CHNA_CHUNK;
 
 #define axml_ID IFFID("axml")
+
+BBC_AUDIOTOOLBOX_END
 
 #endif
