@@ -20,22 +20,22 @@ BBC_AUDIOTOOLBOX_START
 /*--------------------------------------------------------------------------------*/
 class RIFFRIFFChunk : public RIFFChunk {
 public:
-	RIFFRIFFChunk(uint32_t chunk_id) : RIFFChunk(chunk_id) {}
-	virtual ~RIFFRIFFChunk() {}
+  RIFFRIFFChunk(uint32_t chunk_id) : RIFFChunk(chunk_id) {}
+  virtual ~RIFFRIFFChunk() {}
 
-	// provider function register for this object
-	static void Register();
-
-protected:
-	// provider function for this object
-	static RIFFChunk *Create(uint32_t id, void *context) {
-		(void)context;
-		return new RIFFRIFFChunk(id);
-	}
+  // provider function register for this object
+  static void Register();
 
 protected:
-	// do NOT read OR skip over data
-	virtual ChunkHandling_t GetChunkHandling() const {return ChunkHandling_RemainInChunkData;}
+  // provider function for this object
+  static RIFFChunk *Create(uint32_t id, void *context) {
+    (void)context;
+    return new RIFFRIFFChunk(id);
+  }
+
+protected:
+  // do NOT read OR skip over data
+  virtual ChunkHandling_t GetChunkHandling() const {return ChunkHandling_RemainInChunkData;}
 
 };
 
@@ -48,22 +48,22 @@ protected:
 /*--------------------------------------------------------------------------------*/
 class RIFFWAVEChunk : public RIFFChunk {
 public:
-	RIFFWAVEChunk(uint32_t chunk_id) : RIFFChunk(chunk_id) {}
-	virtual ~RIFFWAVEChunk() {}
+  RIFFWAVEChunk(uint32_t chunk_id) : RIFFChunk(chunk_id) {}
+  virtual ~RIFFWAVEChunk() {}
 
-	// provider function register for this object
-	static void Register();
-
-protected:
-	// provider function for this object
-	static RIFFChunk *Create(uint32_t id, void *context) {
-		(void)context;
-		return new RIFFWAVEChunk(id);
-	}
+  // provider function register for this object
+  static void Register();
 
 protected:
-	// dummy read function
-	virtual bool ReadChunk(SoundFile *file);
+  // provider function for this object
+  static RIFFChunk *Create(uint32_t id, void *context) {
+    (void)context;
+    return new RIFFWAVEChunk(id);
+  }
+
+protected:
+  // dummy read function
+  virtual bool ReadChunk(SoundFile *file);
 };
 
 /*--------------------------------------------------------------------------------*/
@@ -77,29 +77,29 @@ protected:
 /*--------------------------------------------------------------------------------*/
 class RIFFfmtChunk : public RIFFChunk, public SoundFormat {
 public:
-	RIFFfmtChunk(uint32_t chunk_id) : RIFFChunk(chunk_id),
-									  SoundFormat() {}
-	virtual ~RIFFfmtChunk() {}
+  RIFFfmtChunk(uint32_t chunk_id) : RIFFChunk(chunk_id),
+                                    SoundFormat() {}
+  virtual ~RIFFfmtChunk() {}
 
-	// provider function register for this object
-	static void Register();
-
-protected:
-	// provider function for this object
-	static RIFFChunk *Create(uint32_t id, void *context) {
-		(void)context;
-		return new RIFFfmtChunk(id);
-	}
+  // provider function register for this object
+  static void Register();
 
 protected:
-	// data will need byte swapping on certain machines
-	virtual void ByteSwapData();
-	// always read and process his kind of chunk
-	virtual ChunkHandling_t GetChunkHandling() const {return ChunkHandling_ReadChunk;}
-	// chunk processing
-	virtual bool ProcessChunkData();
-	// delete data after processing
-	virtual bool DeleteDataAfterProcessing() const {return true;}
+  // provider function for this object
+  static RIFFChunk *Create(uint32_t id, void *context) {
+    (void)context;
+    return new RIFFfmtChunk(id);
+  }
+
+protected:
+  // data will need byte swapping on certain machines
+  virtual void ByteSwapData();
+  // always read and process his kind of chunk
+  virtual ChunkHandling_t GetChunkHandling() const {return ChunkHandling_ReadChunk;}
+  // chunk processing
+  virtual bool ProcessChunkData();
+  // delete data after processing
+  virtual bool DeleteDataAfterProcessing() const {return true;}
 };
 
 /*--------------------------------------------------------------------------------*/
@@ -111,24 +111,24 @@ protected:
 /*--------------------------------------------------------------------------------*/
 class RIFFbextChunk : public RIFFChunk {
 public:
-	RIFFbextChunk(uint32_t chunk_id) : RIFFChunk(chunk_id) {}
-	virtual ~RIFFbextChunk() {}
+  RIFFbextChunk(uint32_t chunk_id) : RIFFChunk(chunk_id) {}
+  virtual ~RIFFbextChunk() {}
 
-	// provider function register for this object
-	static void Register();
-
-protected:
-	// provider function for this object
-	static RIFFChunk *Create(uint32_t id, void *context) {
-		(void)context;
-		return new RIFFbextChunk(id);
-	}
+  // provider function register for this object
+  static void Register();
 
 protected:
-	// data will need byte swapping on certain machines
-	virtual void ByteSwapData();
-	// data should be read
-	virtual ChunkHandling_t GetChunkHandling() const {return ChunkHandling_ReadChunk;}
+  // provider function for this object
+  static RIFFChunk *Create(uint32_t id, void *context) {
+    (void)context;
+    return new RIFFbextChunk(id);
+  }
+
+protected:
+  // data will need byte swapping on certain machines
+  virtual void ByteSwapData();
+  // data should be read
+  virtual ChunkHandling_t GetChunkHandling() const {return ChunkHandling_ReadChunk;}
 };
 
 /*--------------------------------------------------------------------------------*/
@@ -140,24 +140,24 @@ protected:
 /*--------------------------------------------------------------------------------*/
 class RIFFchnaChunk : public RIFFChunk {
 public:
-	RIFFchnaChunk(uint32_t chunk_id) : RIFFChunk(chunk_id) {}
-	virtual ~RIFFchnaChunk() {}
+  RIFFchnaChunk(uint32_t chunk_id) : RIFFChunk(chunk_id) {}
+  virtual ~RIFFchnaChunk() {}
 
-	// provider function register for this object
-	static void Register();
-
-protected:
-	// provider function for this object
-	static RIFFChunk *Create(uint32_t id, void *context) {
-		(void)context;
-		return new RIFFchnaChunk(id);
-	}
+  // provider function register for this object
+  static void Register();
 
 protected:
-	// byte swapping required
-	virtual void ByteSwapData();
-	// data should be read
-	virtual ChunkHandling_t GetChunkHandling() const {return ChunkHandling_ReadChunk;}
+  // provider function for this object
+  static RIFFChunk *Create(uint32_t id, void *context) {
+    (void)context;
+    return new RIFFchnaChunk(id);
+  }
+
+protected:
+  // byte swapping required
+  virtual void ByteSwapData();
+  // data should be read
+  virtual ChunkHandling_t GetChunkHandling() const {return ChunkHandling_ReadChunk;}
 };
 
 /*--------------------------------------------------------------------------------*/
@@ -169,22 +169,22 @@ protected:
 /*--------------------------------------------------------------------------------*/
 class RIFFaxmlChunk : public RIFFChunk {
 public:
-	RIFFaxmlChunk(uint32_t chunk_id) : RIFFChunk(chunk_id) {}
-	virtual ~RIFFaxmlChunk() {}
+  RIFFaxmlChunk(uint32_t chunk_id) : RIFFChunk(chunk_id) {}
+  virtual ~RIFFaxmlChunk() {}
 
-	// provider function register for this object
-	static void Register();
-
-protected:
-	// provider function for this object
-	static RIFFChunk *Create(uint32_t id, void *context) {
-		(void)context;
-		return new RIFFaxmlChunk(id);
-	}
+  // provider function register for this object
+  static void Register();
 
 protected:
-	// data should be read
-	virtual ChunkHandling_t GetChunkHandling() const {return ChunkHandling_ReadChunk;}
+  // provider function for this object
+  static RIFFChunk *Create(uint32_t id, void *context) {
+    (void)context;
+    return new RIFFaxmlChunk(id);
+  }
+
+protected:
+  // data should be read
+  virtual ChunkHandling_t GetChunkHandling() const {return ChunkHandling_ReadChunk;}
 };
 
 /*--------------------------------------------------------------------------------*/
@@ -199,23 +199,23 @@ protected:
 /*--------------------------------------------------------------------------------*/
 class RIFFdataChunk : public RIFFChunk, public SoundFileSamples {
 public:
-	RIFFdataChunk(uint32_t chunk_id) : RIFFChunk(chunk_id),
-									   SoundFileSamples() {}
-	virtual ~RIFFdataChunk() {}
+  RIFFdataChunk(uint32_t chunk_id) : RIFFChunk(chunk_id),
+                                     SoundFileSamples() {}
+  virtual ~RIFFdataChunk() {}
 
-	// provider function register for this object
-	static void Register();
-
-protected:
-	// provider function for this object
-	static RIFFChunk *Create(uint32_t id, void *context) {
-		(void)context;
-		return new RIFFdataChunk(id);
-	}
+  // provider function register for this object
+  static void Register();
 
 protected:
-	// perform additional initialisation after chunk read
-	virtual bool ReadChunk(SoundFile *file);
+  // provider function for this object
+  static RIFFChunk *Create(uint32_t id, void *context) {
+    (void)context;
+    return new RIFFdataChunk(id);
+  }
+
+protected:
+  // perform additional initialisation after chunk read
+  virtual bool ReadChunk(SoundFile *file);
 };
 
 /*--------------------------------------------------------------------------------*/

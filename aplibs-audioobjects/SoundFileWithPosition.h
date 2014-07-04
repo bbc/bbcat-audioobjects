@@ -13,19 +13,19 @@ BBC_AUDIOTOOLBOX_START
 
 class SoundFileSamplesWithPosition : public SoundFileSamples {
 public:
-	SoundFileSamplesWithPosition() : SoundFileSamples() {}
-	SoundFileSamplesWithPosition(const SoundFileSamples *obj) : SoundFileSamples(obj) {}
-	virtual ~SoundFileSamplesWithPosition() {
-		uint_t i;
-		for (i = 0; i < cursors.size(); i++) {
-			delete cursors[i];
-		}
-	}	
+  SoundFileSamplesWithPosition() : SoundFileSamples() {}
+  SoundFileSamplesWithPosition(const SoundFileSamples *obj) : SoundFileSamples(obj) {}
+  virtual ~SoundFileSamplesWithPosition() {
+    uint_t i;
+    for (i = 0; i < cursors.size(); i++) {
+      delete cursors[i];
+    }
+  }   
 
-	virtual const std::vector<PositionCursor *>& GetCursors() const {return cursors;}
+  virtual const std::vector<PositionCursor *>& GetCursors() const {return cursors;}
 
 protected:
-	std::vector<PositionCursor *> cursors;
+  std::vector<PositionCursor *> cursors;
 };
 
 BBC_AUDIOTOOLBOX_END

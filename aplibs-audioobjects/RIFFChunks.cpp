@@ -20,7 +20,7 @@ BBC_AUDIOTOOLBOX_START
 /*--------------------------------------------------------------------------------*/
 void RIFFRIFFChunk::Register()
 {
-	RIFFChunk::RegisterProvider("RIFF", &Create);
+  RIFFChunk::RegisterProvider("RIFF", &Create);
 }
 
 /*----------------------------------------------------------------------------------------------------*/
@@ -34,15 +34,15 @@ void RIFFRIFFChunk::Register()
 /*--------------------------------------------------------------------------------*/
 bool RIFFWAVEChunk::ReadChunk(SoundFile *file)
 {
-	UNUSED_PARAMETER(file);
+  UNUSED_PARAMETER(file);
 
-	// there is no data after WAVE to read
-	return true;
+  // there is no data after WAVE to read
+  return true;
 }
 
 void RIFFWAVEChunk::Register()
 {
-	RIFFChunk::RegisterProvider("WAVE", &Create);
+  RIFFChunk::RegisterProvider("WAVE", &Create);
 }
 
 /*----------------------------------------------------------------------------------------------------*/
@@ -58,57 +58,57 @@ void RIFFWAVEChunk::Register()
 /*--------------------------------------------------------------------------------*/
 void RIFFfmtChunk::Register()
 {
-	RIFFChunk::RegisterProvider("fmt ", &Create);
+  RIFFChunk::RegisterProvider("fmt ", &Create);
 }
 
 void RIFFfmtChunk::ByteSwapData()
 {
-	WAVEFORMAT_CHUNK& chunk = *(WAVEFORMAT_CHUNK *)data;
+  WAVEFORMAT_CHUNK& chunk = *(WAVEFORMAT_CHUNK *)data;
 
-	if (SwapLittleEndian()) {
-		BYTESWAP_VAR(chunk.Format);
-		BYTESWAP_VAR(chunk.Channels);
-		BYTESWAP_VAR(chunk.SampleRate);
-		BYTESWAP_VAR(chunk.BytesPerSecond);
-		BYTESWAP_VAR(chunk.BlockAlign);
-		BYTESWAP_VAR(chunk.BitsPerSample);
-	}
+  if (SwapLittleEndian()) {
+    BYTESWAP_VAR(chunk.Format);
+    BYTESWAP_VAR(chunk.Channels);
+    BYTESWAP_VAR(chunk.SampleRate);
+    BYTESWAP_VAR(chunk.BytesPerSecond);
+    BYTESWAP_VAR(chunk.BlockAlign);
+    BYTESWAP_VAR(chunk.BitsPerSample);
+  }
 }
 
 bool RIFFfmtChunk::ProcessChunkData()
 {
-	const WAVEFORMAT_CHUNK& chunk = *(const WAVEFORMAT_CHUNK *)data;
-	bool success = false;
+  const WAVEFORMAT_CHUNK& chunk = *(const WAVEFORMAT_CHUNK *)data;
+  bool success = false;
 
-	if (chunk.Format == WAVE_FORMAT_PCM) {
-		// cannot handle anything other that PCM samples
+  if (chunk.Format == WAVE_FORMAT_PCM) {
+    // cannot handle anything other that PCM samples
 
-		DEBUG2(("Reading format data"));
+    DEBUG2(("Reading format data"));
 
-		// set parameters within SoundFormat according to data from this chunk
-		samplerate 	   = chunk.SampleRate;
-		channels   	   = chunk.Channels;
-		bytespersample = (chunk.BitsPerSample + 7) >> 3;
+    // set parameters within SoundFormat according to data from this chunk
+    samplerate     = chunk.SampleRate;
+    channels       = chunk.Channels;
+    bytespersample = (chunk.BitsPerSample + 7) >> 3;
 
-		// best guess at sample data format
-		if (chunk.BitsPerSample <= 16) {
-			format = SampleFormat_16bit;
-		}
-		else if (chunk.BitsPerSample <= 24) {
-			format = SampleFormat_24bit;
-		}
-		else {
-			format = SampleFormat_32bit;
-		}
+    // best guess at sample data format
+    if (chunk.BitsPerSample <= 16) {
+      format = SampleFormat_16bit;
+    }
+    else if (chunk.BitsPerSample <= 24) {
+      format = SampleFormat_24bit;
+    }
+    else {
+      format = SampleFormat_32bit;
+    }
 
-		// WAVE is always little-endian
-		bigendian = false;
+    // WAVE is always little-endian
+    bigendian = false;
 
-		success = true;
-	}
-	else ERROR("Format is %04x, not PCM", chunk.Format);
+    success = true;
+  }
+  else ERROR("Format is %04x, not PCM", chunk.Format);
 
-	return success;
+  return success;
 }
 
 /*----------------------------------------------------------------------------------------------------*/
@@ -122,18 +122,18 @@ bool RIFFfmtChunk::ProcessChunkData()
 /*--------------------------------------------------------------------------------*/
 void RIFFbextChunk::Register()
 {
-	RIFFChunk::RegisterProvider("bext", &Create);
+  RIFFChunk::RegisterProvider("bext", &Create);
 }
 
 void RIFFbextChunk::ByteSwapData()
 {
-	BROADCAST_CHUNK& chunk = *(BROADCAST_CHUNK *)data;
+  BROADCAST_CHUNK& chunk = *(BROADCAST_CHUNK *)data;
 
-	if (SwapLittleEndian()) {
-		BYTESWAP_VAR(chunk.TimeReferenceLow);
-		BYTESWAP_VAR(chunk.TimeReferenceHigh);
-		BYTESWAP_VAR(chunk.Version);
-	}
+  if (SwapLittleEndian()) {
+    BYTESWAP_VAR(chunk.TimeReferenceLow);
+    BYTESWAP_VAR(chunk.TimeReferenceHigh);
+    BYTESWAP_VAR(chunk.Version);
+  }
 }
 
 /*----------------------------------------------------------------------------------------------------*/
@@ -147,22 +147,22 @@ void RIFFbextChunk::ByteSwapData()
 /*--------------------------------------------------------------------------------*/
 void RIFFchnaChunk::Register()
 {
-	RIFFChunk::RegisterProvider("chna", &Create);
+  RIFFChunk::RegisterProvider("chna", &Create);
 }
 
 void RIFFchnaChunk::ByteSwapData()
 {
-	CHNA_CHUNK& chunk = *(CHNA_CHUNK *)data;
+  CHNA_CHUNK& chunk = *(CHNA_CHUNK *)data;
 
-	if (SwapLittleEndian()) {
-		BYTESWAP_VAR(chunk.TrackCount);
-		BYTESWAP_VAR(chunk.UIDCount);
+  if (SwapLittleEndian()) {
+    BYTESWAP_VAR(chunk.TrackCount);
+    BYTESWAP_VAR(chunk.UIDCount);
 
-		uint16_t i;
-		for (i = 0; i < chunk.UIDCount; i++) {
-			BYTESWAP_VAR(chunk.UIDs[i].TrackNum);
-		}
-	}
+    uint16_t i;
+    for (i = 0; i < chunk.UIDCount; i++) {
+      BYTESWAP_VAR(chunk.UIDs[i].TrackNum);
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------------------------------*/
@@ -176,7 +176,7 @@ void RIFFchnaChunk::ByteSwapData()
 /*--------------------------------------------------------------------------------*/
 void RIFFaxmlChunk::Register()
 {
-	RIFFChunk::RegisterProvider("axml", &Create);
+  RIFFChunk::RegisterProvider("axml", &Create);
 }
 
 /*----------------------------------------------------------------------------------------------------*/
@@ -193,21 +193,21 @@ void RIFFaxmlChunk::Register()
 /*--------------------------------------------------------------------------------*/
 bool RIFFdataChunk::ReadChunk(SoundFile *file)
 {
-	bool success = false;
+  bool success = false;
 
-	if (RIFFChunk::ReadChunk(file)) {
-		// link file to SoundFileSamples object
-		SetFile(file, datapos, length);
+  if (RIFFChunk::ReadChunk(file)) {
+    // link file to SoundFileSamples object
+    SetFile(file, datapos, length);
 
-		success = true;
-	}
+    success = true;
+  }
 
-	return success;
+  return success;
 }
 
 void RIFFdataChunk::Register()
 {
-	RIFFChunk::RegisterProvider("data", &Create);
+  RIFFChunk::RegisterProvider("data", &Create);
 }
 
 /*----------------------------------------------------------------------------------------------------*/
@@ -218,13 +218,13 @@ void RIFFdataChunk::Register()
 /*--------------------------------------------------------------------------------*/
 void RegisterRIFFChunkProviders()
 {
-	RIFFRIFFChunk::Register();
-	RIFFWAVEChunk::Register();
-	RIFFfmtChunk::Register();
-	RIFFbextChunk::Register();
-	RIFFchnaChunk::Register();
-	RIFFaxmlChunk::Register();
-	RIFFdataChunk::Register();
+  RIFFRIFFChunk::Register();
+  RIFFWAVEChunk::Register();
+  RIFFfmtChunk::Register();
+  RIFFbextChunk::Register();
+  RIFFchnaChunk::Register();
+  RIFFaxmlChunk::Register();
+  RIFFdataChunk::Register();
 }
 
 BBC_AUDIOTOOLBOX_END

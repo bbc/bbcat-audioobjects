@@ -17,73 +17,73 @@ BBC_AUDIOTOOLBOX_START
 /*--------------------------------------------------------------------------------*/
 class PlaybackEngine {
 public:
-	PlaybackEngine();
-	virtual ~PlaybackEngine();
+  PlaybackEngine();
+  virtual ~PlaybackEngine();
 
-	/*--------------------------------------------------------------------------------*/
-	/** Add file to list
-	 *
-	 * @note object will be DELETED on destruction of this object!
-	 */
-	/*--------------------------------------------------------------------------------*/
-	virtual void AddFile(SoundFileSamples *file);
+  /*--------------------------------------------------------------------------------*/
+  /** Add file to list
+   *
+   * @note object will be DELETED on destruction of this object!
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void AddFile(SoundFileSamples *file);
 
-	/*--------------------------------------------------------------------------------*/
-	/** Set renderer
-	 *
-	 * @note object will be DELETED on destruction of this object!
-	 */
-	/*--------------------------------------------------------------------------------*/
-	virtual void SetRenderer(SoundRenderer *newrenderer);
+  /*--------------------------------------------------------------------------------*/
+  /** Set renderer
+   *
+   * @note object will be DELETED on destruction of this object!
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void SetRenderer(SoundRenderer *newrenderer);
 
-	/*--------------------------------------------------------------------------------*/
-	/** Get current renderer
-	 */
-	/*--------------------------------------------------------------------------------*/
-	SoundRenderer *GetRenderer() {return renderer;}
+  /*--------------------------------------------------------------------------------*/
+  /** Get current renderer
+   */
+  /*--------------------------------------------------------------------------------*/
+  SoundRenderer *GetRenderer() {return renderer;}
 
-	/*--------------------------------------------------------------------------------*/
-	/** Enable/disable looping
-	 */
-	/*--------------------------------------------------------------------------------*/
-	virtual void EnableLoop(bool enable = true) {loop_all = enable;}
+  /*--------------------------------------------------------------------------------*/
+  /** Enable/disable looping
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void EnableLoop(bool enable = true) {loop_all = enable;}
 
-	/*--------------------------------------------------------------------------------*/
-	/** Reset to start of playback list
-	 */
-	/*--------------------------------------------------------------------------------*/
-	virtual void Reset();
+  /*--------------------------------------------------------------------------------*/
+  /** Reset to start of playback list
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void Reset();
 
-	/*--------------------------------------------------------------------------------*/
-	/** Update positions of channels currently being played out
-	 *
-	 * @param initial true if this is the initial call
-	 */
-	/*--------------------------------------------------------------------------------*/
-	virtual void UpdatePositions(bool initial = false);
+  /*--------------------------------------------------------------------------------*/
+  /** Update positions of channels currently being played out
+   *
+   * @param initial true if this is the initial call
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void UpdatePositions(bool initial = false);
 
-	/*--------------------------------------------------------------------------------*/
-	/** Generate a buffer worth of samples from list of audio files
-	 *
-	 * @param output buffer to write audio to
-	 * @param output_channels expected width of output buffer
-	 * @param frames number of frames to generate
-	 *
-	 * @return true if all of or part of buffer written
-	 */
-	/*--------------------------------------------------------------------------------*/
-	virtual bool GenerateAudio(int32_t *output, uint_t output_channels, uint_t frames);
+  /*--------------------------------------------------------------------------------*/
+  /** Generate a buffer worth of samples from list of audio files
+   *
+   * @param output buffer to write audio to
+   * @param output_channels expected width of output buffer
+   * @param frames number of frames to generate
+   *
+   * @return true if all of or part of buffer written
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual bool GenerateAudio(int32_t *output, uint_t output_channels, uint_t frames);
 
 protected:
-	ThreadLockObject  tlock;
-	SoundRenderer     *renderer;
-	uint_t			  channels;
-	uint_t			  nsamples;
-	int32_t           *samples;
-	uint32_t		  reporttick;
-	bool			  loop_all;
-	std::vector<SoundFileSamples *> list;
-	std::vector<SoundFileSamples *>::iterator it;
+  ThreadLockObject  tlock;
+  SoundRenderer     *renderer;
+  uint_t            channels;
+  uint_t            nsamples;
+  int32_t           *samples;
+  uint32_t          reporttick;
+  bool              loop_all;
+  std::vector<SoundFileSamples *> list;
+  std::vector<SoundFileSamples *>::iterator it;
 };
 
 BBC_AUDIOTOOLBOX_END

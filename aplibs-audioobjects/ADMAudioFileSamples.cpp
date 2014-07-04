@@ -11,57 +11,57 @@ using namespace std;
 BBC_AUDIOTOOLBOX_START
 
 ADMAudioFileSamples::ADMAudioFileSamples(const ADMData *iadm, const SoundFileSamples *isamples, const ADMAudioObject *obj) : SoundFileSamplesWithPosition(isamples),
-																															 adm(iadm)
+                                                                                                                             adm(iadm)
 {
-	if (obj) {
-		Clip_t newclip;
+  if (obj) {
+    Clip_t newclip;
 
-		newclip.start     = ADMObject::TimeToSamples(obj->GetChildrenStartTime(), format->GetSampleRate());
-		if (obj->GetChildrenEndTime() == obj->GetChildrenStartTime()) {
-			newclip.nsamples = ~(ulong_t)0;
-		}
-		else {
-			newclip.nsamples  = ADMObject::TimeToSamples(obj->GetChildrenEndTime(),   format->GetSampleRate()) - newclip.start;
-		}
-		newclip.channel   = obj->GetChildrenStartChannel();
-		newclip.nchannels = obj->GetChildrenChannelCount();
+    newclip.start = ADMObject::TimeToSamples(obj->GetChildrenStartTime(), format->GetSampleRate());
+    if (obj->GetChildrenEndTime() == obj->GetChildrenStartTime()) {
+      newclip.nsamples = ~(ulong_t)0;
+    }
+    else {
+      newclip.nsamples = ADMObject::TimeToSamples(obj->GetChildrenEndTime(),   format->GetSampleRate()) - newclip.start;
+    }
+    newclip.channel   = obj->GetChildrenStartChannel();
+    newclip.nchannels = obj->GetChildrenChannelCount();
 
-		SetClip(newclip);
-	}
+    SetClip(newclip);
+  }
 
-	adm->CreateCursors(cursors, GetClip().channel, GetClip().nchannels);
+  adm->CreateCursors(cursors, GetClip().channel, GetClip().nchannels);
 
-	DEBUG2(("Channels %u for %u, samples %lu for %lu (%s to %s)",
-			GetClip().channel, GetClip().nchannels,
-			(ulong_t)GetClip().start, (ulong_t)GetClip().nsamples,
-			ADMObject::GenTime(ADMObject::SamplesToTime(GetClip().start,					  format->GetSampleRate())).c_str(),
-			ADMObject::GenTime(ADMObject::SamplesToTime(GetClip().start + GetClip().nsamples, format->GetSampleRate())).c_str()));
+  DEBUG2(("Channels %u for %u, samples %lu for %lu (%s to %s)",
+          GetClip().channel, GetClip().nchannels,
+          (ulong_t)GetClip().start, (ulong_t)GetClip().nsamples,
+          ADMObject::GenTime(ADMObject::SamplesToTime(GetClip().start,                      format->GetSampleRate())).c_str(),
+          ADMObject::GenTime(ADMObject::SamplesToTime(GetClip().start + GetClip().nsamples, format->GetSampleRate())).c_str()));
 }
 
 ADMAudioFileSamples::ADMAudioFileSamples(const ADMAudioFileSamples *isamples) : SoundFileSamplesWithPosition(isamples),
-																				adm(isamples->adm)
+                                                                                adm(isamples->adm)
 {
-	adm->CreateCursors(cursors, GetClip().channel, GetClip().nchannels);
+  adm->CreateCursors(cursors, GetClip().channel, GetClip().nchannels);
 
-	DEBUG2(("Channels %u for %u, samples %lu for %lu (%s to %s)",
-			GetClip().channel, GetClip().nchannels,
-			(ulong_t)GetClip().start, (ulong_t)GetClip().nsamples,
-			ADMObject::GenTime(ADMObject::SamplesToTime(GetClip().start,					  format->GetSampleRate())).c_str(),
-			ADMObject::GenTime(ADMObject::SamplesToTime(GetClip().start + GetClip().nsamples, format->GetSampleRate())).c_str()));
+  DEBUG2(("Channels %u for %u, samples %lu for %lu (%s to %s)",
+          GetClip().channel, GetClip().nchannels,
+          (ulong_t)GetClip().start, (ulong_t)GetClip().nsamples,
+          ADMObject::GenTime(ADMObject::SamplesToTime(GetClip().start,                      format->GetSampleRate())).c_str(),
+          ADMObject::GenTime(ADMObject::SamplesToTime(GetClip().start + GetClip().nsamples, format->GetSampleRate())).c_str()));
 }
-																									 
+                                                                                                     
 ADMAudioFileSamples::~ADMAudioFileSamples()
 {
 }
 
 void ADMAudioFileSamples::UpdatePosition()
 {
-	uint64_t t = ADMObject::SamplesToTime(GetAbsolutePosition(), GetFormat()->GetSampleRate());
-	uint_t   i;
+  uint64_t t = ADMObject::SamplesToTime(GetAbsolutePosition(), GetFormat()->GetSampleRate());
+  uint_t   i;
 
-	for (i = 0; i < cursors.size(); i++) {
-		cursors[i]->Seek(t);
-	}
+  for (i = 0; i < cursors.size(); i++) {
+    cursors[i]->Seek(t);
+  }
 }
 
 BBC_AUDIOTOOLBOX_END

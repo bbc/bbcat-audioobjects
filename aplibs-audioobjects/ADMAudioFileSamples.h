@@ -9,17 +9,17 @@ BBC_AUDIOTOOLBOX_START
 
 class ADMAudioFileSamples : public SoundFileSamplesWithPosition {
 public:
-	ADMAudioFileSamples(const ADMData *iadm, const SoundFileSamples *isamples, const ADMAudioObject *obj = NULL);
-	ADMAudioFileSamples(const ADMAudioFileSamples *isamples);
-	virtual ~ADMAudioFileSamples();
+  ADMAudioFileSamples(const ADMData *iadm, const SoundFileSamples *isamples, const ADMAudioObject *obj = NULL);
+  ADMAudioFileSamples(const ADMAudioFileSamples *isamples);
+  virtual ~ADMAudioFileSamples();
 
-	virtual ADMAudioFileSamples *Duplicate() const {return new ADMAudioFileSamples(this);}
-
-protected:
-	virtual void UpdatePosition();
+  virtual ADMAudioFileSamples *Duplicate() const {return new ADMAudioFileSamples(this);}
 
 protected:
-	const ADMData *adm;
+  virtual void UpdatePosition();
+
+protected:
+  const ADMData *adm;
 };
 
 BBC_AUDIOTOOLBOX_END

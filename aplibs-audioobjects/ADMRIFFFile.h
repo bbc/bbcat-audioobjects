@@ -11,19 +11,19 @@ BBC_AUDIOTOOLBOX_START
 
 class ADMRIFFFile : public RIFFFile {
 public:
-	ADMRIFFFile();
-	virtual ~ADMRIFFFile();
-	
-	virtual void Close();
+  ADMRIFFFile();
+  virtual ~ADMRIFFFile();
+    
+  virtual void Close();
 
-	ADMData *GetADM() const {return adm;}
-
-protected:
-	virtual bool PostReadChunks();
-	virtual void UpdateSamplePosition();
+  ADMData *GetADM() const {return adm;}
 
 protected:
-	ADMData *adm;
+  virtual bool PostReadChunks();
+  virtual void UpdateSamplePosition();
+
+protected:
+  ADMData *adm;
 };
 
 BBC_AUDIOTOOLBOX_END

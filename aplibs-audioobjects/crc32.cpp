@@ -60,9 +60,9 @@ uint32_t CRC32(const unsigned char *buffer, uint32_t buffer_length, uint32_t crc
   for (i = 0; i < buffer_length; i++) {
     crc = (crc >> 8) ^ g_CRCtable[(crc ^ buffer[i]) & 0xff];
   }
-	
+    
   crc ^= 0xffffffff;
-	
+    
   return crc;
 }
 
