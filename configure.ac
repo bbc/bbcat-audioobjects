@@ -42,12 +42,12 @@ debug_default="no"
 AC_ARG_ENABLE(debug, [  --enable-debug=[no/yes] turn on debugging
 					   [default=$debug_default]],, enable_debug=$debug_default)
 if test "x$enable_debug" = "xyes"; then
-		 APLIBS_AUDIOOBJECTS_CFLAGS="$APLIBS_AUDIOOBJECTS_CFLAGS -g -O0"
-		 CXXFLAGS="$CXXFLAGS -O0"
-AC_MSG_RESULT(yes)
+  APLIBS_AUDIOOBJECTS_CFLAGS="$APLIBS_AUDIOOBJECTS_CFLAGS -g"
+  AC_MSG_RESULT(yes)
 else
-AC_MSG_RESULT(no)
+  AC_MSG_RESULT(no)
 fi
+AC_SUBST(APLIBS_AUDIOOBJECTS_CFLAGS)
 
 dnl aplibs-dsp is required
 APLIBS_DSP_VER="0.1.1.0"
