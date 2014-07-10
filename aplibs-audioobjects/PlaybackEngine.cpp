@@ -12,6 +12,7 @@ using namespace std;
 BBC_AUDIOTOOLBOX_START
 
 PlaybackEngine::PlaybackEngine() : renderer(new SoundRenderer()),
+                                   receiver(NULL),
                                    channels(0),
                                    nsamples(1024),
                                    samples(new int32_t[nsamples]),
@@ -30,13 +31,28 @@ PlaybackEngine::~PlaybackEngine()
   }
   if (samples) delete[] samples;
 
+  if (receiver) delete receiver;
   if (renderer) delete renderer;
 }
 
 void PlaybackEngine::SetRenderer(SoundRenderer *newrenderer)
 {
+  SoundPositionRenderer *posrenderer;
+
   if (renderer) delete renderer;
   renderer = newrenderer;
+
+  if (receiver && ((posrenderer = dynamic_cast<SoundPositionRenderer *>(renderer)) != NULL)) receiver->SetRenderer(posrenderer);
+}
+
+void PlaybackEngine::SetPositionReceiver(PositionReceiver *newreceiver)
+{
+  SoundPositionRenderer *posrenderer;
+
+  if (receiver) delete receiver;
+  receiver = newreceiver;
+
+  if (receiver && ((posrenderer = dynamic_cast<SoundPositionRenderer *>(renderer)) != NULL)) receiver->SetRenderer(posrenderer);
 }
 
 void PlaybackEngine::AddFile(SoundFileSamples *file)
@@ -127,8 +143,6 @@ void PlaybackEngine::UpdatePositions(bool initial)
       SoundFileSamplesWithPosition *file = dynamic_cast<SoundFileSamplesWithPosition *>(*it);
             
       if (file) {
-        const vector<PositionCursor *>& cursors = file->GetCursors();
-        uint_t i, n = cursors.size();
         uint32_t tick = GetTickCount();
         bool report = ((tick - reporttick) >= 1000);    // report once a second
 
@@ -150,12 +164,24 @@ void PlaybackEngine::UpdatePositions(bool initial)
           samplerate = file->GetFormat()->GetSampleRate();
         }
 
-        for (i = 0; i < n; i++) {
-          const Position *pos = cursors[i]->GetPosition();
+        if (receiver)
+        {
+          // position receiver set, use it as source of channel positions
+          receiver->Process();
+        }
+        else
+        {
+          // no position receiver set, get positions from audio objects
+          const vector<PositionCursor *>& cursors = file->GetCursors();
+          uint_t i, n = cursors.size();
 
-          if (pos) {
-            posrenderer->UpdatePosition(i, *pos, cursors[i]->GetPositionSupplement());
-            if (report) reports.push_back(*pos);
+          for (i = 0; i < n; i++) {
+            const Position *pos = cursors[i]->GetPosition();
+
+            if (pos) {
+              posrenderer->UpdatePosition(i, *pos, cursors[i]->GetPositionSupplement());
+              if (report) reports.push_back(*pos);
+            }
           }
         }
 

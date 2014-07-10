@@ -5,6 +5,7 @@
 
 #include <aplibs-dsp/ThreadLock.h>
 #include <aplibs-render/SoundRenderer.h>
+#include <aplibs-render/PositionReceiver.h>
 
 #include "SoundFileAttributes.h"
 
@@ -37,10 +38,24 @@ public:
   virtual void SetRenderer(SoundRenderer *newrenderer);
 
   /*--------------------------------------------------------------------------------*/
+  /** Set position receiver
+   *
+   * @note object will be DELETED on destruction of this object!
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void SetPositionReceiver(PositionReceiver *newreceiver);
+
+  /*--------------------------------------------------------------------------------*/
   /** Get current renderer
    */
   /*--------------------------------------------------------------------------------*/
   SoundRenderer *GetRenderer() {return renderer;}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Get current position receiver
+   */
+  /*--------------------------------------------------------------------------------*/
+  PositionReceiver *GetPositionReceiver() {return receiver;}
 
   /*--------------------------------------------------------------------------------*/
   /** Enable/disable looping
@@ -77,6 +92,7 @@ public:
 protected:
   ThreadLockObject  tlock;
   SoundRenderer     *renderer;
+  PositionReceiver  *receiver;
   uint_t            channels;
   uint_t            nsamples;
   int32_t           *samples;
