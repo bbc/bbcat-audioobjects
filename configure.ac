@@ -36,18 +36,18 @@ AC_SUBST(ACLOCAL_AMFLAGS)
 DX_DOXYGEN_FEATURE(ON)
 DX_INIT_DOXYGEN(aplibs-audioobjects, doxygen.cfg)
 
-# Check if we should enable debug support  (./configure --enable-debug)
-AC_MSG_CHECKING(whether to enable debugging)
-debug_default="no"
-AC_ARG_ENABLE(debug, [  --enable-debug=[no/yes] turn on debugging
-					   [default=$debug_default]],, enable_debug=$debug_default)
-if test "x$enable_debug" = "xyes"; then
-  APLIBS_AUDIOOBJECTS_CFLAGS="$APLIBS_AUDIOOBJECTS_CFLAGS -g"
+# Check if we should disable optimization  (./configure --disable-opt)
+AC_MSG_CHECKING(whether to disable optimization)
+AC_ARG_ENABLE(opt, AS_HELP_STRING([--disable-opt], [disable optimzation]), DISABLE_OPTIMIZATION="yes", DISABLE_OPTIMIZATION="no")
+if test "x${DISABLE_OPTIMIZATION}" = "xyes"; then
+  CFLAGS="$CFLAGS -O0"
+  CXXFLAGS="$CXXFLAGS -O0"
   AC_MSG_RESULT(yes)
 else
   AC_MSG_RESULT(no)
 fi
-AC_SUBST(APLIBS_AUDIOOBJECTS_CFLAGS)
+AC_SUBST(CFLAGS)
+AC_SUBST(CXXFLAGS)
 
 dnl aplibs-dsp is required
 APLIBS_DSP_VER="0.1.1.0"
