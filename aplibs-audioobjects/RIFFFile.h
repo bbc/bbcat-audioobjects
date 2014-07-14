@@ -52,7 +52,7 @@ public:
   RIFFChunk *GetChunk(uint32_t id)       {return chunkmap[id];}
   RIFFChunk *GetChunk(const char *name)  {return GetChunk(IFFID(name));}
 
-  SoundFileSamples *GetSamples()         {return filesamples;}
+  SoundFileSamples *GetSamples() const   {return filesamples;}
 
   sint_t ReadFrames(uint8_t *buffer, SampleFormat_t type, uint_t nframes) {return filesamples ? filesamples->ReadSamples((uint8_t *)buffer, type, nframes) : -1;}
   sint_t ReadFrames(int16_t *buffer, uint_t nframes = 1) {return ReadFrames((uint8_t *)buffer, SampleFormatOf(buffer), nframes);}

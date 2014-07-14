@@ -5,8 +5,9 @@
 
 #include <aplibs-dsp/ThreadLock.h>
 #include <aplibs-render/SoundRenderer.h>
-#include <aplibs-render/PositionReceiver.h>
+#include <aplibs-render/AudioPositionProcessor.h>
 
+#include "Playlist.h"
 #include "SoundFileAttributes.h"
 
 BBC_AUDIOTOOLBOX_START
@@ -16,13 +17,16 @@ BBC_AUDIOTOOLBOX_START
  * specified renderer
  */
 /*--------------------------------------------------------------------------------*/
-class PlaybackEngine {
+class ADMRIFFFile;
+class PlaybackEngine : public AudioPositionProcessor {
 public:
   PlaybackEngine();
   virtual ~PlaybackEngine();
 
   /*--------------------------------------------------------------------------------*/
-  /** Add file to list
+  /** Add file to playlist
+   *
+   * @param file COPY of file to add 
    *
    * @note object will be DELETED on destruction of this object!
    */
@@ -30,38 +34,20 @@ public:
   virtual void AddFile(SoundFileSamples *file);
 
   /*--------------------------------------------------------------------------------*/
-  /** Set renderer
+  /** Add audio object to playlist
    *
-   * @note object will be DELETED on destruction of this object!
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void SetRenderer(SoundRenderer *newrenderer);
-
-  /*--------------------------------------------------------------------------------*/
-  /** Set position receiver
+   * @param adm ADM object with audio objects
+   * @param name name of audio object or 'all' for entire file
    *
-   * @note object will be DELETED on destruction of this object!
    */
   /*--------------------------------------------------------------------------------*/
-  virtual void SetPositionReceiver(PositionReceiver *newreceiver);
-
-  /*--------------------------------------------------------------------------------*/
-  /** Get current renderer
-   */
-  /*--------------------------------------------------------------------------------*/
-  SoundRenderer *GetRenderer() {return renderer;}
-
-  /*--------------------------------------------------------------------------------*/
-  /** Get current position receiver
-   */
-  /*--------------------------------------------------------------------------------*/
-  PositionReceiver *GetPositionReceiver() {return receiver;}
+  virtual bool AddObject(const ADMRIFFFile& file, const char *name);
 
   /*--------------------------------------------------------------------------------*/
   /** Enable/disable looping
    */
   /*--------------------------------------------------------------------------------*/
-  virtual void EnableLoop(bool enable = true) {loop_all = enable;}
+  virtual void EnableLoop(bool enable = true) {playlist.EnableLoop(enable);}
 
   /*--------------------------------------------------------------------------------*/
   /** Reset to start of playback list
@@ -71,15 +57,15 @@ public:
 
   /*--------------------------------------------------------------------------------*/
   /** Update positions of channels currently being played out
-   *
-   * @param initial true if this is the initial call
    */
   /*--------------------------------------------------------------------------------*/
-  virtual void UpdatePositions(bool initial = false);
+  virtual void UpdatePositions();
 
   /*--------------------------------------------------------------------------------*/
   /** Generate a buffer worth of samples from list of audio files
    *
+   * @param input buffer to read audio from
+   * @param input_channels expected width of input buffer
    * @param output buffer to write audio to
    * @param output_channels expected width of output buffer
    * @param frames number of frames to generate
@@ -87,19 +73,17 @@ public:
    * @return true if all of or part of buffer written
    */
   /*--------------------------------------------------------------------------------*/
-  virtual bool GenerateAudio(int32_t *output, uint_t output_channels, uint_t frames);
+  virtual bool ProcessAudio(const sint32_t *input, uint_t input_channels, sint32_t *output, uint_t output_channels, uint_t frames);
+
+protected:
+  virtual void SetFileChannelsAndSampleRate();
 
 protected:
   ThreadLockObject  tlock;
-  SoundRenderer     *renderer;
-  PositionReceiver  *receiver;
-  uint_t            channels;
+  Playlist          playlist;
   uint_t            nsamples;
   int32_t           *samples;
   uint32_t          reporttick;
-  bool              loop_all;
-  std::vector<SoundFileSamples *> list;
-  std::vector<SoundFileSamples *>::iterator it;
 };
 
 BBC_AUDIOTOOLBOX_END

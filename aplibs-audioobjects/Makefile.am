@@ -24,8 +24,10 @@ libap_audioobjects_@APLIBS_AUDIOOBJECTS_MAJORMINOR@_la_SOURCES =	\
 	ADMObjects.cpp													\
 	ADMRIFFFile.cpp													\
 	crc32.cpp														\
+	FilePositionGenerator.cpp										\
 	mt19937ar.c														\
 	PlaybackEngine.cpp												\
+	Playlist.cpp													\
 	RIFFChunk.cpp													\
 	RIFFChunks.cpp													\
 	RIFFFile.cpp													\
@@ -38,8 +40,10 @@ pkginclude_HEADERS =							\
 	ADMObjects.h								\
 	ADMRIFFFile.h								\
 	crc32.h										\
+	FilePositionGenerator.h						\
 	mt19937ar.h									\
 	PlaybackEngine.h							\
+	Playlist.h									\
 	RIFFChunk_Definitions.h						\
 	RIFFChunk.h									\
 	RIFFChunks.h								\
