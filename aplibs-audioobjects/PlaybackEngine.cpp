@@ -133,8 +133,8 @@ void PlaybackEngine::UpdatePositions()
   // if inputchannels = 0 then renderer has changed so set up channels and sample rate again
   if (!inputchannels) SetFileChannelsAndSampleRate();
 
-  // update positions from PositionGenerator
-  if (generator) generator->Process();
+  // update positions from PositionGenerator and to renderer
+  AudioPositionProcessor::UpdatePositions();
 }
 
 /*--------------------------------------------------------------------------------*/
