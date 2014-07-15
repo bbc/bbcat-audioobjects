@@ -9,8 +9,6 @@
 #define DEBUG_LEVEL 1
 #include "TinyXMLADMData.h"
 
-using namespace std;
-
 BBC_AUDIOTOOLBOX_START
 
 TinyXMLADMData::TinyXMLADMData()
@@ -27,7 +25,7 @@ TinyXMLADMData::~TinyXMLADMData()
 /** Required implementation of XML translation
  */
 /*--------------------------------------------------------------------------------*/
-bool TinyXMLADMData::TranslateXML(const string& data)
+bool TinyXMLADMData::TranslateXML(const std::string& data)
 {
   TiXmlDocument doc;
   const TiXmlNode *node;
@@ -65,7 +63,7 @@ bool TinyXMLADMData::TranslateXML(const string& data)
  *
  */
 /*--------------------------------------------------------------------------------*/
-void TinyXMLADMData::ParseHeader(ADMHEADER& header, const string& type, void *userdata)
+void TinyXMLADMData::ParseHeader(ADMHEADER& header, const std::string& type, void *userdata)
 {
   const TiXmlNode      *node = (const TiXmlNode *)userdata;
   const TiXmlAttribute *attr; 
@@ -78,7 +76,7 @@ void TinyXMLADMData::ParseHeader(ADMHEADER& header, const string& type, void *us
   header.id   = dummyid;
 
   for (attr = node->ToElement()->FirstAttribute(); attr; attr = attr->Next()) {
-    string attr_name = attr->Name();
+    std::string attr_name = attr->Name();
 
     // find '<type>Name', '<type>ID' or 'UID' (special for AudioTrack)
     if (attr_name == (type + "Name")) {
@@ -95,7 +93,7 @@ void TinyXMLADMData::ParseHeader(ADMHEADER& header, const string& type, void *us
   DEBUG4(("Parse header (type='%s', id='%s', name='%s')", header.type.c_str(), header.id.c_str(), header.name.c_str()));
 }
 
-void TinyXMLADMData::ParseValue(ADMObject *obj, const string& type, void *userdata)
+void TinyXMLADMData::ParseValue(ADMObject *obj, const std::string& type, void *userdata)
 {
   const TiXmlNode      *node    = (const TiXmlNode *)userdata;
   const TiXmlNode      *subnode = node->FirstChild();
@@ -130,7 +128,7 @@ void TinyXMLADMData::ParseValue(ADMObject *obj, const string& type, void *userda
  *
  */
 /*--------------------------------------------------------------------------------*/
-void TinyXMLADMData::ParseValues(ADMObject *obj, const string& type, void *userdata)
+void TinyXMLADMData::ParseValues(ADMObject *obj, const std::string& type, void *userdata)
 {
   // if the supplied ADM object is an AudioChannelFormat, AudioBlockFormat sub-sections will be parsed
   ADMAudioChannelFormat *channel = dynamic_cast<ADMAudioChannelFormat *>(obj);
@@ -140,7 +138,7 @@ void TinyXMLADMData::ParseValues(ADMObject *obj, const string& type, void *userd
 
   // parse attributes
   for (attr = node->ToElement()->FirstAttribute(); attr; attr = attr->Next()) {
-    string attr_name = attr->Name();
+    std::string attr_name = attr->Name();
 
     // ignore header values previously found
     if ((attr_name != (type + "Name")) &&
@@ -164,7 +162,7 @@ void TinyXMLADMData::ParseValues(ADMObject *obj, const string& type, void *userd
   // parse subnode elements and create values from them
   for (subnode = node->FirstChild(); subnode; subnode = subnode->NextSibling()) {
     if (subnode->Type() == TiXmlNode::TINYXML_ELEMENT) {
-      string name = subnode->Value();
+      std::string name = subnode->Value();
 
       if (name == ADMAudioBlockFormat::Type) {
         // AudioBlockFormat sections are handled differently...
@@ -193,7 +191,7 @@ void TinyXMLADMData::ParseValues(ADMObject *obj, const string& type, void *userd
  * @param name name of subnode to find
  */
 /*--------------------------------------------------------------------------------*/
-const TiXmlNode *TinyXMLADMData::FindElement(const TiXmlNode *node, const string& name)
+const TiXmlNode *TinyXMLADMData::FindElement(const TiXmlNode *node, const std::string& name)
 {
   const TiXmlNode *subnode; 
 

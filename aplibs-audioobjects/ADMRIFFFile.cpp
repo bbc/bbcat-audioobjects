@@ -11,8 +11,6 @@
 #include "ADMRIFFFile.h"
 #include "RIFFChunk_Definitions.h"
 
-using namespace std;
-
 BBC_AUDIOTOOLBOX_START
 
 ADMRIFFFile::ADMRIFFFile() : RIFFFile(),

@@ -10,11 +10,9 @@
 #include "ADMData.h"
 #include "RIFFChunk_Definitions.h"
 
-using namespace std;
-
 BBC_AUDIOTOOLBOX_START
 
-vector<ADMData::PROVIDER> ADMData::providerlist;
+std::vector<ADMData::PROVIDER> ADMData::providerlist;
 
 ADMData::ADMData()
 {
@@ -45,7 +43,7 @@ bool ADMData::SetChna(const uint8_t *data)
   uint16_t i;
   for (i = 0; i < chna.UIDCount; i++) {
     ADMAudioTrack *track;
-    string id;
+    std::string id;
 
     id.assign(chna.UIDs[i].UID, sizeof(chna.UIDs[i].UID));
 
@@ -74,14 +72,14 @@ bool ADMData::SetChna(const uint8_t *data)
 
 bool ADMData::SetAxml(const uint8_t *data, uint_t length)
 {
-  string str;
+  std::string str;
 
   str.assign((const char *)data, length);
 
   return SetAxml(str);
 }
 
-bool ADMData::SetAxml(const string& data)
+bool ADMData::SetAxml(const std::string& data)
 {
   bool success = false;
 
@@ -145,9 +143,9 @@ uint8_t *ADMData::GetChna(uint32_t& len) const
   return (uint8_t *)p;
 }
 
-string ADMData::GetAxml(const string& indent, const string& eol, uint_t ind_level) const
+std::string ADMData::GetAxml(const std::string& indent, const std::string& eol, uint_t ind_level) const
 {
-  string str;
+  std::string str;
 
   Printf(str,
          "%s<?xml version=\"1.0\" encoding=\"UTF-8\"?>%s",
@@ -191,9 +189,9 @@ void ADMData::RegisterProvider(CREATOR fn, void *context)
   providerlist.push_back(provider);
 }
 
-void ADMData::Register(ADMObject *obj, const string& type)
+void ADMData::Register(ADMObject *obj, const std::string& type)
 {
-  string uuid = type + "/" + obj->GetID();
+  std::string uuid = type + "/" + obj->GetID();
 
   admobjects[uuid] = obj;
 
@@ -205,7 +203,7 @@ void ADMData::Register(ADMObject *obj, const string& type)
   }
 }
 
-bool ADMData::ValidType(const string& type) const
+bool ADMData::ValidType(const std::string& type) const
 {
   return ((type == ADMAudioProgramme::Type) ||
           (type == ADMAudioContent::Type) ||
@@ -218,13 +216,13 @@ bool ADMData::ValidType(const string& type) const
           (type == ADMAudioTrack::Type));
 }
 
-ADMObject *ADMData::Create(const string& type, const string& id, const string& name)
+ADMObject *ADMData::Create(const std::string& type, const std::string& id, const std::string& name)
 {
   ADMObject *obj = NULL;
 
   if (ValidType(type)) {
     ADMOBJECTS_MAP::const_iterator it;
-    string uuid = type + "/" + id;
+    std::string uuid = type + "/" + id;
 
     if ((it = admobjects.find(uuid)) == admobjects.end()) {
       if      (type == ADMAudioProgramme::Type)     obj = new ADMAudioProgramme(*this, id, name);
@@ -243,7 +241,7 @@ ADMObject *ADMData::Create(const string& type, const string& id, const string& n
   return obj;
 }
 
-ADMObject *ADMData::Parse(const string& type, void *userdata)
+ADMObject *ADMData::Parse(const std::string& type, void *userdata)
 {
   ADMHEADER header;
   ADMObject *obj;
@@ -264,7 +262,7 @@ ADMObject *ADMData::GetReference(const ADMVALUE& value)
 {
   ADMObject *obj = NULL;
   ADMOBJECTS_CIT it;
-  string uuid = value.name, cmp;
+  std::string uuid = value.name, cmp;
 
   cmp = "UIDRef";
   if ((uuid.size() >= cmp.size()) && (uuid.compare(uuid.size() - cmp.size(), cmp.size(), cmp) == 0)) {
@@ -289,7 +287,7 @@ ADMObject *ADMData::GetReference(const ADMVALUE& value)
 
 void ADMData::SortTracks()
 {
-  vector<const ADMAudioTrack *>::const_iterator it;
+  std::vector<const ADMAudioTrack *>::const_iterator it;
 
   sort(tracklist.begin(), tracklist.end(), ADMAudioTrack::Compare);
 
@@ -320,7 +318,7 @@ void ADMData::UpdateLimits()
   }
 }
 
-void ADMData::GetADMList(const string& type, vector<const ADMObject *>& list) const
+void ADMData::GetADMList(const std::string& type, std::vector<const ADMObject *>& list) const
 {
   ADMOBJECTS_CIT it;
 
@@ -334,7 +332,7 @@ void ADMData::GetADMList(const string& type, vector<const ADMObject *>& list) co
   }
 }
 
-const ADMObject *ADMData::GetObjectByID(const string& id, const string& type) const
+const ADMObject *ADMData::GetObjectByID(const std::string& id, const std::string& type) const
 {
   ADMOBJECTS_CIT it;
 
@@ -347,7 +345,7 @@ const ADMObject *ADMData::GetObjectByID(const string& id, const string& type) co
   return NULL;
 }
 
-const ADMObject *ADMData::GetObjectByName(const string& name, const string& type) const
+const ADMObject *ADMData::GetObjectByName(const std::string& name, const std::string& type) const
 {
   ADMOBJECTS_CIT it;
 
@@ -360,9 +358,9 @@ const ADMObject *ADMData::GetObjectByName(const string& name, const string& type
   return NULL;
 }
 
-string ADMData::FormatString(const char *fmt, ...)
+std::string ADMData::FormatString(const char *fmt, ...)
 {
-  string  str;
+  std::string  str;
   va_list ap;
 
   va_start(ap, fmt);
@@ -378,7 +376,7 @@ string ADMData::FormatString(const char *fmt, ...)
   return str;
 }
 
-void ADMData::Dump(string& str, const string& indent, const string& eol, uint_t level) const
+void ADMData::Dump(std::string& str, const std::string& indent, const std::string& eol, uint_t level) const
 {
   ADMOBJECTS_CIT it;
 
@@ -389,7 +387,7 @@ void ADMData::Dump(string& str, const string& indent, const string& eol, uint_t 
   }
 }
 
-void ADMData::GenerateXML(string& str, const string& indent, const string& eol, uint_t ind_level) const
+void ADMData::GenerateXML(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level) const
 {
   ADMOBJECTS_CIT it;
 

@@ -6,8 +6,6 @@
 #define DEBUG_LEVEL 2
 #include "ADMAudioFileSamples.h"
 
-using namespace std;
-
 BBC_AUDIOTOOLBOX_START
 
 ADMAudioFileSamples::ADMAudioFileSamples(const ADMData *iadm, const SoundFileSamples *isamples, const ADMAudioObject *obj) : SoundFileSamplesWithPosition(isamples),

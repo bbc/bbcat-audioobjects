@@ -8,8 +8,6 @@
 
 #include "SoundFileAttributes.h"
 
-using namespace std;
-
 BBC_AUDIOTOOLBOX_START
 
 Playlist::Playlist() : loop_all(false)

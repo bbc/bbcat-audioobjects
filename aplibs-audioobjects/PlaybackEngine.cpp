@@ -10,8 +10,6 @@
 #include "ADMRIFFFile.h"
 #include "ADMAudioFileSamples.h"
 
-using namespace std;
-
 BBC_AUDIOTOOLBOX_START
 
 PlaybackEngine::PlaybackEngine() : AudioPositionProcessor(),

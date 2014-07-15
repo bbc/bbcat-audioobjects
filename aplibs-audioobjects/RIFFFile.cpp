@@ -8,8 +8,6 @@
 
 #include "RIFFFile.h"
 
-using namespace std;
-
 BBC_AUDIOTOOLBOX_START
 
 RIFFFile::RIFFFile() : file(NULL),
