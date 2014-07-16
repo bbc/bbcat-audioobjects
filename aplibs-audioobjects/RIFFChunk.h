@@ -105,7 +105,7 @@ public:
   /*--------------------------------------------------------------------------------*/
   /** The primary chunk creation function
    *
-   * @param fp open file positioned at chunk ID point
+   * @param file open file positioned at chunk ID point
    *
    * @return RIFFChunk object for the chunk
    *

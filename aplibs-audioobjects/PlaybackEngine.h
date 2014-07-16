@@ -36,7 +36,7 @@ public:
   /*--------------------------------------------------------------------------------*/
   /** Add audio object to playlist
    *
-   * @param adm ADM object with audio objects
+   * @param file open audio file support audio objects
    * @param name name of audio object or 'all' for entire file
    *
    */

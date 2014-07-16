@@ -122,7 +122,7 @@ void TinyXMLADMData::ParseValue(ADMObject *obj, const std::string& type, void *u
 /*--------------------------------------------------------------------------------*/
 /** Parse attributes and subnodes as values
  *
- * @param header header object ot be populated
+ * @param obj object to read values from
  * @param type XML type of object
  * @param userdata user suppled data
  *

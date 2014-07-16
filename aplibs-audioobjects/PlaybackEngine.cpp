@@ -46,7 +46,8 @@ void PlaybackEngine::AddFile(SoundFileSamples *file)
 /*--------------------------------------------------------------------------------*/
 /** Add audio object to playlist
  *
- * @note object will be DELETED on destruction of this object!
+ * @param file open audio file support audio objects
+ * @param name name of audio object or 'all' for entire file
  */
 /*--------------------------------------------------------------------------------*/
 bool PlaybackEngine::AddObject(const ADMRIFFFile& file, const char *name)

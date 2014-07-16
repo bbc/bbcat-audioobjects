@@ -886,6 +886,7 @@ void ADMObject::Serialize(uint8_t *dst, uint_t& len) const
  *
  * @param dst destination buffer or NULL to calculate required buffer size
  * @param len offset into data to store data, modified by function
+ * @param len0 offset into data of the beginning of this data block (to sync against)
  *
  */
 /*--------------------------------------------------------------------------------*/
@@ -905,6 +906,8 @@ void ADMObject::SerializeSync(uint8_t *dst, uint_t& len, uint_t len0)
  * @param dst buffer to receive data (or NULL to just calculate size)
  * @param len offset into buffer, modified by this function
  * @param obj object to store
+ * @param objlen length of data 
+ * @param byteswap true to require the bytes to be swapped prior to storage (assumes the data is a single object)
  *
  */
 /*--------------------------------------------------------------------------------*/
