@@ -117,7 +117,7 @@ void PlaybackEngine::SetFileChannelsAndSampleRate()
     }
 
     // update sample rate
-    SetSampleRate(file->GetFormat()->GetSampleRate());
+    SetInputSampleRate(file->GetFormat()->GetSampleRate());
   }
 }
 
@@ -136,67 +136,96 @@ void PlaybackEngine::UpdatePositions()
   AudioPositionProcessor::UpdatePositions();
 }
 
+
 /*--------------------------------------------------------------------------------*/
 /** Generate a buffer worth of samples from list of audio files
  *
- * @param input buffer to read audio from
- * @param input_channels expected width of input buffer
- * @param output buffer to write audio to
- * @param output_channels expected width of output buffer
- * @param frames number of frames to generate
+ * @param src source buffer (IGNORED)
+ * @param srcformat format of source buffer (IGNORED)
+ * @param dst destination buffer
+ * @param dstformat format of destination buffer
+ * @param nsrcchannels number channels in source buffer (IGNORED)
+ * @param ndstchannels number channels desired in destination buffer
+ * @param nsrcframes number of sample frames in source buffer (IGNORED)
+ * @param ndstframes maximum number of sample frames that can be put in destination
  *
- * @return true if all of or part of buffer written
+ * @return number of frames written to destination
+ *
+ * @note for any implementation of a renderer, this function is the PREFERRED one to override
+ * @note whereas overriding any of the specific type versions below is DISCOURAGED
+ *
+ * @note samples may be LOST if nsrcframes > ndstframes
+ * @note ASSUMES destination is BLANKED out!
+ *
  */
 /*--------------------------------------------------------------------------------*/
-bool PlaybackEngine::ProcessAudio(const sint32_t *input, uint_t input_channels, sint32_t *output, uint_t output_channels, uint_t frames)
+uint_t PlaybackEngine::Render(const uint8_t *src, SampleFormat_t srcformat,
+                              uint8_t       *dst, SampleFormat_t dstformat,
+                              uint_t nsrcchannels, uint_t ndstchannels, uint_t nsrcframes, uint_t ndstframes)
 {
-  bool done = true;
-
-  UNUSED_PARAMETER(input);
-  UNUSED_PARAMETER(input_channels);
-
-  // clear entire output
-  memset(output, 0, output_channels * frames * sizeof(*output));
-
-  while (frames)
+  if (renderer)
   {
-    ThreadLock       lock(tlock);
-    SoundFileSamples *file;
-    uint_t           nread = 0;
+    uint_t frames = 0;
+    uint_t dstbps = GetBytesPerSample(dstformat);
 
-    // if not at the end of the play list, try and read out samples
-    if ((file = playlist.GetFile()) != NULL)
+    UNUSED_PARAMETER(src);
+    UNUSED_PARAMETER(srcformat);
+    UNUSED_PARAMETER(nsrcchannels);
+    UNUSED_PARAMETER(nsrcframes);
+
+    // clear entire output
+    memset(dst, 0, ndstchannels * ndstframes * dstbps);
+
+    while (ndstframes)
     {
-      // if inputchannels = 0 then renderer has changed so set up channels and sample rate again
-      if (!inputchannels) SetFileChannelsAndSampleRate();
+      ThreadLock       lock(tlock);
+      SoundFileSamples *file;
+      uint_t           nread = 0;
 
-      // calculate maximum number of frames that can be read and read them into a temporary buffer
-      nread = file->ReadSamples(samples, MIN(nsamples / inputchannels, frames));
+      // if not at the end of the play list, try and read out samples
+      if ((file = playlist.GetFile()) != NULL)
+      {
+        // if inputchannels = 0 then renderer has changed so set up channels and sample rate again
+        if (!inputchannels) SetFileChannelsAndSampleRate();
 
-      // end of this file, move onto next one
-      if (nread == 0) {
-        playlist.Next();
-        SetFileChannelsAndSampleRate();
-        continue;
+        // calculate maximum number of frames that can be read and read them into a temporary buffer
+        nread = file->ReadSamples(samples, MIN(nsamples / inputchannels, ndstframes));
+
+        // end of this file, move onto next one
+        if (nread == 0) {
+          playlist.Next();
+          SetFileChannelsAndSampleRate();
+          continue;
+        }
       }
+
+      // allow LESS samples to be written to output than sent to renderer (for non-unity time rendering processes)
+      uint_t nwritten = renderer->Render((const uint8_t *)samples,
+                                         SampleFormatOf(samples),
+                                         dst, dstformat,
+                                         inputchannels, ndstchannels,
+                                         nread, ndstframes);
+
+      // if the renderer has finished outputting, break out
+      if ((nread == 0) && (nwritten == 0)) break;
+
+      // move output pointer on by resultant number of frames
+      dst        += nwritten * ndstchannels * dstbps;
+      ndstframes -= nwritten;
+      frames     += nwritten;
     }
 
-    // allow LESS samples to be written to output than sent to renderer (for non-unity time rendering processes)
-    uint_t nwritten = renderer->Render(samples, output, inputchannels, output_channels, nread, frames);
+    // if no frames written, notify renderer that processing has finished
+    if (!frames) renderer->ProcessingFinished();
 
-    // if the renderer has finished outputting, break out
-    if ((nread == 0) && (nwritten == 0)) break;
-
-    // move output pointer on by resultant number of frames
-    output += nwritten * output_channels;
-    frames -= nwritten;
-
-    done = false;
+    return frames;
   }
 
-  if (done) renderer->ProcessingFinished();
-
-  return !done;
+  // no renderer, use default
+  return defaultrenderer.Render(src, srcformat,
+                                dst, dstformat,
+                                nsrcchannels, ndstchannels,
+                                nsrcframes,   ndstframes);
 }
 
 BBC_AUDIOTOOLBOX_END

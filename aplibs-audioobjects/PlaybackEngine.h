@@ -64,16 +64,28 @@ public:
   /*--------------------------------------------------------------------------------*/
   /** Generate a buffer worth of samples from list of audio files
    *
-   * @param input buffer to read audio from
-   * @param input_channels expected width of input buffer
-   * @param output buffer to write audio to
-   * @param output_channels expected width of output buffer
-   * @param frames number of frames to generate
+   * @param src source buffer (IGNORED)
+   * @param srcformat format of source buffer (IGNORED)
+   * @param dst destination buffer
+   * @param dstformat format of destination buffer
+   * @param nsrcchannels number channels in source buffer (IGNORED)
+   * @param ndstchannels number channels desired in destination buffer
+   * @param nsrcframes number of sample frames in source buffer (IGNORED)
+   * @param ndstframes maximum number of sample frames that can be put in destination
    *
-   * @return true if all of or part of buffer written
+   * @return number of frames written to destination
+   *
+   * @note for any implementation of a renderer, this function is the PREFERRED one to override
+   * @note whereas overriding any of the specific type versions below is DISCOURAGED
+   *
+   * @note samples may be LOST if nsrcframes > ndstframes
+   * @note ASSUMES destination is BLANKED out!
+   *
    */
   /*--------------------------------------------------------------------------------*/
-  virtual bool ProcessAudio(const sint32_t *input, uint_t input_channels, sint32_t *output, uint_t output_channels, uint_t frames);
+  virtual uint_t Render(const uint8_t *src, SampleFormat_t srcformat,
+                        uint8_t       *dst, SampleFormat_t dstformat,
+                        uint_t nsrcchannels, uint_t ndstchannels, uint_t nsrcframes, uint_t ndstframes);
 
 protected:
   virtual void SetFileChannelsAndSampleRate();
