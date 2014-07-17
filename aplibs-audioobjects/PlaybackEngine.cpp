@@ -165,16 +165,13 @@ uint_t PlaybackEngine::Render(const uint8_t *src, SampleFormat_t srcformat,
 {
   if (renderer)
   {
-    uint_t frames = 0;
     uint_t dstbps = GetBytesPerSample(dstformat);
+    uint_t frames = 0;
 
     UNUSED_PARAMETER(src);
     UNUSED_PARAMETER(srcformat);
     UNUSED_PARAMETER(nsrcchannels);
     UNUSED_PARAMETER(nsrcframes);
-
-    // clear entire output
-    memset(dst, 0, ndstchannels * ndstframes * dstbps);
 
     while (ndstframes)
     {
