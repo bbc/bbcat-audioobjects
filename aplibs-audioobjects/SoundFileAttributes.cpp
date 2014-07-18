@@ -41,10 +41,12 @@ bool SoundFile::fopen(const char *filename, const char *mode)
 
   if (!isopen()) {
     if ((fp = ::fopen(filename, mode)) != NULL) {
+      DEBUG2(("Opened '%s' for '%s'", filename, mode));
       this->filename = filename;
       this->mode     = mode;
       success        = true;
     }
+    else DEBUG2(("Failed to open '%s' for '%s'", filename, mode));
   }
 
   return success;

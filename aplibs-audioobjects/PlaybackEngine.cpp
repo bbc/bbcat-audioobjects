@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define DEBUG_LEVEL 1
+#define DEBUG_LEVEL 2
 #include "PlaybackEngine.h"
 #include "SoundFileWithPosition.h"
 #include "FilePositionGenerator.h"

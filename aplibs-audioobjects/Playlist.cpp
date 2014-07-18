@@ -34,7 +34,8 @@ void Playlist::AddFile(SoundFileSamples *file)
 {
   list.push_back(file);
 
-  if (list.size() == 1) Reset();
+  // MUST reset here to ensure 'it' is always valid
+  Reset();
 }
 
 /*--------------------------------------------------------------------------------*/
