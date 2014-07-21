@@ -12,16 +12,14 @@
 
 BBC_AUDIOTOOLBOX_START
 
-PlaybackEngine::PlaybackEngine() : AudioPositionProcessor(),
-                                   nsamples(1024),
-                                   samples(new int32_t[nsamples])
+PlaybackEngine::PlaybackEngine() : AudioPositionProcessor()
 {
-  SetExplicitGenerator(new FilePositionGenerator(renderer, playlist));
+  samples.resize(4096);
+  SetExplicitGenerator(new FilePositionGenerator(this, playlist));
 }
 
 PlaybackEngine::~PlaybackEngine()
 {
-  if (samples) delete[] samples;
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -107,14 +105,8 @@ void PlaybackEngine::SetFileChannelsAndSampleRate()
   // if not at the end of the play list, try and read out samples
   if ((file = playlist.GetFile()) != NULL)
   {
-    // save number of input channels for this file
-    inputchannels = file->GetClip().nchannels;
-
-    if (renderer)
-    {
-      // tell renderer how many input channels to expect
-      renderer->SetInputChannels(inputchannels);
-    }
+    // tell renderers how many input channels to expect
+    SetInputChannels(file->GetClip().nchannels);
 
     // update sample rate
     SetInputSampleRate(file->GetFormat()->GetSampleRate());
@@ -136,93 +128,73 @@ void PlaybackEngine::UpdatePositions()
   AudioPositionProcessor::UpdatePositions();
 }
 
-
 /*--------------------------------------------------------------------------------*/
-/** Generate a buffer worth of samples from list of audio files
+/** Render from one set of channels to another
  *
- * @param src source buffer (IGNORED)
- * @param srcformat format of source buffer (IGNORED)
+ * @param src source buffer
  * @param dst destination buffer
- * @param dstformat format of destination buffer
- * @param nsrcchannels number channels in source buffer (IGNORED)
+ * @param nsrcchannels number channels in source buffer
  * @param ndstchannels number channels desired in destination buffer
- * @param nsrcframes number of sample frames in source buffer (IGNORED)
+ * @param nsrcframes number of sample frames in source buffer
  * @param ndstframes maximum number of sample frames that can be put in destination
  *
  * @return number of frames written to destination
- *
- * @note for any implementation of a renderer, this function is the PREFERRED one to override
- * @note whereas overriding any of the specific type versions below is DISCOURAGED
  *
  * @note samples may be LOST if nsrcframes > ndstframes
  * @note ASSUMES destination is BLANKED out!
  *
  */
 /*--------------------------------------------------------------------------------*/
-uint_t PlaybackEngine::Render(const uint8_t *src, SampleFormat_t srcformat,
-                              uint8_t       *dst, SampleFormat_t dstformat,
+uint_t PlaybackEngine::Render(const Sample_t *src, Sample_t *dst,
                               uint_t nsrcchannels, uint_t ndstchannels, uint_t nsrcframes, uint_t ndstframes)
 {
-  if (renderer)
+  uint_t frames = 0;
+
+  UNUSED_PARAMETER(src);
+  UNUSED_PARAMETER(nsrcchannels);
+  UNUSED_PARAMETER(nsrcframes);
+
+  while (ndstframes)
   {
-    uint_t dstbps = GetBytesPerSample(dstformat);
-    uint_t frames = 0;
+    ThreadLock       lock(tlock);
+    SoundFileSamples *file;
+    uint_t           nread = 0;
 
-    UNUSED_PARAMETER(src);
-    UNUSED_PARAMETER(srcformat);
-    UNUSED_PARAMETER(nsrcchannels);
-    UNUSED_PARAMETER(nsrcframes);
-
-    while (ndstframes)
+    // if not at the end of the play list, try and read out samples
+    if ((file = playlist.GetFile()) != NULL)
     {
-      ThreadLock       lock(tlock);
-      SoundFileSamples *file;
-      uint_t           nread = 0;
+      // if inputchannels = 0 then renderer has changed so set up channels and sample rate again
+      if (!inputchannels) SetFileChannelsAndSampleRate();
 
-      // if not at the end of the play list, try and read out samples
-      if ((file = playlist.GetFile()) != NULL)
-      {
-        // if inputchannels = 0 then renderer has changed so set up channels and sample rate again
-        if (!inputchannels) SetFileChannelsAndSampleRate();
+      // calculate maximum number of frames that can be read and read them into a temporary buffer
+      nread = file->ReadSamples(&samples[0], MIN(samples.size() / inputchannels, ndstframes));
 
-        // calculate maximum number of frames that can be read and read them into a temporary buffer
-        nread = file->ReadSamples(samples, MIN(nsamples / inputchannels, ndstframes));
-
-        // end of this file, move onto next one
-        if (nread == 0) {
-          playlist.Next();
-          SetFileChannelsAndSampleRate();
-          continue;
-        }
+      // end of this file, move onto next one
+      if (nread == 0) {
+        playlist.Next();
+        SetFileChannelsAndSampleRate();
+        continue;
       }
-
-      // allow LESS samples to be written to output than sent to renderer (for non-unity time rendering processes)
-      uint_t nwritten = renderer->Render((const uint8_t *)samples,
-                                         SampleFormatOf(samples),
-                                         dst, dstformat,
-                                         inputchannels, ndstchannels,
-                                         nread, ndstframes);
-
-      // if the renderer has finished outputting, break out
-      if ((nread == 0) && (nwritten == 0)) break;
-
-      // move output pointer on by resultant number of frames
-      dst        += nwritten * ndstchannels * dstbps;
-      ndstframes -= nwritten;
-      frames     += nwritten;
     }
 
-    // if no frames written, notify renderer that processing has finished
-    if (!frames) renderer->ProcessingFinished();
+    // allow LESS samples to be written to output than sent to renderer (for non-unity time rendering processes)
+    uint_t nwritten = AudioPositionProcessor::Render(&samples[0], dst,
+                                                     inputchannels, ndstchannels,
+                                                     nread, ndstframes);
 
-    return frames;
+    // if the renderer has finished outputting, break out
+    if ((nread == 0) && (nwritten == 0)) break;
+
+    // move output pointer on by resultant number of frames
+    dst        += nwritten * ndstchannels;
+    ndstframes -= nwritten;
+    frames     += nwritten;
   }
 
-  // no renderer, use default
-  return defaultrenderer.Render(src, srcformat,
-                                dst, dstformat,
-                                nsrcchannels, ndstchannels,
-                                nsrcframes,   ndstframes);
+  // if no frames written, notify renderer that processing has finished
+  if (!frames) ProcessingFinished();
+
+  return frames;
 }
 
 BBC_AUDIOTOOLBOX_END

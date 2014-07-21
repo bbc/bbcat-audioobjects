@@ -62,40 +62,33 @@ public:
   virtual void UpdatePositions();
 
   /*--------------------------------------------------------------------------------*/
-  /** Generate a buffer worth of samples from list of audio files
+  /** Render from one set of channels to another
    *
-   * @param src source buffer (IGNORED)
-   * @param srcformat format of source buffer (IGNORED)
+   * @param src source buffer
    * @param dst destination buffer
-   * @param dstformat format of destination buffer
-   * @param nsrcchannels number channels in source buffer (IGNORED)
+   * @param nsrcchannels number channels in source buffer
    * @param ndstchannels number channels desired in destination buffer
-   * @param nsrcframes number of sample frames in source buffer (IGNORED)
+   * @param nsrcframes number of sample frames in source buffer
    * @param ndstframes maximum number of sample frames that can be put in destination
    *
    * @return number of frames written to destination
-   *
-   * @note for any implementation of a renderer, this function is the PREFERRED one to override
-   * @note whereas overriding any of the specific type versions below is DISCOURAGED
    *
    * @note samples may be LOST if nsrcframes > ndstframes
    * @note ASSUMES destination is BLANKED out!
    *
    */
   /*--------------------------------------------------------------------------------*/
-  virtual uint_t Render(const uint8_t *src, SampleFormat_t srcformat,
-                        uint8_t       *dst, SampleFormat_t dstformat,
+  virtual uint_t Render(const Sample_t *src, Sample_t *dst,
                         uint_t nsrcchannels, uint_t ndstchannels, uint_t nsrcframes, uint_t ndstframes);
 
 protected:
   virtual void SetFileChannelsAndSampleRate();
 
 protected:
-  ThreadLockObject  tlock;
-  Playlist          playlist;
-  uint_t            nsamples;
-  int32_t           *samples;
-  uint32_t          reporttick;
+  ThreadLockObject      tlock;
+  Playlist              playlist;
+  std::vector<Sample_t> samples;
+  uint32_t              reporttick;
 };
 
 BBC_AUDIOTOOLBOX_END
