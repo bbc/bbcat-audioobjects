@@ -3,7 +3,7 @@ AUTOMAKE_OPTIONS = foreign
 
 include doxygen.am
 
-SUBDIRS = aplibs-audioobjects
+SUBDIRS = src
 
 EXTRA_DIST = README COPYING autogen.sh
 

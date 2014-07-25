@@ -27,7 +27,7 @@ LT_INIT(disable-static win32-dll)
 AC_PROG_CXX
 AM_PROG_CC_C_O
 
-AC_CONFIG_SRCDIR([aplibs-audioobjects])
+AC_CONFIG_SRCDIR([src])
 
 AC_CONFIG_MACRO_DIR([m4])
 ACLOCAL_AMFLAGS="-I m4 $ACLOCAL_AMFLAGS"
@@ -72,7 +72,7 @@ fi
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_SIZE_T
-AX_CREATE_STDINT_H([aplibs-audioobjects/aplibs-audioobjects-stdint.h])
+AX_CREATE_STDINT_H([src/aplibs-audioobjects-stdint.h])
 
 AC_APPEND_SUPPORTED_CFLAGS(APLIBS_AUDIOOBJECTS_CFLAGS, [-Wall])
 AC_APPEND_SUPPORTED_CFLAGS(APLIBS_AUDIOOBJECTS_CFLAGS, [-Werror])
@@ -86,7 +86,7 @@ APLIBS_AUDIOOBJECTS_LDFLAGS=""
 AC_APPEND_SUPPORTED_LDFLAGS(APLIBS_AUDIOOBJECTS_LDFLAGS, [-Wl,--no-undefined])
 AC_SUBST(APLIBS_AUDIOOBJECTS_LDFLAGS)
 
-APLIBS_AUDIOOBJECTS_LIBS="\$(top_builddir)/aplibs-audioobjects/libap-audioobjects-$APLIBS_AUDIOOBJECTS_MAJORMINOR.la"
+APLIBS_AUDIOOBJECTS_LIBS="\$(top_builddir)/src/libap-audioobjects-$APLIBS_AUDIOOBJECTS_MAJORMINOR.la"
 AC_SUBST(APLIBS_AUDIOOBJECTS_LIBS)
 
 AC_SUBST(APLIBS_AUDIOOBJECTS_PKG_DEPS)
@@ -101,6 +101,6 @@ AC_CONFIG_FILES([
 Makefile
 aplibs-audioobjects-uninstalled.pc
 aplibs-audioobjects.pc
-aplibs-audioobjects/Makefile
+src/Makefile
 ])
 AC_OUTPUT
