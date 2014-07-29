@@ -35,10 +35,14 @@ bool TinyXMLADMData::TranslateXML(const std::string& data)
 
   // dig to correct location of audioFormatExtended section
   doc.Parse(data.c_str());
-  if ((node = FindElement(&doc, "ebuCoreMain")) != NULL) {
-    if ((node = FindElement(node, "coreMetadata")) != NULL) {
-      if ((node = FindElement(node, "format")) != NULL) {
-        if ((node = FindElement(node, "audioFormatExtended")) != NULL) {
+  if ((node = FindElement(&doc, "ebuCoreMain")) != NULL)
+  {
+    if ((node = FindElement(node, "coreMetadata")) != NULL)
+    {
+      if ((node = FindElement(node, "format")) != NULL)
+      {
+        if ((node = FindElement(node, "audioFormatExtended")) != NULL)
+        {
           CollectObjects(node);
                     
           success = true;
@@ -75,17 +79,21 @@ void TinyXMLADMData::ParseHeader(ADMHEADER& header, const std::string& type, voi
   header.type = type;
   header.id   = dummyid;
 
-  for (attr = node->ToElement()->FirstAttribute(); attr; attr = attr->Next()) {
+  for (attr = node->ToElement()->FirstAttribute(); attr; attr = attr->Next())
+  {
     std::string attr_name = attr->Name();
 
     // find '<type>Name', '<type>ID' or 'UID' (special for AudioTrack)
-    if (attr_name == (type + "Name")) {
+    if (attr_name == (type + "Name"))
+    {
       header.name = attr->Value();
     }
-    else if (attr_name == (type + "ID")) {
+    else if (attr_name == (type + "ID"))
+    {
       header.id   = attr->Value();
     }
-    else if (attr_name == "UID") {
+    else if (attr_name == "UID")
+    {
       header.id   = attr->Value();
     }
   }
@@ -110,7 +118,8 @@ void TinyXMLADMData::ParseValue(ADMObject *obj, const std::string& type, void *u
           obj->ToString().c_str(),
           value.name.c_str(), value.value.c_str()));
     
-  for (attr = node->ToElement()->FirstAttribute(); attr; attr = attr->Next()) {
+  for (attr = node->ToElement()->FirstAttribute(); attr; attr = attr->Next())
+  {
     value.attrs[attr->Name()] = attr->Value();
 
     DEBUG3(("\t%s='%s'", attr->Name(), attr->Value()));
@@ -137,13 +146,15 @@ void TinyXMLADMData::ParseValues(ADMObject *obj, const std::string& type, void *
   const TiXmlNode       *subnode; 
 
   // parse attributes
-  for (attr = node->ToElement()->FirstAttribute(); attr; attr = attr->Next()) {
+  for (attr = node->ToElement()->FirstAttribute(); attr; attr = attr->Next())
+  {
     std::string attr_name = attr->Name();
 
     // ignore header values previously found
     if ((attr_name != (type + "Name")) &&
         (attr_name != (type + "ID")) &&
-        (attr_name != "UID")) {
+        (attr_name != "UID"))
+    {
       ADMVALUE value;
             
       value.attr  = true;
@@ -160,19 +171,24 @@ void TinyXMLADMData::ParseValues(ADMObject *obj, const std::string& type, void *
 
 
   // parse subnode elements and create values from them
-  for (subnode = node->FirstChild(); subnode; subnode = subnode->NextSibling()) {
-    if (subnode->Type() == TiXmlNode::TINYXML_ELEMENT) {
+  for (subnode = node->FirstChild(); subnode; subnode = subnode->NextSibling())
+  {
+    if (subnode->Type() == TiXmlNode::TINYXML_ELEMENT)
+    {
       std::string name = subnode->Value();
 
-      if (name == ADMAudioBlockFormat::Type) {
+      if (name == ADMAudioBlockFormat::Type)
+      {
         // AudioBlockFormat sections are handled differently...
 
-        if (channel) {
+        if (channel)
+        {
           // if the supplied ADM object is an AudioChannelFormat, parse this subnode as an AudioBlockFormat section
           ADMAudioBlockFormat *block;
 
           // parse this subnode as a section
-          if ((block = dynamic_cast<ADMAudioBlockFormat *>(Parse(name, (void *)subnode))) != NULL) {
+          if ((block = dynamic_cast<ADMAudioBlockFormat *>(Parse(name, (void *)subnode))) != NULL)
+          {
             channel->Add(block);
           }
           else ERROR("Parsed object was not an AudioBlockFormat object");
@@ -196,9 +212,11 @@ const TiXmlNode *TinyXMLADMData::FindElement(const TiXmlNode *node, const std::s
   const TiXmlNode *subnode; 
 
   // iterate through subnodes to find named element
-  for (subnode = node->FirstChild(); subnode; subnode = subnode->NextSibling()) {
+  for (subnode = node->FirstChild(); subnode; subnode = subnode->NextSibling())
+  {
     if ((subnode->Type() == TiXmlNode::TINYXML_ELEMENT) &&
-        (name == subnode->Value())) {
+        (name == subnode->Value()))
+    {
       return subnode;
     }
   }
@@ -214,10 +232,14 @@ void TinyXMLADMData::CollectObjects(const TiXmlNode *node)
 {
   const TiXmlNode *subnode; 
 
-  for (subnode = node->FirstChild(); subnode; subnode = subnode->NextSibling()) {
-    if (subnode->Type() == TiXmlNode::TINYXML_ELEMENT) {
-      if (ValidType(subnode->Value())) {
-        if (Parse(subnode->Value(), (void *)subnode)) {
+  for (subnode = node->FirstChild(); subnode; subnode = subnode->NextSibling())
+  {
+    if (subnode->Type() == TiXmlNode::TINYXML_ELEMENT)
+    {
+      if (ValidType(subnode->Value()))
+      {
+        if (Parse(subnode->Value(), (void *)subnode))
+        {
           CollectObjects(subnode);
         }
       }

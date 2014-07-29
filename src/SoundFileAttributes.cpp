@@ -26,8 +26,10 @@ SoundFile& SoundFile::operator = (const SoundFile& obj)
 {
   fclose();
 
-  if (obj.isopen()) {
-    if (fopen(obj.filename.c_str(), obj.mode.c_str())) {
+  if (obj.isopen())
+  {
+    if (fopen(obj.filename.c_str(), obj.mode.c_str()))
+    {
       fseek(obj.ftell(), SEEK_SET);
     }
   }
@@ -39,8 +41,10 @@ bool SoundFile::fopen(const char *filename, const char *mode)
 {
   bool success = false;
 
-  if (!isopen()) {
-    if ((fp = ::fopen(filename, mode)) != NULL) {
+  if (!isopen())
+  {
+    if ((fp = ::fopen(filename, mode)) != NULL)
+    {
       DEBUG2(("Opened '%s' for '%s'", filename, mode));
       this->filename = filename;
       this->mode     = mode;
@@ -54,7 +58,8 @@ bool SoundFile::fopen(const char *filename, const char *mode)
 
 void SoundFile::fclose()
 {
-  if (fp) {
+  if (fp)
+  {
     ::fclose(fp);
     fp = NULL;
 
@@ -98,7 +103,7 @@ SoundFileSamples::SoundFileSamples(const SoundFileSamples *obj) : format(NULL),
                                                                   samplepos(0),
                                                                   totalsamples(0),
                                                                   totalbytes(0),
-  samplebuffer(NULL),
+                                                                  samplebuffer(NULL),
   samplebufferframes(256),
   readonly(true)
 {
@@ -151,10 +156,12 @@ uint_t SoundFileSamples::ReadSamples(uint8_t *buffer, SampleFormat_t type, uint_
 {
   uint_t n = 0;
 
-  if (file && file->isopen() && samplebuffer) {
+  if (file && file->isopen() && samplebuffer)
+  {
     frames = MIN(frames, clip.nsamples - samplepos);
 
-    if (!frames) {
+    if (!frames)
+    {
       DEBUG3(("No sample data left (pos = %lu, nsamples = %lu)!", (ulong_t)samplepos, (ulong_t)clip.nsamples));
     }
 
@@ -162,15 +169,18 @@ uint_t SoundFileSamples::ReadSamples(uint8_t *buffer, SampleFormat_t type, uint_
     nchannels    = MIN(nchannels,    clip.nchannels - firstchannel);
 
     n = 0;
-    while (frames) {
+    while (frames)
+    {
       uint_t nframes = MIN(frames, samplebufferframes);
       size_t res;
 
       DEBUG4(("Seeking to %lu", filepos + (clip.start + samplepos) * format->GetBytesPerFrame()));
-      if (file->fseek(filepos + samplepos * format->GetBytesPerFrame(), SEEK_SET) == 0) {
+      if (file->fseek(filepos + samplepos * format->GetBytesPerFrame(), SEEK_SET) == 0)
+      {
         DEBUG4(("Reading %u x %u bytes", nframes, format->GetBytesPerFrame()));
 
-        if ((res = file->fread(samplebuffer, format->GetBytesPerFrame(), nframes)) > 0) {
+        if ((res = file->fread(samplebuffer, format->GetBytesPerFrame(), nframes)) > 0)
+        {
           nframes = res;
 
           DEBUG4(("Read %u frames, extracting channels %u-%u (from 0-%u), converting and copying to destination", nframes, clip.channel + firstchannel, clip.channel + firstchannel + nchannels, format->GetChannels()));
@@ -186,16 +196,19 @@ uint_t SoundFileSamples::ReadSamples(uint8_t *buffer, SampleFormat_t type, uint_
           frames    -= nframes;
           samplepos += nframes;
         }
-        else if (res <= 0) {
+        else if (res <= 0)
+        {
           ERROR("Failed to read %u frames (%u bytes) from file, error %s", nframes, nframes * format->GetBytesPerFrame(), strerror(file->ferror()));
           break;
         }
-        else {
+        else
+        {
           DEBUG3(("No data left!"));
           break;
         }
       }
-      else {
+      else
+      {
         ERROR("Failed to seek to correct position in file, error %s", strerror(file->ferror()));
         n = 0;
         break;
@@ -211,12 +224,14 @@ uint_t SoundFileSamples::ReadSamples(uint8_t *buffer, SampleFormat_t type, uint_
 
 void SoundFileSamples::UpdateData()
 {
-  if (format) {
+  if (format)
+  {
     totalsamples = totalbytes / format->GetBytesPerFrame();
     if (samplebuffer) delete[] samplebuffer;
     samplebuffer = new uint8_t[samplebufferframes * format->GetChannels() * sizeof(double)];
 
-    Clip_t newclip = {
+    Clip_t newclip =
+    {
       0, ~(ulong_t)0,
       0, ~(uint_t)0,
     };

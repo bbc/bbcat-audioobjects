@@ -26,7 +26,8 @@ bool RIFFFile::ReadChunks(ulong_t maxlength)
 {
   bool success = false;
 
-  if (IsOpen()) {
+  if (IsOpen())
+  {
     RIFFChunk *chunk;
     uint32_t  startpos = file->ftell();
 
@@ -34,18 +35,21 @@ bool RIFFFile::ReadChunks(ulong_t maxlength)
 
     while (success &&
            ((ulong_t)(file->ftell() - startpos) < maxlength) &&
-           ((chunk = RIFFChunk::Create(file)) != NULL)) {
+           ((chunk = RIFFChunk::Create(file)) != NULL))
+    {
       chunklist.push_back(chunk);
       chunkmap[chunk->GetID()] = chunk;
 
-      if ((dynamic_cast<const SoundFormat *>(chunk)) != NULL) {
+      if ((dynamic_cast<const SoundFormat *>(chunk)) != NULL)
+      {
         fileformat = dynamic_cast<const SoundFormat *>(chunk);
         if (filesamples) filesamples->SetFormat(fileformat);
 
         DEBUG3(("Found format chunk (%s)", chunk->GetName()));
       }
 
-      if ((dynamic_cast<const SoundFileSamples *>(chunk)) != NULL) {
+      if ((dynamic_cast<const SoundFileSamples *>(chunk)) != NULL)
+      {
         filesamples = dynamic_cast<SoundFileSamples *>(chunk);
         if (fileformat) filesamples->SetFormat(fileformat);
 
@@ -55,7 +59,8 @@ bool RIFFFile::ReadChunks(ulong_t maxlength)
       success = ProcessChunk(chunk);
     }
 
-    if (success) {
+    if (success)
+    {
       success = PostReadChunks();
       if (!success) ERROR("Failed post read chunks processing");
     }
@@ -68,15 +73,19 @@ bool RIFFFile::Open(const char *filename)
 {
   bool success = false;
 
-  if (!IsOpen()) {
-    if (((file = new SoundFile) != NULL) && file->fopen(filename, "rb")) {
+  if (!IsOpen())
+  {
+    if (((file = new SoundFile) != NULL) && file->fopen(filename, "rb"))
+    {
       RIFFChunk *chunk;
 
-      if ((chunk = RIFFChunk::Create(file)) != NULL) {
+      if ((chunk = RIFFChunk::Create(file)) != NULL)
+      {
         chunklist.push_back(chunk);
         chunkmap[chunk->GetID()] = chunk;
 
-        if (chunk->GetID() == IFFID("RIFF")) {
+        if (chunk->GetID() == IFFID("RIFF"))
+        {
           filetype = FileType_WAV;
           success  = ReadChunks(chunk->GetLength());
         }
@@ -91,7 +100,8 @@ bool RIFFFile::Open(const char *filename)
 
 void RIFFFile::Close()
 {
-  if (file) {
+  if (file)
+  {
     delete file;
     file = NULL;
   }
@@ -101,7 +111,8 @@ void RIFFFile::Close()
   filesamples = NULL;
 
   uint_t i;
-  for (i = 0; i < chunklist.size(); i++) {
+  for (i = 0; i < chunklist.size(); i++)
+  {
     delete chunklist[i];
   }
 

@@ -5,7 +5,8 @@
 
 BBC_AUDIOTOOLBOX_START
 
-typedef PACKEDSTRUCT {
+typedef PACKEDSTRUCT
+{
   uint8_t Count;
   uint8_t String[1];
 } PSTRING;
@@ -13,7 +14,8 @@ typedef PACKEDSTRUCT {
 #define RIFF_ID IFFID("RIFF")
 #define WAVE_ID IFFID("WAVE")
 
-typedef PACKEDSTRUCT {
+typedef PACKEDSTRUCT
+{
   uint16_t     NChannels;
   uint32_t     SampleFrames;
   uint16_t     SampleSize;
@@ -22,7 +24,8 @@ typedef PACKEDSTRUCT {
 
 #define COMM_ID IFFID("COMM")
 
-typedef PACKEDSTRUCT {
+typedef PACKEDSTRUCT
+{
   uint16_t     NChannels;
   uint32_t     SampleFrames;
   uint16_t     SampleSize;
@@ -32,21 +35,24 @@ typedef PACKEDSTRUCT {
   uint8_t      __pad[254];
 } COMM_CHUNK_EX;
 
-typedef PACKEDSTRUCT {
+typedef PACKEDSTRUCT
+{
   uint32_t     TimestampHigh;
   uint32_t     TimestampLow;
 } TMST_CHUNK;
 
 #define TMST_ID IFFID("TMST")
 
-typedef PACKEDSTRUCT {
+typedef PACKEDSTRUCT
+{
   uint32_t     Offset;
   uint32_t     BlockSize;
 } SSND_CHUNK;
 
 #define SSND_ID IFFID("SSND")
 
-typedef PACKEDSTRUCT {
+typedef PACKEDSTRUCT
+{
   char         Description[256];                      /* ASCII : «Description of the sound sequence» */
   char         Originator[32];                        /* ASCII : «Name of the originator» */
   char         OriginatorReference[32];               /* ASCII : «Reference of the originator» */
@@ -61,7 +67,8 @@ typedef PACKEDSTRUCT {
 
 #define bext_ID IFFID("bext")
 
-typedef PACKEDSTRUCT {
+typedef PACKEDSTRUCT
+{
   uint16_t     Format;
   uint16_t     Channels;
   uint32_t     SampleRate;
@@ -76,10 +83,12 @@ typedef PACKEDSTRUCT {
 #define data_ID IFFID("data")
 
 #define chna_ID IFFID("chna")
-typedef PACKEDSTRUCT {
+typedef PACKEDSTRUCT
+{
   uint16_t    TrackCount;
   uint16_t    UIDCount;
-  PACKEDSTRUCT {
+  PACKEDSTRUCT
+  {
     uint16_t TrackNum;
     char     UID[12];
     char     TrackRef[14];

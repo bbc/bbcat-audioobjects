@@ -11,14 +11,17 @@ BBC_AUDIOTOOLBOX_START
 ADMAudioFileSamples::ADMAudioFileSamples(const ADMData *iadm, const SoundFileSamples *isamples, const ADMAudioObject *obj) : SoundFileSamplesWithPosition(isamples),
                                                                                                                              adm(iadm)
 {
-  if (obj) {
+  if (obj)
+  {
     Clip_t newclip;
 
     newclip.start = ADMObject::TimeToSamples(obj->GetChildrenStartTime(), format->GetSampleRate());
-    if (obj->GetChildrenEndTime() == obj->GetChildrenStartTime()) {
+    if (obj->GetChildrenEndTime() == obj->GetChildrenStartTime())
+    {
       newclip.nsamples = ~(ulong_t)0;
     }
-    else {
+    else
+    {
       newclip.nsamples = ADMObject::TimeToSamples(obj->GetChildrenEndTime(),   format->GetSampleRate()) - newclip.start;
     }
     newclip.channel   = obj->GetChildrenStartChannel();
@@ -57,7 +60,8 @@ void ADMAudioFileSamples::UpdatePosition()
   uint64_t t = ADMObject::SamplesToTime(GetAbsolutePosition(), GetFormat()->GetSampleRate());
   uint_t   i;
 
-  for (i = 0; i < cursors.size(); i++) {
+  for (i = 0; i < cursors.size(); i++)
+  {
     cursors[i]->Seek(t);
   }
 }

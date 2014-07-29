@@ -34,7 +34,8 @@ class ADMAudioTrackFormat;
 /** ADM base object
  */
 /*--------------------------------------------------------------------------------*/
-class ADMObject {
+class ADMObject
+{
 public:
   /*--------------------------------------------------------------------------------*/
   /** Base constructor for all objects
@@ -99,7 +100,8 @@ public:
   /*--------------------------------------------------------------------------------*/
   // each 'value' can also have a list of attributes (a consequence of XML)
   typedef std::map<std::string,std::string> ADMATTRS;
-  typedef struct {
+  typedef struct
+  {
     bool        attr;       // true if this value is a simple XML attribute
     std::string name;       // value name
     std::string value;      // value value
@@ -204,7 +206,8 @@ public:
   /** Convert ns time to samples
    */
   /*--------------------------------------------------------------------------------*/
-  static ulong_t TimeToSamples(uint64_t t, ulong_t sr) {
+  static ulong_t TimeToSamples(uint64_t t, ulong_t sr)
+  {
     return (ulong_t)(((ullong_t)t * (ullong_t)sr) / 1000000000ull);
   }
 
@@ -212,11 +215,13 @@ public:
   /** Convert samples to ns time
    */
   /*--------------------------------------------------------------------------------*/
-  static uint64_t SamplesToTime(ulong_t s, ulong_t sr) {
+  static uint64_t SamplesToTime(ulong_t s, ulong_t sr)
+  {
     return (uint64_t)(((ullong_t)s * 1000000000ull) / sr);
   }
 
-  typedef enum {
+  typedef enum
+  {
     SerialDataType_32bit = 0x0,
     SerialDataType_64bit,
     SerialDataType_double,
@@ -322,7 +327,8 @@ protected:
   /** Internal dumping functions implemented by each derived object
    */
   /*--------------------------------------------------------------------------------*/
-  virtual void DumpEx(std::map<const ADMObject *,bool>& handledmap, std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level) const {
+  virtual void DumpEx(std::map<const ADMObject *,bool>& handledmap, std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level) const
+  {
     UNUSED_PARAMETER(handledmap);
     UNUSED_PARAMETER(str);
     UNUSED_PARAMETER(indent);
@@ -371,7 +377,8 @@ protected:
    *
    */
   /*--------------------------------------------------------------------------------*/
-  virtual void SerializeEx(uint8_t *dst, uint_t& len) const {
+  virtual void SerializeEx(uint8_t *dst, uint_t& len) const
+  {
     UNUSED_PARAMETER(dst);
     UNUSED_PARAMETER(len);
   }
@@ -435,7 +442,8 @@ protected:
 
 /*----------------------------------------------------------------------------------------------------*/
 
-class ADMLevelObject {
+class ADMLevelObject
+{
 public:
   ADMLevelObject() : level(1.0) {}
 
@@ -452,7 +460,8 @@ protected:
 
 /*----------------------------------------------------------------------------------------------------*/
 
-class ADMTimeObject {
+class ADMTimeObject
+{
 public:
   ADMTimeObject() : childrenStartTime(~(uint64_t)0),
                     childrenEndTime(0) {}
@@ -467,7 +476,8 @@ public:
   /** Reset and re-calculate limits
    */
   /*--------------------------------------------------------------------------------*/
-  virtual void Reset() {
+  virtual void Reset()
+  {
     childrenStartTime = ~(uint64_t)0;
     childrenEndTime   = 0;
     UpdateLimits();
@@ -477,7 +487,8 @@ public:
   /** Update time limits
    */
   /*--------------------------------------------------------------------------------*/
-  virtual void Update(uint64_t t1, uint64_t t2) {
+  virtual void Update(uint64_t t1, uint64_t t2)
+  {
     childrenStartTime = MIN(childrenStartTime, t1);
     childrenEndTime   = MAX(childrenEndTime, t2);
   }
@@ -507,7 +518,8 @@ protected:
 
 /*----------------------------------------------------------------------------------------------------*/
 
-class ADMAudioProgramme : public ADMObject, public ADMLevelObject {
+class ADMAudioProgramme : public ADMObject, public ADMLevelObject
+{
 public:
   /*--------------------------------------------------------------------------------*/
   /** ADM AudioProgramme object
@@ -612,7 +624,8 @@ protected:
 
 /*----------------------------------------------------------------------------------------------------*/
 
-class ADMAudioContent : public ADMObject, public ADMLevelObject {
+class ADMAudioContent : public ADMObject, public ADMLevelObject
+{
 public:
   /*--------------------------------------------------------------------------------*/
   /** ADM AudioContent object
@@ -717,7 +730,8 @@ protected:
 
 /*----------------------------------------------------------------------------------------------------*/
 
-class ADMAudioObject : public ADMObject, public ADMLevelObject, public ADMTimeObject {
+class ADMAudioObject : public ADMObject, public ADMLevelObject, public ADMTimeObject
+{
 public:
   /*--------------------------------------------------------------------------------*/
   /** ADM AudioObject object
@@ -815,7 +829,8 @@ public:
   /*--------------------------------------------------------------------------------*/
   virtual void XMLData(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, std::vector<const ADMObject *>& reflist) const;
 
-  static bool Compare(const ADMAudioObject *obj1, const ADMAudioObject *obj2) {
+  static bool Compare(const ADMAudioObject *obj1, const ADMAudioObject *obj2)
+  {
     return ((obj1->GetChildrenStartTime() < obj2->GetChildrenStartTime()) ||
             ((obj1->GetChildrenStartTime() == obj2->GetChildrenStartTime()) &&
              (obj1->GetChildrenStartChannel() < obj2->GetChildrenStartChannel())));
@@ -868,7 +883,8 @@ protected:
 
 /*----------------------------------------------------------------------------------------------------*/
 
-class ADMAudioTrack : public ADMObject, public ADMLevelObject, public ADMTimeObject {
+class ADMAudioTrack : public ADMObject, public ADMLevelObject, public ADMTimeObject
+{
 public:
   /*--------------------------------------------------------------------------------*/
   /** ADM AudioTrack object
@@ -969,7 +985,8 @@ public:
   /** Convert ns time to samples
    */
   /*--------------------------------------------------------------------------------*/
-  ulong_t TimeToSamples(uint64_t t) const {
+  ulong_t TimeToSamples(uint64_t t) const
+  {
     return (ulong_t)(((ullong_t)t * (ullong_t)sampleRate) / 1000000000ull);
   }
 
@@ -977,11 +994,13 @@ public:
   /** Convert samples to ns time
    */
   /*--------------------------------------------------------------------------------*/
-  uint64_t SamplesToTime(ulong_t s) const {
+  uint64_t SamplesToTime(ulong_t s) const
+  {
     return (uint64_t)(((ullong_t)s * 1000000000ull) / sampleRate);
   }
 
-  static bool Compare(const ADMAudioTrack *track1, const ADMAudioTrack *track2) {
+  static bool Compare(const ADMAudioTrack *track1, const ADMAudioTrack *track2)
+  {
     return (track1->trackNum < track2->trackNum);
   }
 
@@ -1030,7 +1049,8 @@ protected:
 
 /*----------------------------------------------------------------------------------------------------*/
 
-class ADMAudioPackFormat : public ADMObject, public ADMTimeObject {
+class ADMAudioPackFormat : public ADMObject, public ADMTimeObject
+{
 public:
   /*--------------------------------------------------------------------------------*/
   /** ADM AudioPackFormat object
@@ -1148,7 +1168,8 @@ protected:
 
 /*----------------------------------------------------------------------------------------------------*/
 
-class ADMAudioStreamFormat : public ADMObject, public ADMTimeObject {
+class ADMAudioStreamFormat : public ADMObject, public ADMTimeObject
+{
 public:
   /*--------------------------------------------------------------------------------*/
   /** ADM AudioStreamFormat object
@@ -1273,7 +1294,8 @@ protected:
   std::vector<ADMAudioPackFormat *>    packformatrefs;
 };
 
-class ADMAudioChannelFormat : public ADMObject, public ADMTimeObject {
+class ADMAudioChannelFormat : public ADMObject, public ADMTimeObject
+{
 public:
   /*--------------------------------------------------------------------------------*/
   /** ADM AudioChannelFormat object
@@ -1377,7 +1399,8 @@ protected:
 
 /*----------------------------------------------------------------------------------------------------*/
 
-class ADMAudioTrackFormat : public ADMObject, public ADMLevelObject, public ADMTimeObject {
+class ADMAudioTrackFormat : public ADMObject, public ADMLevelObject, public ADMTimeObject
+{
 public:
   /*--------------------------------------------------------------------------------*/
   /** ADM AudioTrackFormat object
@@ -1497,7 +1520,8 @@ protected:
 
 /*----------------------------------------------------------------------------------------------------*/
 
-class ADMAudioBlockFormat : public ADMObject, public ADMLevelObject {
+class ADMAudioBlockFormat : public ADMObject, public ADMLevelObject
+{
 public:
   /*--------------------------------------------------------------------------------*/
   /** ADM AudioBlockFormat object
@@ -1513,7 +1537,7 @@ public:
                                                                                            ADMLevelObject(),
                                                                                            rtime(0),
                                                                                            duration(0),
-    position(),
+                                                                                           position(),
     supplement() {Register();}
 
   /*--------------------------------------------------------------------------------*/
@@ -1594,7 +1618,8 @@ public:
   /*--------------------------------------------------------------------------------*/
   virtual void XMLData(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, std::vector<const ADMObject *>& reflist) const;
 
-  static bool Compare(const ADMAudioBlockFormat *block1, const ADMAudioBlockFormat *block2) {
+  static bool Compare(const ADMAudioBlockFormat *block1, const ADMAudioBlockFormat *block2)
+  {
     return (block1->rtime < block2->rtime);
   }
 
@@ -1642,7 +1667,8 @@ protected:
 
 /*----------------------------------------------------------------------------------------------------*/
 
-class ADMTrackCursor : public PositionCursor {
+class ADMTrackCursor : public PositionCursor
+{
 public:
   ADMTrackCursor(const ADMAudioTrack *itrack = NULL);
   ADMTrackCursor(const ADMTrackCursor& obj);

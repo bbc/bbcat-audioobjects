@@ -23,10 +23,12 @@ BBC_AUDIOTOOLBOX_START
 /*----------------------------------------------------------------------------------------------------*/
 
 #if SERIALIZE_AS_TEXT
-static struct {
+static struct
+{
   ADMObject::SerialDataType_t type;
   const char *name;
-} _SerialDataTypes[] = {
+} _SerialDataTypes[] =
+{
   {ADMObject::SerialDataType_32bit, "32bit"},
   {ADMObject::SerialDataType_64bit, "64bit"},
   {ADMObject::SerialDataType_double, "double"},
@@ -74,10 +76,12 @@ ADMObject::ADMObject(ADMData& _owner, const std::string& _id, const std::string&
                                                                                           name(_name)
 {
 #if SERIALIZE_AS_TEXT
-  if (SerialDataType_Names.size() == 0) {
+  if (SerialDataType_Names.size() == 0)
+  {
     uint_t i;
 
-    for (i = 0; i < NUMBEROF(_SerialDataTypes); i++) {
+    for (i = 0; i < NUMBEROF(_SerialDataTypes); i++)
+    {
       SerialDataType_Names[_SerialDataTypes[i].type] = _SerialDataTypes[i].name;
     }
   }
@@ -111,17 +115,20 @@ void ADMObject::SetReferences()
   ADMVALUES::iterator it;
 
   // cycle through values looking for references to the specified object type
-  for (it = values.begin(); (it != values.end());) {
+  for (it = values.begin(); (it != values.end());)
+  {
     const ADMObject *obj  = NULL; // for neater response handling
     const ADMVALUE& value = *it;
     bool  refrejected = false;
 
     // the value name is reference name of object type
-    if (value.name == ADMAudioContent::Reference) {
+    if (value.name == ADMAudioContent::Reference)
+    {
       ADMAudioContent *ref;
 
       // look up reference using owner ADMData object, try to cast it to an object of the correct type
-      if ((ref = dynamic_cast<ADMAudioContent *>(owner.GetReference(value))) != NULL) {
+      if ((ref = dynamic_cast<ADMAudioContent *>(owner.GetReference(value))) != NULL)
+      {
         // save object for debugging purposes
         obj = ref;
 
@@ -129,10 +136,12 @@ void ADMObject::SetReferences()
         refrejected = !Add(ref);
       }
     }
-    else if (value.name == ADMAudioObject::Reference) {
+    else if (value.name == ADMAudioObject::Reference)
+    {
       ADMAudioObject *ref;
 
-      if ((ref = dynamic_cast<ADMAudioObject *>(owner.GetReference(value))) != NULL) {
+      if ((ref = dynamic_cast<ADMAudioObject *>(owner.GetReference(value))) != NULL)
+      {
         // save object for debugging purposes
         obj = ref;
 
@@ -140,10 +149,12 @@ void ADMObject::SetReferences()
         refrejected = !Add(ref);
       }
     }
-    else if (value.name == ADMAudioTrack::Reference) {
+    else if (value.name == ADMAudioTrack::Reference)
+    {
       ADMAudioTrack *ref;
 
-      if ((ref = dynamic_cast<ADMAudioTrack *>(owner.GetReference(value))) != NULL) {
+      if ((ref = dynamic_cast<ADMAudioTrack *>(owner.GetReference(value))) != NULL)
+      {
         // save object for debugging purposes
         obj = ref;
 
@@ -151,10 +162,12 @@ void ADMObject::SetReferences()
         refrejected = !Add(ref);
       }
     }
-    else if (value.name == ADMAudioPackFormat::Reference) {
+    else if (value.name == ADMAudioPackFormat::Reference)
+    {
       ADMAudioPackFormat *ref;
 
-      if ((ref = dynamic_cast<ADMAudioPackFormat *>(owner.GetReference(value))) != NULL) {
+      if ((ref = dynamic_cast<ADMAudioPackFormat *>(owner.GetReference(value))) != NULL)
+      {
         // save object for debugging purposes
         obj = ref;
 
@@ -162,10 +175,12 @@ void ADMObject::SetReferences()
         refrejected = !Add(ref);
       }
     }
-    else if (value.name == ADMAudioStreamFormat::Reference) {
+    else if (value.name == ADMAudioStreamFormat::Reference)
+    {
       ADMAudioStreamFormat *ref;
 
-      if ((ref = dynamic_cast<ADMAudioStreamFormat *>(owner.GetReference(value))) != NULL) {
+      if ((ref = dynamic_cast<ADMAudioStreamFormat *>(owner.GetReference(value))) != NULL)
+      {
         // save object for debugging purposes
         obj = ref;
 
@@ -173,10 +188,12 @@ void ADMObject::SetReferences()
         refrejected = !Add(ref);
       }
     }
-    else if (value.name == ADMAudioTrackFormat::Reference) {
+    else if (value.name == ADMAudioTrackFormat::Reference)
+    {
       ADMAudioTrackFormat *ref;
 
-      if ((ref = dynamic_cast<ADMAudioTrackFormat *>(owner.GetReference(value))) != NULL) {
+      if ((ref = dynamic_cast<ADMAudioTrackFormat *>(owner.GetReference(value))) != NULL)
+      {
         // save object for debugging purposes
         obj = ref;
 
@@ -184,10 +201,12 @@ void ADMObject::SetReferences()
         refrejected = !Add(ref);
       }
     }
-    else if (value.name == ADMAudioChannelFormat::Reference) {
+    else if (value.name == ADMAudioChannelFormat::Reference)
+    {
       ADMAudioChannelFormat *ref;
 
-      if ((ref = dynamic_cast<ADMAudioChannelFormat *>(owner.GetReference(value))) != NULL) {
+      if ((ref = dynamic_cast<ADMAudioChannelFormat *>(owner.GetReference(value))) != NULL)
+      {
         // save object for debugging purposes
         obj = ref;
 
@@ -195,10 +214,12 @@ void ADMObject::SetReferences()
         refrejected = !Add(ref);
       }
     }
-    else if (value.name == ADMAudioBlockFormat::Reference) {
+    else if (value.name == ADMAudioBlockFormat::Reference)
+    {
       ADMAudioBlockFormat *ref;
 
-      if ((ref = dynamic_cast<ADMAudioBlockFormat *>(owner.GetReference(value))) != NULL) {
+      if ((ref = dynamic_cast<ADMAudioBlockFormat *>(owner.GetReference(value))) != NULL)
+      {
         // save object for debugging purposes
         obj = ref;
 
@@ -206,27 +227,32 @@ void ADMObject::SetReferences()
         refrejected = !Add(ref);
       }
     }
-    else {
+    else
+    {
       ++it;
       // note continue to avoid removing non-reference values
       continue;
     }
 
-    if (obj) {
-      if (refrejected) {
+    if (obj)
+    {
+      if (refrejected)
+      {
         ERROR("Reference %s as reference '%s' for %s REJECTED",
               obj->ToString().c_str(),
               value.value.c_str(),
               ToString().c_str());
       }
-      else {
+      else
+      {
         DEBUG3(("Found %s as reference '%s' for %s",
                 obj->ToString().c_str(),
                 value.value.c_str(),
                 ToString().c_str()));
       }
     }
-    else {
+    else
+    {
       ERROR("Cannot find %s reference '%s' for %s",
             value.name.c_str(), value.value.c_str(),
             ToString().c_str());
@@ -249,7 +275,8 @@ void ADMObject::XMLAttributes(std::string& str) const
   XMLAttribute(str, "typeLabel", typeLabel);
 
   // output XML attribute values from list - this allows arbitary attributes to be stored
-  for (it = values.begin(); it != values.end(); ++it) {
+  for (it = values.begin(); it != values.end(); ++it)
+  {
     const ADMVALUE& value = *it;
 
     if (value.attr) XMLAttribute(str, value.name, value.value);
@@ -269,22 +296,26 @@ void ADMObject::XMLData(std::string& str, const std::string& indent, const std::
   // this base object version will be called by every derived version
 
   // cycle through all values looking for non-attribute values and output them
-  for (it = values.begin(); it != values.end(); ++it) {
+  for (it = values.begin(); it != values.end(); ++it)
+  {
     const ADMVALUE& value = *it;
 
-    if (!value.attr) {
+    if (!value.attr)
+    {
       ADMATTRS::const_iterator it2;
 
       // create new XML section for this value
       Printf(str, "%s<%s", CreateIndent(indent, ind_level + 1).c_str(), value.name.c_str());
 
       // add sub-attributes as XML attributes of this section
-      for (it2 = value.attrs.begin(); it2 != value.attrs.end(); ++it2) {
+      for (it2 = value.attrs.begin(); it2 != value.attrs.end(); ++it2)
+      {
         XMLAttribute(str, it2->first.c_str(), it2->second.c_str());
       }
 
       // if value is valid, output it and close the XML section
-      if (value.value != "") {
+      if (value.value != "")
+      {
         Printf(str, ">%s</%s>%s", value.value.c_str(), value.name.c_str(), eol.c_str());
       }
       // otherwise close the XML section directly
@@ -313,8 +344,10 @@ const ADMObject::ADMVALUE* ADMObject::GetValue(const std::string& name) const
 
   // simple search and compare
   // (MUST use a list because there can be MULTIPLE values of the same name)
-  for (i = 0; i < values.size(); i++) {
-    if (values[i].name == name) {
+  for (i = 0; i < values.size(); i++)
+  {
+    if (values[i].name == name)
+    {
       value = &values[i];
       break;
     }
@@ -334,7 +367,8 @@ const std::string *ADMObject::GetAttribute(const ADMVALUE& value, const std::str
   ADMATTRS::const_iterator it;
   const std::string *attr = NULL;
 
-  if ((it = value.attrs.find(name)) != value.attrs.end()) {
+  if ((it = value.attrs.find(name)) != value.attrs.end())
+  {
     attr = &it->second;
   }
 
@@ -349,10 +383,12 @@ void ADMObject::EraseValue(const ADMVALUE *value)
 {
   ADMVALUES::iterator it;
     
-  for (it = values.begin(); it != values.end(); ++it) {
+  for (it = values.begin(); it != values.end(); ++it)
+  {
     const ADMVALUE& value1 = *it;
 
-    if (value == &value1) {
+    if (value == &value1)
+    {
       values.erase(it);
       break;
     }
@@ -375,7 +411,8 @@ bool ADMObject::SetValue(std::string& res, const std::string& name)
   const ADMVALUE *value;
   bool success = false;
 
-  if ((value = GetValue(name)) != NULL) {
+  if ((value = GetValue(name)) != NULL)
+  {
     res = value->value;
     EraseValue(value);
     success = true;
@@ -400,7 +437,8 @@ bool ADMObject::SetValue(double& res, const std::string& name)
   const ADMVALUE *value;
   bool success = false;
 
-  if ((value = GetValue(name)) != NULL) {
+  if ((value = GetValue(name)) != NULL)
+  {
     success = (sscanf(value->value.c_str(), "%lf", &res) > 0);
     EraseValue(value);
   }
@@ -424,7 +462,8 @@ bool ADMObject::SetValue(uint_t& res, const std::string& name)
   const ADMVALUE *value;
   bool success = false;
 
-  if ((value = GetValue(name)) != NULL) {
+  if ((value = GetValue(name)) != NULL)
+  {
     success = (sscanf(value->value.c_str(), "%u", &res) > 0);
     EraseValue(value);
   }
@@ -448,7 +487,8 @@ bool ADMObject::SetValue(ulong_t& res, const std::string& name)
   const ADMVALUE *value;
   bool success = false;
 
-  if ((value = GetValue(name)) != NULL) {
+  if ((value = GetValue(name)) != NULL)
+  {
     success = (sscanf(value->value.c_str(), "%lu", &res) > 0);
     EraseValue(value);
   }
@@ -472,7 +512,8 @@ bool ADMObject::SetValue(sint_t& res, const std::string& name)
   const ADMVALUE *value;
   bool success = false;
 
-  if ((value = GetValue(name)) != NULL) {
+  if ((value = GetValue(name)) != NULL)
+  {
     success = (sscanf(value->value.c_str(), "%d", &res) > 0);
     EraseValue(value);
   }
@@ -496,7 +537,8 @@ bool ADMObject::SetValue(slong_t& res, const std::string& name)
   const ADMVALUE *value;
   bool success = false;
 
-  if ((value = GetValue(name)) != NULL) {
+  if ((value = GetValue(name)) != NULL)
+  {
     success = (sscanf(value->value.c_str(), "%ld", &res) > 0);
     EraseValue(value);
   }
@@ -520,7 +562,8 @@ bool ADMObject::SetValue(bool& res, const std::string& name)
   const ADMVALUE *value;
   bool success = false;
 
-  if ((value = GetValue(name)) != NULL) {
+  if ((value = GetValue(name)) != NULL)
+  {
     res = (value->value == "true");
     EraseValue(value);
     success = true;
@@ -545,7 +588,8 @@ bool ADMObject::SetValueTime(uint64_t& res, const std::string& name)
   const ADMVALUE *value;
   bool success = false;
 
-  if ((value = GetValue(name)) != NULL) {
+  if ((value = GetValue(name)) != NULL)
+  {
     success = CalcTime(res, value->value);
     EraseValue(value);
   }
@@ -566,7 +610,8 @@ bool ADMObject::CalcTime(uint64_t& t, const std::string& str)
   uint_t hr, mn, s, ss;
   bool   success = false;
 
-  if (sscanf(str.c_str(), "%u:%u:%u.%u", &hr, &mn, &s, &ss) == 4) {
+  if (sscanf(str.c_str(), "%u:%u:%u.%u", &hr, &mn, &s, &ss) == 4)
+  {
     t = hr;                 // hours
     t = (t * 60) + mn;      // minutes
     t = (t * 60) + s;       // seconds
@@ -611,7 +656,8 @@ std::string ADMObject::GenTime(uint64_t t)
 /*--------------------------------------------------------------------------------*/
 void ADMObject::Dump(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, const std::string& name, const std::string& value)
 {
-  if (value != "") {
+  if (value != "")
+  {
     Printf(str, "%s%s '%s'%s",
            CreateIndent(indent, ind_level + 1).c_str(),
            name.c_str(),
@@ -697,7 +743,8 @@ void ADMObject::Dump(std::string& str, const std::string& indent, const std::str
 void ADMObject::Dump(std::map<const ADMObject *,bool>& handledmap, std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level) const
 {
   // if this object has not been outputted previously
-  if (handledmap.find(this) == handledmap.end()) {
+  if (handledmap.find(this) == handledmap.end())
+  {
     handledmap[this] = true;        // the true is somewhat irrelevant, it is just used to store 'this' in the map
 
     // output header
@@ -712,7 +759,8 @@ void ADMObject::Dump(std::map<const ADMObject *,bool>& handledmap, std::string& 
     // call derived function to output variables from derived classes and recurse through references
     DumpEx(handledmap, str, indent, eol, ind_level);
   }
-  else {
+  else
+  {
     // output information and note
     Printf(str, "%s%s ID '%s' name '%s' (see above)%s",
            CreateIndent(indent, ind_level).c_str(),
@@ -741,11 +789,13 @@ void ADMObject::GenerateXML(std::string& str, const std::string& indent, const s
   XMLData(str, indent, eol, ind_level, reflist);
 
   // output information about objects stored in reflist
-  for (i = 0; i < reflist.size(); i++) {
+  for (i = 0; i < reflist.size(); i++)
+  {
     const ADMObject *obj = reflist[i];
 
     // if object has not be outputted before, output it here
-    if (map.find(obj) == map.end()) {
+    if (map.find(obj) == map.end())
+    {
       map[obj] = true;
 
       obj->XMLData(str, indent, eol, ind_level, reflist);
@@ -804,10 +854,12 @@ void ADMObject::XMLOpen(std::string& str, const std::string& indent, const std::
          GetType().c_str());
 
   // AudioTrack objects are specified slightly differently
-  if (GetType() == ADMAudioTrack::Type) {
+  if (GetType() == ADMAudioTrack::Type)
+  {
     Printf(str, " UID=\"%s\"", GetID().c_str());
   }
-  else {
+  else
+  {
     Printf(str, " %sID=\"%s\"", GetType().c_str(), GetID().c_str());
   }
 
@@ -829,7 +881,8 @@ void ADMObject::XMLOpen(std::string& str, const std::string& indent, const std::
 void ADMObject::XMLClose(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level) const
 {
   // only need to close XML section here if some XML data has been outputted
-  if (!XMLEmpty()) {
+  if (!XMLEmpty())
+  {
     Printf(str, "%s</%s>%s",
            CreateIndent(indent, ind_level).c_str(),
            GetType().c_str(),
@@ -913,7 +966,8 @@ void ADMObject::SerializeSync(uint8_t *dst, uint_t& len, uint_t len0)
 /*--------------------------------------------------------------------------------*/
 void ADMObject::SerializeData(uint8_t *dst, uint_t& len, const void *obj, uint_t objlen, bool byteswap)
 {
-  if (dst) {
+  if (dst)
+  {
     memcpy(dst + len, obj, objlen);
     if (byteswap) ByteSwap(dst + len, objlen);
   }
@@ -1019,7 +1073,8 @@ void ADMObject::SerializeData(uint8_t *dst, uint_t& len, const ADMATTRS& obj)
   if (dst) SerializeData(NULL, sublen, obj);
 
   SerializeData(dst, len, SerialDataType_Value_Attributes, sublen);
-  for (it = obj.begin(); it != obj.end(); ++it) {
+  for (it = obj.begin(); it != obj.end(); ++it)
+  {
     SerializeItem(dst, len, it->first, it->second);
   }
 }
@@ -1040,7 +1095,8 @@ void ADMObject::SerializeData(uint8_t *dst, uint_t& len, const ADMVALUES& obj)
   SerializeData(dst, len, SerialDataType_Values_And_Attributes, sublen);
 
   // cycle through values serializing each item
-  for (it = obj.begin(); it != obj.end(); ++it) {
+  for (it = obj.begin(); it != obj.end(); ++it)
+  {
     SerializeData(dst, len, *it);
   }
 }
@@ -1059,12 +1115,14 @@ void ADMObject::SerializeData(uint8_t *dst, uint_t& len, const ADMObject *obj)
 void ADMObject::SerializeData(uint8_t *dst, uint_t& len, const Position& obj)
 {
   SerializeData(dst, len, obj.polar);
-  if (obj.polar) {
+  if (obj.polar)
+  {
     SerializeData(dst, len, obj.pos.x);
     SerializeData(dst, len, obj.pos.y);
     SerializeData(dst, len, obj.pos.z);
   }
-  else {
+  else
+  {
     SerializeData(dst, len, obj.pos.az);
     SerializeData(dst, len, obj.pos.el);
     SerializeData(dst, len, obj.pos.d);
@@ -1080,7 +1138,8 @@ void ADMObject::SerializeData(uint8_t *dst, uint_t& len, const ParameterSet& obj
 
   SerializeData(dst, len, SerialDataType_Position_Supplement, sublen);
 
-  for (it = obj.GetBegin(); it != obj.GetEnd(); ++it) {
+  for (it = obj.GetBegin(); it != obj.GetEnd(); ++it)
+  {
     SerializeData(dst, len, it->first);
     SerializeData(dst, len, it->second);
   }
@@ -1189,7 +1248,8 @@ void ADMAudioProgramme::SetValues()
 
 bool ADMAudioProgramme::Add(ADMAudioContent *obj)
 {
-  if (std::find(contentrefs.begin(), contentrefs.end(), obj) == contentrefs.end()) {
+  if (std::find(contentrefs.begin(), contentrefs.end(), obj) == contentrefs.end())
+  {
     contentrefs.push_back(obj);
     return true;
   }
@@ -1208,7 +1268,8 @@ void ADMAudioProgramme::DumpEx(std::map<const ADMObject *,bool>& handledmap, std
 
   Dump(str, indent, eol, ind_level, "language", language);
 
-  for (i = 0; i < contentrefs.size(); i++) {
+  for (i = 0; i < contentrefs.size(); i++)
+  {
     contentrefs[i]->Dump(handledmap, str, indent, eol, ind_level + 1);
   }
 }
@@ -1236,7 +1297,8 @@ void ADMAudioProgramme::XMLData(std::string& str, const std::string& indent, con
 
   ADMObject::XMLData(str, indent, eol, ind_level, reflist);
         
-  for (i = 0; i < contentrefs.size(); i++) {
+  for (i = 0; i < contentrefs.size(); i++)
+  {
     contentrefs[i]->XMLRef(str, indent, eol, ind_level + 1);
     reflist.push_back(contentrefs[i]);
   }
@@ -1258,7 +1320,8 @@ void ADMAudioProgramme::SerializeEx(uint8_t *dst, uint_t& len) const
 
   SerializeItem(dst, len, "language", language);
 
-  for (i = 0; i < contentrefs.size(); i++) {
+  for (i = 0; i < contentrefs.size(); i++)
+  {
     SerializeData(dst, len, contentrefs[i]);
   }
 }
@@ -1281,7 +1344,8 @@ void ADMAudioContent::SetValues()
 
 bool ADMAudioContent::Add(ADMAudioObject *obj)
 {
-  if (std::find(objectrefs.begin(), objectrefs.end(), obj) == objectrefs.end()) {
+  if (std::find(objectrefs.begin(), objectrefs.end(), obj) == objectrefs.end())
+  {
     objectrefs.push_back(obj);
     return true;
   }
@@ -1300,7 +1364,8 @@ void ADMAudioContent::DumpEx(std::map<const ADMObject *,bool>& handledmap, std::
 
   Dump(str, indent, eol, ind_level, "language", language);
 
-  for (i = 0; i < objectrefs.size(); i++) {
+  for (i = 0; i < objectrefs.size(); i++)
+  {
     objectrefs[i]->Dump(handledmap, str, indent, eol, ind_level + 1);
   }
 }
@@ -1328,7 +1393,8 @@ void ADMAudioContent::XMLData(std::string& str, const std::string& indent, const
         
   ADMObject::XMLData(str, indent, eol, ind_level, reflist);
 
-  for (i = 0; i < objectrefs.size(); i++) {
+  for (i = 0; i < objectrefs.size(); i++)
+  {
     objectrefs[i]->XMLRef(str, indent, eol, ind_level + 1);
     reflist.push_back(objectrefs[i]);
   }
@@ -1350,7 +1416,8 @@ void ADMAudioContent::SerializeEx(uint8_t *dst, uint_t& len) const
 
   SerializeItem(dst, len, "language", language);
 
-  for (i = 0; i < objectrefs.size(); i++) {
+  for (i = 0; i < objectrefs.size(); i++)
+  {
     SerializeData(dst, len, objectrefs[i]);
   }
 }
@@ -1374,8 +1441,8 @@ ADMAudioObject::ADMAudioObject(ADMData& _owner, const std::string& _id, const st
                                                                                                     ADMLevelObject(),
                                                                                                     ADMTimeObject(),
                                                                                                     startTime(0),
-                                                                                                    duration(0),
-  childrenMinChannel(~0),
+  duration(0),
+                                                                                                    childrenMinChannel(~0),
   childrenMaxChannel(0)
 {
   Register();
@@ -1395,7 +1462,8 @@ void ADMAudioObject::SetValues()
 
 bool ADMAudioObject::Add(ADMAudioObject *obj)
 {
-  if (std::find(objectrefs.begin(), objectrefs.end(), obj) == objectrefs.end()) {
+  if (std::find(objectrefs.begin(), objectrefs.end(), obj) == objectrefs.end())
+  {
     objectrefs.push_back(obj);
     return true;
   }
@@ -1406,7 +1474,8 @@ bool ADMAudioObject::Add(ADMAudioObject *obj)
 
 bool ADMAudioObject::Add(ADMAudioPackFormat *obj)
 {
-  if (std::find(packformatrefs.begin(), packformatrefs.end(), obj) == packformatrefs.end()) {
+  if (std::find(packformatrefs.begin(), packformatrefs.end(), obj) == packformatrefs.end())
+  {
     packformatrefs.push_back(obj);
     return true;
   }
@@ -1417,7 +1486,8 @@ bool ADMAudioObject::Add(ADMAudioPackFormat *obj)
 
 bool ADMAudioObject::Add(ADMAudioTrack *obj)
 {
-  if (std::find(trackrefs.begin(), trackrefs.end(), obj) == trackrefs.end()) {
+  if (std::find(trackrefs.begin(), trackrefs.end(), obj) == trackrefs.end())
+  {
     trackrefs.push_back(obj);
     childrenMinChannel = MIN(childrenMinChannel, obj->GetTrackNum() - 1);
     childrenMaxChannel = MAX(childrenMaxChannel, obj->GetTrackNum() - 1);
@@ -1432,20 +1502,23 @@ void ADMAudioObject::UpdateLimits()
 {
   uint_t i;
 
-  for (i = 0; i < trackrefs.size(); i++) {
+  for (i = 0; i < trackrefs.size(); i++)
+  {
     uint_t t = trackrefs[i]->GetTrackNum() - 1;
     childrenMinChannel = MIN(childrenMinChannel, t);
     childrenMaxChannel = MAX(childrenMaxChannel, t);
   }
 
-  for (i = 0; i < packformatrefs.size(); i++) {
+  for (i = 0; i < packformatrefs.size(); i++)
+  {
     ADMAudioPackFormat *obj = packformatrefs[i];
 
     obj->UpdateLimits();
     Update(obj);
   }
 
-  for (i = 0; i < trackrefs.size(); i++) {
+  for (i = 0; i < trackrefs.size(); i++)
+  {
     ADMAudioTrack *obj = trackrefs[i];
 
     obj->UpdateLimits();
@@ -1475,15 +1548,18 @@ void ADMAudioObject::DumpEx(std::map<const ADMObject *,bool>& handledmap, std::s
   DumpTime(str, indent, eol, ind_level, "block start",     GetChildrenStartTime());
   DumpTime(str, indent, eol, ind_level, "block end",       GetChildrenEndTime());
 
-  for (i = 0; i < objectrefs.size(); i++) {
+  for (i = 0; i < objectrefs.size(); i++)
+  {
     objectrefs[i]->Dump(handledmap, str, indent, eol, ind_level + 1);
   }
 
-  for (i = 0; i < packformatrefs.size(); i++) {
+  for (i = 0; i < packformatrefs.size(); i++)
+  {
     packformatrefs[i]->Dump(handledmap, str, indent, eol, ind_level + 1);
   }
 
-  for (i = 0; i < trackrefs.size(); i++) {
+  for (i = 0; i < trackrefs.size(); i++)
+  {
     trackrefs[i]->Dump(handledmap, str, indent, eol, ind_level + 1);
   }
 }
@@ -1512,17 +1588,20 @@ void ADMAudioObject::XMLData(std::string& str, const std::string& indent, const 
         
   ADMObject::XMLData(str, indent, eol, ind_level, reflist);
 
-  for (i = 0; i < objectrefs.size(); i++) {
+  for (i = 0; i < objectrefs.size(); i++)
+  {
     objectrefs[i]->XMLRef(str, indent, eol, ind_level + 1);
     reflist.push_back(objectrefs[i]);
   }
 
-  for (i = 0; i < packformatrefs.size(); i++) {
+  for (i = 0; i < packformatrefs.size(); i++)
+  {
     packformatrefs[i]->XMLRef(str, indent, eol, ind_level + 1);
     reflist.push_back(packformatrefs[i]);
   }
 
-  for (i = 0; i < trackrefs.size(); i++) {
+  for (i = 0; i < trackrefs.size(); i++)
+  {
     trackrefs[i]->XMLRef(str, indent, eol, ind_level + 1);
     reflist.push_back(trackrefs[i]);
   }
@@ -1545,15 +1624,18 @@ void ADMAudioObject::SerializeEx(uint8_t *dst, uint_t& len) const
   SerializeTime(dst, len, "startTime", startTime);
   SerializeTime(dst, len, "duration", duration);
 
-  for (i = 0; i < objectrefs.size(); i++) {
+  for (i = 0; i < objectrefs.size(); i++)
+  {
     SerializeData(dst, len, objectrefs[i]);
   }
 
-  for (i = 0; i < packformatrefs.size(); i++) {
+  for (i = 0; i < packformatrefs.size(); i++)
+  {
     SerializeData(dst, len, packformatrefs[i]);
   }
 
-  for (i = 0; i < trackrefs.size(); i++) {
+  for (i = 0; i < trackrefs.size(); i++)
+  {
     SerializeData(dst, len, trackrefs[i]);
   }
 }
@@ -1588,11 +1670,13 @@ void ADMAudioTrack::DumpEx(std::map<const ADMObject *,bool>& handledmap, std::st
   Dump(str, indent, eol, ind_level, "sampleRate", sampleRate);
   Dump(str, indent, eol, ind_level, "bitDepth",   bitDepth);
 
-  for (i = 0; i < trackformatrefs.size(); i++) {
+  for (i = 0; i < trackformatrefs.size(); i++)
+  {
     trackformatrefs[i]->Dump(handledmap, str, indent, eol, ind_level + 1);
   }
 
-  for (i = 0; i < packformatrefs.size(); i++) {
+  for (i = 0; i < packformatrefs.size(); i++)
+  {
     packformatrefs[i]->Dump(handledmap, str, indent, eol, ind_level + 1);
   }
 }
@@ -1621,12 +1705,14 @@ void ADMAudioTrack::XMLData(std::string& str, const std::string& indent, const s
         
   ADMObject::XMLData(str, indent, eol, ind_level, reflist);
 
-  for (i = 0; i < trackformatrefs.size(); i++) {
+  for (i = 0; i < trackformatrefs.size(); i++)
+  {
     //trackformatrefs[i]->XMLRef(str, indent, eol, ind_level + 1);
     reflist.push_back(trackformatrefs[i]);
   }
 
-  for (i = 0; i < packformatrefs.size(); i++) {
+  for (i = 0; i < packformatrefs.size(); i++)
+  {
     //packformatrefs[i]->XMLRef(str, indent, eol, ind_level + 1);
     reflist.push_back(packformatrefs[i]);
   }
@@ -1636,7 +1722,8 @@ void ADMAudioTrack::XMLData(std::string& str, const std::string& indent, const s
 
 bool ADMAudioTrack::Add(ADMAudioTrackFormat *obj)
 {
-  if (std::find(trackformatrefs.begin(), trackformatrefs.end(), obj) == trackformatrefs.end()) {
+  if (std::find(trackformatrefs.begin(), trackformatrefs.end(), obj) == trackformatrefs.end())
+  {
     trackformatrefs.push_back(obj);
     return true;
   }
@@ -1647,7 +1734,8 @@ bool ADMAudioTrack::Add(ADMAudioTrackFormat *obj)
 
 bool ADMAudioTrack::Add(ADMAudioPackFormat *obj)
 {
-  if (std::find(packformatrefs.begin(), packformatrefs.end(), obj) == packformatrefs.end()) {
+  if (std::find(packformatrefs.begin(), packformatrefs.end(), obj) == packformatrefs.end())
+  {
     packformatrefs.push_back(obj);
     return true;
   }
@@ -1664,14 +1752,16 @@ void ADMAudioTrack::UpdateLimits()
 {
   uint_t i;
 
-  for (i = 0; i < trackformatrefs.size(); i++) {
+  for (i = 0; i < trackformatrefs.size(); i++)
+  {
     ADMAudioTrackFormat *obj = trackformatrefs[i];
 
     obj->UpdateLimits();
     Update(obj);
   }
 
-  for (i = 0; i < packformatrefs.size(); i++) {
+  for (i = 0; i < packformatrefs.size(); i++)
+  {
     ADMAudioPackFormat *obj = packformatrefs[i];
 
     obj->UpdateLimits();
@@ -1694,11 +1784,13 @@ void ADMAudioTrack::SerializeEx(uint8_t *dst, uint_t& len) const
   SerializeItem(dst, len, "sampleRate", sampleRate);
   SerializeItem(dst, len, "bitDepth", bitDepth);
 
-  for (i = 0; i < trackformatrefs.size(); i++) {
+  for (i = 0; i < trackformatrefs.size(); i++)
+  {
     SerializeData(dst, len, trackformatrefs[i]);
   }
 
-  for (i = 0; i < packformatrefs.size(); i++) {
+  for (i = 0; i < packformatrefs.size(); i++)
+  {
     SerializeData(dst, len, packformatrefs[i]);
   }
 }
@@ -1725,7 +1817,8 @@ void ADMAudioPackFormat::SetValues()
 /*--------------------------------------------------------------------------------*/
 bool ADMAudioPackFormat::Add(ADMAudioChannelFormat *obj)
 {
-  if (std::find(channelformatrefs.begin(), channelformatrefs.end(), obj) == channelformatrefs.end()) {
+  if (std::find(channelformatrefs.begin(), channelformatrefs.end(), obj) == channelformatrefs.end())
+  {
     channelformatrefs.push_back(obj);
     return true;
   }
@@ -1747,11 +1840,13 @@ void ADMAudioPackFormat::DumpEx(std::map<const ADMObject *,bool>& handledmap, st
   DumpTime(str, indent, eol, ind_level, "start", GetChildrenStartTime());
   DumpTime(str, indent, eol, ind_level, "end",   GetChildrenEndTime());
 
-  for (i = 0; i < channelformatrefs.size(); i++) {
+  for (i = 0; i < channelformatrefs.size(); i++)
+  {
     channelformatrefs[i]->Dump(handledmap, str, indent, eol, ind_level + 1);
   }
 
-  for (i = 0; i < packformatrefs.size(); i++) {
+  for (i = 0; i < packformatrefs.size(); i++)
+  {
     packformatrefs[i]->Dump(handledmap, str, indent, eol, ind_level + 1);
   }
 }
@@ -1779,12 +1874,14 @@ void ADMAudioPackFormat::XMLData(std::string& str, const std::string& indent, co
 
   ADMObject::XMLData(str, indent, eol, ind_level, reflist);
 
-  for (i = 0; i < channelformatrefs.size(); i++) {
+  for (i = 0; i < channelformatrefs.size(); i++)
+  {
     channelformatrefs[i]->XMLRef(str, indent, eol, ind_level + 1);
     reflist.push_back(channelformatrefs[i]);
   }
 
-  for (i = 0; i < packformatrefs.size(); i++) {
+  for (i = 0; i < packformatrefs.size(); i++)
+  {
     packformatrefs[i]->XMLRef(str, indent, eol, ind_level + 1);
     reflist.push_back(packformatrefs[i]);
   }
@@ -1794,7 +1891,8 @@ void ADMAudioPackFormat::XMLData(std::string& str, const std::string& indent, co
 
 bool ADMAudioPackFormat::Add(ADMAudioPackFormat *obj)
 {
-  if (std::find(packformatrefs.begin(), packformatrefs.end(), obj) == packformatrefs.end()) {
+  if (std::find(packformatrefs.begin(), packformatrefs.end(), obj) == packformatrefs.end())
+  {
     packformatrefs.push_back(obj);
     obj->Add(this);
     return true;
@@ -1812,7 +1910,8 @@ void ADMAudioPackFormat::UpdateLimits()
 {
   uint_t i;
 
-  for (i = 0; i < channelformatrefs.size(); i++) {
+  for (i = 0; i < channelformatrefs.size(); i++)
+  {
     ADMAudioChannelFormat *obj = channelformatrefs[i];
 
     obj->UpdateLimits();
@@ -1834,11 +1933,13 @@ void ADMAudioPackFormat::SerializeEx(uint8_t *dst, uint_t& len) const
 
   SerializeItem(dst, len, "typeDefinition", typeDefinition);
 
-  for (i = 0; i < channelformatrefs.size(); i++) {
+  for (i = 0; i < channelformatrefs.size(); i++)
+  {
     SerializeData(dst, len, channelformatrefs[i]);
   }
 
-  for (i = 0; i < packformatrefs.size(); i++) {
+  for (i = 0; i < packformatrefs.size(); i++)
+  {
     SerializeData(dst, len, packformatrefs[i]);
   }
 }
@@ -1863,7 +1964,8 @@ void ADMAudioStreamFormat::SetValues()
 /*--------------------------------------------------------------------------------*/
 bool ADMAudioStreamFormat::Add(ADMAudioChannelFormat *obj)
 {
-  if (channelformatrefs.size() == 0) {
+  if (channelformatrefs.size() == 0)
+  {
     channelformatrefs.push_back(obj);
     return true;
   }
@@ -1878,7 +1980,8 @@ bool ADMAudioStreamFormat::Add(ADMAudioChannelFormat *obj)
 /*--------------------------------------------------------------------------------*/
 bool ADMAudioStreamFormat::Add(ADMAudioTrackFormat *obj)
 {
-  if (std::find(trackformatrefs.begin(), trackformatrefs.end(), obj) == trackformatrefs.end()) {
+  if (std::find(trackformatrefs.begin(), trackformatrefs.end(), obj) == trackformatrefs.end())
+  {
     trackformatrefs.push_back(obj);
     obj->Add(this);
     return true;
@@ -1894,7 +1997,8 @@ bool ADMAudioStreamFormat::Add(ADMAudioTrackFormat *obj)
 /*--------------------------------------------------------------------------------*/
 bool ADMAudioStreamFormat::Add(ADMAudioPackFormat *obj)
 {
-  if (packformatrefs.size() == 0) {
+  if (packformatrefs.size() == 0)
+  {
     packformatrefs.push_back(obj);
     return true;
   }
@@ -1911,14 +2015,16 @@ void ADMAudioStreamFormat::UpdateLimits()
 {
   uint_t i;
 
-  for (i = 0; i < channelformatrefs.size(); i++) {
+  for (i = 0; i < channelformatrefs.size(); i++)
+  {
     ADMAudioChannelFormat *obj = channelformatrefs[i];
 
     obj->UpdateLimits();
     Update(obj);
   }
 
-  for (i = 0; i < packformatrefs.size(); i++) {
+  for (i = 0; i < packformatrefs.size(); i++)
+  {
     ADMAudioPackFormat *obj = packformatrefs[i];
 
     obj->UpdateLimits();
@@ -1937,15 +2043,18 @@ void ADMAudioStreamFormat::DumpEx(std::map<const ADMObject *,bool>& handledmap, 
   DumpTime(str, indent, eol, ind_level, "start", GetChildrenStartTime());
   DumpTime(str, indent, eol, ind_level, "end",   GetChildrenEndTime());
 
-  for (i = 0; i < channelformatrefs.size(); i++) {
+  for (i = 0; i < channelformatrefs.size(); i++)
+  {
     channelformatrefs[i]->Dump(handledmap, str, indent, eol, ind_level + 1);
   }
 
-  for (i = 0; i < packformatrefs.size(); i++) {
+  for (i = 0; i < packformatrefs.size(); i++)
+  {
     packformatrefs[i]->Dump(handledmap, str, indent, eol, ind_level + 1);
   }
 
-  for (i = 0; i < trackformatrefs.size(); i++) {
+  for (i = 0; i < trackformatrefs.size(); i++)
+  {
     trackformatrefs[i]->Dump(handledmap, str, indent, eol, ind_level + 1);
   }
 }
@@ -1971,12 +2080,14 @@ void ADMAudioStreamFormat::XMLData(std::string& str, const std::string& indent, 
         
   ADMObject::XMLData(str, indent, eol, ind_level, reflist);
 
-  for (i = 0; i < channelformatrefs.size(); i++) {
+  for (i = 0; i < channelformatrefs.size(); i++)
+  {
     channelformatrefs[i]->XMLRef(str, indent, eol, ind_level + 1);
     reflist.push_back(channelformatrefs[i]);
   }
 
-  for (i = 0; i < packformatrefs.size(); i++) {
+  for (i = 0; i < packformatrefs.size(); i++)
+  {
     packformatrefs[i]->XMLRef(str, indent, eol, ind_level + 1);
     reflist.push_back(packformatrefs[i]);
   }
@@ -1996,11 +2107,13 @@ void ADMAudioStreamFormat::SerializeEx(uint8_t *dst, uint_t& len) const
 {
   uint_t i;
 
-  for (i = 0; i < channelformatrefs.size(); i++) {
+  for (i = 0; i < channelformatrefs.size(); i++)
+  {
     SerializeData(dst, len, channelformatrefs[i]);
   }
 
-  for (i = 0; i < packformatrefs.size(); i++) {
+  for (i = 0; i < packformatrefs.size(); i++)
+  {
     SerializeData(dst, len, packformatrefs[i]);
   }
 }
@@ -2033,7 +2146,8 @@ void ADMAudioTrackFormat::DumpEx(std::map<const ADMObject *,bool>& handledmap, s
   Dump(str, indent, eol, ind_level, "formatLabel", formatLabel);
   Dump(str, indent, eol, ind_level, "formatDefinition", formatDefinition);
 
-  for (i = 0; i < streamformatrefs.size(); i++) {
+  for (i = 0; i < streamformatrefs.size(); i++)
+  {
     streamformatrefs[i]->Dump(handledmap, str, indent, eol, ind_level + 1);
   }
 }
@@ -2062,7 +2176,8 @@ void ADMAudioTrackFormat::XMLData(std::string& str, const std::string& indent, c
         
   ADMObject::XMLData(str, indent, eol, ind_level, reflist);
 
-  for (i = 0; i < streamformatrefs.size(); i++) {
+  for (i = 0; i < streamformatrefs.size(); i++)
+  {
     streamformatrefs[i]->XMLRef(str, indent, eol, ind_level + 1);
     reflist.push_back(streamformatrefs[i]);
   }
@@ -2072,7 +2187,8 @@ void ADMAudioTrackFormat::XMLData(std::string& str, const std::string& indent, c
 
 bool ADMAudioTrackFormat::Add(ADMAudioStreamFormat *obj)
 {
-  if (streamformatrefs.size() == 0) {
+  if (streamformatrefs.size() == 0)
+  {
     streamformatrefs.push_back(obj);
     obj->Add(this);
     return true;
@@ -2090,7 +2206,8 @@ void ADMAudioTrackFormat::UpdateLimits()
 {
   uint_t i;
 
-  for (i = 0; i < streamformatrefs.size(); i++) {
+  for (i = 0; i < streamformatrefs.size(); i++)
+  {
     ADMAudioStreamFormat *obj = streamformatrefs[i];
 
     obj->UpdateLimits();
@@ -2112,7 +2229,8 @@ void ADMAudioTrackFormat::SerializeEx(uint8_t *dst, uint_t& len) const
 
   SerializeItem(dst, len, "formatLabel", formatLabel);
 
-  for (i = 0; i < streamformatrefs.size(); i++) {
+  for (i = 0; i < streamformatrefs.size(); i++)
+  {
     SerializeData(dst, len, streamformatrefs[i]);
   }
 }
@@ -2137,7 +2255,8 @@ void ADMAudioChannelFormat::SetValues()
 /*--------------------------------------------------------------------------------*/
 bool ADMAudioChannelFormat::Add(ADMAudioBlockFormat *obj)
 {
-  if (std::find(blockformatrefs.begin(), blockformatrefs.end(), obj) == blockformatrefs.end()) {
+  if (std::find(blockformatrefs.begin(), blockformatrefs.end(), obj) == blockformatrefs.end())
+  {
     blockformatrefs.push_back(obj);
     sort(blockformatrefs.begin(), blockformatrefs.end(), ADMAudioBlockFormat::Compare);
 
@@ -2160,7 +2279,8 @@ void ADMAudioChannelFormat::DumpEx(std::map<const ADMObject *,bool>& handledmap,
   DumpTime(str, indent, eol, ind_level, "start", GetChildrenStartTime());
   DumpTime(str, indent, eol, ind_level, "end",   GetChildrenEndTime());
 
-  for (i = 0; i < blockformatrefs.size(); i++) {
+  for (i = 0; i < blockformatrefs.size(); i++)
+  {
     blockformatrefs[i]->Dump(handledmap, str, indent, eol, ind_level + 1);
   }
 }
@@ -2186,7 +2306,8 @@ void ADMAudioChannelFormat::XMLData(std::string& str, const std::string& indent,
 
   ADMObject::XMLData(str, indent, eol, ind_level, reflist);
 
-  for (i = 0; i < blockformatrefs.size(); i++) {
+  for (i = 0; i < blockformatrefs.size(); i++)
+  {
     if (i) Printf(str, "%s", eol.c_str());
     blockformatrefs[i]->XMLData(str, indent, eol, ind_level + 1, reflist);
   }
@@ -2206,7 +2327,8 @@ void ADMAudioChannelFormat::SerializeEx(uint8_t *dst, uint_t& len) const
 {
   uint_t i;
 
-  for (i = 0; i < blockformatrefs.size(); i++) {
+  for (i = 0; i < blockformatrefs.size(); i++)
+  {
     SerializeData(dst, len, blockformatrefs[i]);
   }
 }
@@ -2229,16 +2351,20 @@ void ADMAudioBlockFormat::SetValues()
   SetValueTime(rtime, "rtime");
   SetValueTime(duration, "duration");
 
-  for (it = values.begin(); it != values.end();) {
+  for (it = values.begin(); it != values.end();)
+  {
     const ADMVALUE& value = *it;
 
-    if (value.name == "position") {
+    if (value.name == "position")
+    {
       double val;
 
-      if (sscanf(value.value.c_str(), "%lf", &val) > 0) {
+      if (sscanf(value.value.c_str(), "%lf", &val) > 0)
+      {
         const std::string *attr;
 
-        if ((attr = GetAttribute(value, "coordinate")) != NULL) {
+        if ((attr = GetAttribute(value, "coordinate")) != NULL)
+        {
           DEBUG4(("Position type %s value %0.6lf", attr->c_str(), val));
           if      (*attr == "azimuth")   {position.pos.az = val; position.polar = true;}
           else if (*attr == "elevation") {position.pos.el = val; position.polar = true;}
@@ -2252,7 +2378,8 @@ void ADMAudioBlockFormat::SetValues()
 
       it = values.erase(it);
     }
-    else if (value.name == "diffuse") {
+    else if (value.name == "diffuse")
+    {
       supplement.Set(value.name, (value.value == "true"));
 
       it = values.erase(it);
@@ -2297,7 +2424,8 @@ void ADMAudioBlockFormat::XMLData(std::string& str, const std::string& indent, c
 
   ADMObject::XMLData(str, indent, eol, ind_level, reflist);
 
-  if (position.polar) {
+  if (position.polar)
+  {
     Printf(str, "%s<position coordinate=\"azimuth\">%0.6f</position>%s",
            CreateIndent(indent, ind_level + 1).c_str(),
            position.pos.az,
@@ -2311,7 +2439,8 @@ void ADMAudioBlockFormat::XMLData(std::string& str, const std::string& indent, c
            position.pos.d,
            eol.c_str());
   }
-  else {
+  else
+  {
     Printf(str, "%s<position coordinate=\"x\">%0.6f</position>%s",
            CreateIndent(indent, ind_level + 1).c_str(),
            position.pos.x,
@@ -2326,7 +2455,8 @@ void ADMAudioBlockFormat::XMLData(std::string& str, const std::string& indent, c
            eol.c_str());
   }
   bool diffuse;
-  if (supplement.Get("diffuse", diffuse)) {
+  if (supplement.Get("diffuse", diffuse))
+  {
     Printf(str, "%s<diffuse>%s</diffuse>%s",
            CreateIndent(indent, ind_level + 1).c_str(),
            diffuse ? "true" : "false",
@@ -2377,16 +2507,20 @@ void ADMTrackCursor::Setup(const ADMAudioTrack *itrack)
   blockformats = NULL;
   blockindex   = 0;
 
-  if ((track = itrack) != NULL) {
+  if ((track = itrack) != NULL)
+  {
     const ADMAudioTrackFormat *trackformat;
 
-    if ((trackformat = track->GetTrackFormatRefs().front()) != NULL) {
+    if ((trackformat = track->GetTrackFormatRefs().front()) != NULL)
+    {
       const ADMAudioStreamFormat *streamformat;
 
-      if ((streamformat = trackformat->GetStreamFormatRefs().front()) != NULL) {
+      if ((streamformat = trackformat->GetStreamFormatRefs().front()) != NULL)
+      {
         const ADMAudioChannelFormat *channelformat;
 
-        if ((channelformat = streamformat->GetChannelFormatRefs().front()) != NULL) {
+        if ((channelformat = streamformat->GetChannelFormatRefs().front()) != NULL)
+        {
           blockformats = &channelformat->GetBlockFormatRefs();
         }
         else ERROR("Failed to find channel format for '%s' (track '%s')", streamformat->ToString().c_str(), track->ToString().c_str());
@@ -2439,7 +2573,8 @@ bool ADMTrackCursor::Seek(uint64_t t)
 {
   uint_t oldindex = blockindex;
 
-  if (blockformats) {
+  if (blockformats)
+  {
     size_t n = blockformats->size();
 
     // move blockindex to point to the correct index

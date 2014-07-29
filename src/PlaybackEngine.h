@@ -18,7 +18,8 @@ BBC_AUDIOTOOLBOX_START
  */
 /*--------------------------------------------------------------------------------*/
 class ADMRIFFFile;
-class PlaybackEngine : public AudioPositionProcessor {
+class PlaybackEngine : public AudioPositionProcessor
+{
 public:
   PlaybackEngine();
   virtual ~PlaybackEngine();

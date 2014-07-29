@@ -12,7 +12,8 @@ BBC_AUDIOTOOLBOX_START
  */
 /*--------------------------------------------------------------------------------*/
 
-class TinyXMLADMData : public ADMData {
+class TinyXMLADMData : public ADMData
+{
 public:
   TinyXMLADMData();
   virtual ~TinyXMLADMData();
@@ -57,7 +58,8 @@ protected:
   /** Creator for this class
    */
   /*--------------------------------------------------------------------------------*/
-  static ADMData *__Creator(void *context) {
+  static ADMData *__Creator(void *context)
+  {
     UNUSED_PARAMETER(context);
     return new TinyXMLADMData();
   }

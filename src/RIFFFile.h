@@ -17,7 +17,8 @@ BBC_AUDIOTOOLBOX_START
  * base class for ADMRIFFFile which supports the ADM for audio objects
  */
 /*--------------------------------------------------------------------------------*/
-class RIFFFile {
+class RIFFFile
+{
 public:
   RIFFFile();
   virtual ~RIFFFile();
@@ -50,7 +51,8 @@ public:
   SoundFile *GetFile() {return file;}
 
   /// file type enumeration
-  enum {
+  enum
+  {
     FileType_Unknown = 0,
     FileType_WAV,
     FileType_AIFF,

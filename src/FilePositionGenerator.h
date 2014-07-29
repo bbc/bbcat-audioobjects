@@ -6,7 +6,8 @@
 BBC_AUDIOTOOLBOX_START
 
 class Playlist;
-class FilePositionGenerator : public PositionGenerator {
+class FilePositionGenerator : public PositionGenerator
+{
 public:
   FilePositionGenerator(SoundPositionRenderer *_renderer, Playlist& _playlist);
   virtual ~FilePositionGenerator();

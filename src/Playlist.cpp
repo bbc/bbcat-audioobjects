@@ -19,7 +19,8 @@ Playlist::~Playlist()
 {
   uint_t i;
 
-  for (i = 0; i < list.size(); i++) {
+  for (i = 0; i < list.size(); i++)
+  {
     delete list[i];
   }
 }

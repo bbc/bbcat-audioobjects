@@ -16,7 +16,8 @@ BBC_AUDIOTOOLBOX_START
 ADMRIFFFile::ADMRIFFFile() : RIFFFile(),
                              adm(ADMData::Create())
 {
-  if (!adm) {
+  if (!adm)
+  {
     ERROR("No providers for ADM XML decoding!");
   }
 }
@@ -30,7 +31,8 @@ void ADMRIFFFile::Close()
 {
   RIFFFile::Close();
 
-  if (adm) {
+  if (adm)
+  {
     adm->Delete();
   }
 }
@@ -39,13 +41,15 @@ bool ADMRIFFFile::PostReadChunks()
 {
   bool success = RIFFFile::PostReadChunks();
 
-  if (success) {
+  if (success)
+  {
     RIFFchnaChunk *chna = dynamic_cast<RIFFchnaChunk *>(GetChunk("chna"));
     RIFFaxmlChunk *axml = dynamic_cast<RIFFaxmlChunk *>(GetChunk("axml"));
 
     if (adm &&
         chna && chna->GetData() &&
-        axml && axml->GetData()) {
+        axml && axml->GetData())
+    {
       success = adm->Set(chna->GetData(), axml->GetData(), axml->GetLength());
 
 #if 0
@@ -67,12 +71,14 @@ bool ADMRIFFFile::PostReadChunks()
       vector<const ADMObject *>list;
       adm->GetADMList(ADMAudioObject::Type, list);
       uint_t i;
-      for (i = 0; i < list.size(); i++) {
+      for (i = 0; i < list.size(); i++)
+      {
         DEBUG("%s", list[i]->ToString().c_str());
       }
 #endif
     }
-    else {
+    else
+    {
       if (!adm)                       ERROR("Cannot decode ADM, no ADM decoder available");
       if (!(chna && chna->GetData())) ERROR("Cannot decode ADM, chna chunk not available");
       if (!(axml && axml->GetData())) ERROR("Cannot decode ADM, chna chunk not available");

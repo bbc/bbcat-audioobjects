@@ -65,7 +65,8 @@ void RIFFfmtChunk::ByteSwapData()
 {
   WAVEFORMAT_CHUNK& chunk = *(WAVEFORMAT_CHUNK *)data;
 
-  if (SwapLittleEndian()) {
+  if (SwapLittleEndian())
+  {
     BYTESWAP_VAR(chunk.Format);
     BYTESWAP_VAR(chunk.Channels);
     BYTESWAP_VAR(chunk.SampleRate);
@@ -80,7 +81,8 @@ bool RIFFfmtChunk::ProcessChunkData()
   const WAVEFORMAT_CHUNK& chunk = *(const WAVEFORMAT_CHUNK *)data;
   bool success = false;
 
-  if (chunk.Format == WAVE_FORMAT_PCM) {
+  if (chunk.Format == WAVE_FORMAT_PCM)
+  {
     // cannot handle anything other that PCM samples
 
     DEBUG2(("Reading format data"));
@@ -91,13 +93,16 @@ bool RIFFfmtChunk::ProcessChunkData()
     bytespersample = (chunk.BitsPerSample + 7) >> 3;
 
     // best guess at sample data format
-    if (chunk.BitsPerSample <= 16) {
+    if (chunk.BitsPerSample <= 16)
+    {
       format = SampleFormat_16bit;
     }
-    else if (chunk.BitsPerSample <= 24) {
+    else if (chunk.BitsPerSample <= 24)
+    {
       format = SampleFormat_24bit;
     }
-    else {
+    else
+    {
       format = SampleFormat_32bit;
     }
 
@@ -129,7 +134,8 @@ void RIFFbextChunk::ByteSwapData()
 {
   BROADCAST_CHUNK& chunk = *(BROADCAST_CHUNK *)data;
 
-  if (SwapLittleEndian()) {
+  if (SwapLittleEndian())
+  {
     BYTESWAP_VAR(chunk.TimeReferenceLow);
     BYTESWAP_VAR(chunk.TimeReferenceHigh);
     BYTESWAP_VAR(chunk.Version);
@@ -154,12 +160,14 @@ void RIFFchnaChunk::ByteSwapData()
 {
   CHNA_CHUNK& chunk = *(CHNA_CHUNK *)data;
 
-  if (SwapLittleEndian()) {
+  if (SwapLittleEndian())
+  {
     BYTESWAP_VAR(chunk.TrackCount);
     BYTESWAP_VAR(chunk.UIDCount);
 
     uint16_t i;
-    for (i = 0; i < chunk.UIDCount; i++) {
+    for (i = 0; i < chunk.UIDCount; i++)
+    {
       BYTESWAP_VAR(chunk.UIDs[i].TrackNum);
     }
   }
@@ -195,7 +203,8 @@ bool RIFFdataChunk::ReadChunk(SoundFile *file)
 {
   bool success = false;
 
-  if (RIFFChunk::ReadChunk(file)) {
+  if (RIFFChunk::ReadChunk(file))
+  {
     // link file to SoundFileSamples object
     SetFile(file, datapos, length);
 

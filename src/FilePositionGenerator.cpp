@@ -23,14 +23,17 @@ void FilePositionGenerator::Process()
 {
   SoundFileSamplesWithPosition *file;
 
-  if ((file = dynamic_cast<SoundFileSamplesWithPosition *>(playlist.GetFile())) != NULL) {
+  if ((file = dynamic_cast<SoundFileSamplesWithPosition *>(playlist.GetFile())) != NULL)
+  {
     const std::vector<PositionCursor *>& cursors = file->GetCursors();
     uint_t i, n = cursors.size();
 
-    for (i = 0; i < n; i++) {
+    for (i = 0; i < n; i++)
+    {
       const Position *pos = cursors[i]->GetPosition();
 
-      if (pos) {
+      if (pos)
+      {
         UpdatePosition(i, *pos, cursors[i]->GetPositionSupplement());
       }
     }

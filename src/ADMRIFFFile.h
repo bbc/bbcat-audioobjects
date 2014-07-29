@@ -22,7 +22,8 @@ BBC_AUDIOTOOLBOX_START
  * An example implementation of the interpretation is in TinyXMLADMData.h
  */
 /*--------------------------------------------------------------------------------*/
-class ADMRIFFFile : public RIFFFile {
+class ADMRIFFFile : public RIFFFile
+{
 public:
   ADMRIFFFile();
   virtual ~ADMRIFFFile();

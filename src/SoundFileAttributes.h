@@ -9,7 +9,8 @@
 
 BBC_AUDIOTOOLBOX_START
 
-class SoundFile {
+class SoundFile
+{
 public:
   SoundFile();
   SoundFile(const SoundFile& obj);
@@ -37,7 +38,8 @@ protected:
   FILE        *fp;
 };
 
-class SoundFormat {
+class SoundFormat
+{
 public:
   SoundFormat();
   virtual ~SoundFormat();
@@ -57,7 +59,8 @@ protected:
   bool           bigendian;
 };
 
-class SoundFileSamples {
+class SoundFileSamples
+{
 public:
   SoundFileSamples();
   SoundFileSamples(const SoundFileSamples *obj);
@@ -82,7 +85,8 @@ public:
   void    SetPosition(ulong_t pos)         {samplepos = MIN(pos, clip.nsamples); UpdatePosition();}
   void    SetAbsolutePosition(ulong_t pos) {samplepos = LIMIT(pos, clip.start, clip.start + clip.nsamples) - clip.start; UpdatePosition();}
 
-  typedef struct {
+  typedef struct
+  {
     ulong_t start;
     ulong_t nsamples;
     uint_t  channel;

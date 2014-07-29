@@ -8,7 +8,8 @@
 BBC_AUDIOTOOLBOX_START
 
 class SoundFileSamples;
-class Playlist {
+class Playlist
+{
 public:
   Playlist();
   ~Playlist();

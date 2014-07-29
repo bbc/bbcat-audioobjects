@@ -60,7 +60,8 @@ bool PlaybackEngine::AddObject(const ADMRIFFFile& file, const char *name)
       ADMAudioFileSamples *afile;
     
       // play entire file
-      if ((afile = new ADMAudioFileSamples(adm, file.GetSamples())) != NULL) {
+      if ((afile = new ADMAudioFileSamples(adm, file.GetSamples())) != NULL)
+      {
         DEBUG2(("Adding entire audio file (%u channels, %lu samples) to list", afile->GetChannels(), afile->GetLength()));
         AddFile(afile);
         success = true;
@@ -170,7 +171,8 @@ uint_t PlaybackEngine::Render(const Sample_t *src, Sample_t *dst,
       nread = file->ReadSamples(&samples[0], MIN(samples.size() / inputchannels, ndstframes));
 
       // end of this file, move onto next one
-      if (nread == 0) {
+      if (nread == 0)
+      {
         playlist.Next();
         SetFileChannelsAndSampleRate();
         continue;

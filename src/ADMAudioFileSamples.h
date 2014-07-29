@@ -7,7 +7,8 @@
 
 BBC_AUDIOTOOLBOX_START
 
-class ADMAudioFileSamples : public SoundFileSamplesWithPosition {
+class ADMAudioFileSamples : public SoundFileSamplesWithPosition
+{
 public:
   ADMAudioFileSamples(const ADMData *iadm, const SoundFileSamples *isamples, const ADMAudioObject *obj = NULL);
   ADMAudioFileSamples(const ADMAudioFileSamples *isamples);

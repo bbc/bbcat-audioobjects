@@ -27,7 +27,8 @@ void ADMData::Delete()
 {
   ADMOBJECTS_IT it;
 
-  for (it = admobjects.begin(); it != admobjects.end(); ++it) {
+  for (it = admobjects.begin(); it != admobjects.end(); ++it)
+  {
     delete it->second;
   }
 
@@ -41,13 +42,15 @@ bool ADMData::SetChna(const uint8_t *data)
   bool success = true;
 
   uint16_t i;
-  for (i = 0; i < chna.UIDCount; i++) {
+  for (i = 0; i < chna.UIDCount; i++)
+  {
     ADMAudioTrack *track;
     std::string id;
 
     id.assign(chna.UIDs[i].UID, sizeof(chna.UIDs[i].UID));
 
-    if ((track = dynamic_cast<ADMAudioTrack *>(Create(ADMAudioTrack::Type, id, ""))) != NULL) {
+    if ((track = dynamic_cast<ADMAudioTrack *>(Create(ADMAudioTrack::Type, id, ""))) != NULL)
+    {
       ADMVALUE value;
 
       value.attr = false;
@@ -85,7 +88,8 @@ bool ADMData::SetAxml(const std::string& data)
 
   DEBUG4(("XML: %s", data.c_str()));
 
-  if (TranslateXML(data)) {
+  if (TranslateXML(data))
+  {
     success = true;
   }
 
@@ -96,7 +100,8 @@ bool ADMData::Set(const uint8_t *chna, const uint8_t *axml, uint_t axmllength)
 {
   bool success = false;
 
-  if (SetChna(chna) && SetAxml(axml, axmllength)) {
+  if (SetChna(chna) && SetAxml(axml, axmllength))
+  {
     SortTracks();
     ConnectReferences();
     UpdateLimits();
@@ -112,13 +117,15 @@ uint8_t *ADMData::GetChna(uint32_t& len) const
   CHNA_CHUNK *p = NULL;
 
   len = sizeof(*p) + tracklist.size() * sizeof(p->UIDs[0]);
-  if ((p = (CHNA_CHUNK *)calloc(1, len)) != NULL) {
+  if ((p = (CHNA_CHUNK *)calloc(1, len)) != NULL)
+  {
     uint_t i;
 
     p->TrackCount = tracklist.size();
     p->UIDCount   = tracklist.size();
         
-    for (i = 0; i < p->UIDCount; i++) {
+    for (i = 0; i < p->UIDCount; i++)
+    {
       const ADMAudioTrack *track = tracklist[i];
 
       p->UIDs[i].TrackNum = track->GetTrackNum();
@@ -170,7 +177,8 @@ ADMData *ADMData::Create()
   ADMData *data = NULL;
   uint_t i;
 
-  for (i = 0; i < providerlist.size(); i++) {
+  for (i = 0; i < providerlist.size(); i++)
+  {
     const PROVIDER& provider = providerlist[i];
 
     if ((data = (*provider.fn)(provider.context)) != NULL) break;
@@ -181,7 +189,8 @@ ADMData *ADMData::Create()
 
 void ADMData::RegisterProvider(CREATOR fn, void *context)
 {
-  PROVIDER provider = {
+  PROVIDER provider =
+  {
     .fn      = fn,
     .context = context,
   };
@@ -197,7 +206,8 @@ void ADMData::Register(ADMObject *obj, const std::string& type)
 
   {
     const ADMAudioTrack *track;
-    if ((track = dynamic_cast<const ADMAudioTrack *>(obj)) != NULL) {
+    if ((track = dynamic_cast<const ADMAudioTrack *>(obj)) != NULL)
+    {
       tracklist.push_back(track);
     }
   }
@@ -220,11 +230,13 @@ ADMObject *ADMData::Create(const std::string& type, const std::string& id, const
 {
   ADMObject *obj = NULL;
 
-  if (ValidType(type)) {
+  if (ValidType(type))
+  {
     ADMOBJECTS_MAP::const_iterator it;
     std::string uuid = type + "/" + id;
 
-    if ((it = admobjects.find(uuid)) == admobjects.end()) {
+    if ((it = admobjects.find(uuid)) == admobjects.end())
+    {
       if      (type == ADMAudioProgramme::Type)     obj = new ADMAudioProgramme(*this, id, name);
       else if (type == ADMAudioContent::Type)       obj = new ADMAudioContent(*this, id, name);
       else if (type == ADMAudioObject::Type)        obj = new ADMAudioObject(*this, id, name);
@@ -248,7 +260,8 @@ ADMObject *ADMData::Parse(const std::string& type, void *userdata)
 
   ParseHeader(header, type, userdata);
     
-  if ((obj = Create(type, header.id, header.name)) != NULL) {
+  if ((obj = Create(type, header.id, header.name)) != NULL)
+  {
     ParseValues(obj, type, userdata);
     PostParse(obj, type, userdata);
 
@@ -265,13 +278,16 @@ ADMObject *ADMData::GetReference(const ADMVALUE& value)
   std::string uuid = value.name, cmp;
 
   cmp = "UIDRef";
-  if ((uuid.size() >= cmp.size()) && (uuid.compare(uuid.size() - cmp.size(), cmp.size(), cmp) == 0)) {
+  if ((uuid.size() >= cmp.size()) && (uuid.compare(uuid.size() - cmp.size(), cmp.size(), cmp) == 0))
+  {
     uuid = uuid.substr(0, uuid.size() - 3);
   }
-  else {
+  else
+  {
     cmp = "IDRef";
 
-    if ((uuid.size() >= cmp.size()) && (uuid.compare(uuid.size() - cmp.size(), cmp.size(), cmp) == 0)) {
+    if ((uuid.size() >= cmp.size()) && (uuid.compare(uuid.size() - cmp.size(), cmp.size(), cmp) == 0))
+    {
       uuid = uuid.substr(0, uuid.size() - cmp.size());
     }
   }
@@ -292,7 +308,8 @@ void ADMData::SortTracks()
   sort(tracklist.begin(), tracklist.end(), ADMAudioTrack::Compare);
 
   DEBUG4(("%lu tracks:", tracklist.size()));
-  for (it = tracklist.begin(); it != tracklist.end(); ++it) {
+  for (it = tracklist.begin(); it != tracklist.end(); ++it)
+  {
     DEBUG4(("%u: %s", (*it)->GetTrackNum(), (*it)->ToString().c_str()));
   }
 }
@@ -301,7 +318,8 @@ void ADMData::ConnectReferences()
 {
   ADMOBJECTS_IT it;
 
-  for (it = admobjects.begin(); it != admobjects.end(); ++it) {
+  for (it = admobjects.begin(); it != admobjects.end(); ++it)
+  {
     it->second->SetReferences();
   }
 }
@@ -311,8 +329,10 @@ void ADMData::UpdateLimits()
   ADMOBJECTS_IT  it;
   ADMAudioObject *obj;
 
-  for (it = admobjects.begin(); it != admobjects.end(); ++it) {
-    if ((obj = dynamic_cast<ADMAudioObject *>(it->second)) != NULL) {
+  for (it = admobjects.begin(); it != admobjects.end(); ++it)
+  {
+    if ((obj = dynamic_cast<ADMAudioObject *>(it->second)) != NULL)
+    {
       obj->UpdateLimits();
     }
   }
@@ -322,10 +342,12 @@ void ADMData::GetADMList(const std::string& type, std::vector<const ADMObject *>
 {
   ADMOBJECTS_CIT it;
 
-  for (it = admobjects.begin(); it != admobjects.end(); ++it) {
+  for (it = admobjects.begin(); it != admobjects.end(); ++it)
+  {
     const ADMObject *obj = it->second;
 
-    if (obj->GetType() == type) {
+    if (obj->GetType() == type)
+    {
             
       list.push_back(obj);
     }
@@ -336,7 +358,8 @@ const ADMObject *ADMData::GetObjectByID(const std::string& id, const std::string
 {
   ADMOBJECTS_CIT it;
 
-  for (it = admobjects.begin(); it != admobjects.end(); ++it) {
+  for (it = admobjects.begin(); it != admobjects.end(); ++it)
+  {
     const ADMObject *obj = it->second;
 
     if (((type == "") || (obj->GetType() == type)) && (obj->GetID() == id)) return obj;
@@ -349,7 +372,8 @@ const ADMObject *ADMData::GetObjectByName(const std::string& name, const std::st
 {
   ADMOBJECTS_CIT it;
 
-  for (it = admobjects.begin(); it != admobjects.end(); ++it) {
+  for (it = admobjects.begin(); it != admobjects.end(); ++it)
+  {
     const ADMObject *obj = it->second;
 
     if (((type == "") || (obj->GetType() == type)) && (obj->GetName() == name)) return obj;
@@ -366,7 +390,8 @@ std::string ADMData::FormatString(const char *fmt, ...)
   va_start(ap, fmt);
 
   char *buf = NULL;
-  if (vasprintf(&buf, fmt, ap) > 0) {
+  if (vasprintf(&buf, fmt, ap) > 0)
+  {
     str = buf;
     free(buf);
   }
@@ -380,8 +405,10 @@ void ADMData::Dump(std::string& str, const std::string& indent, const std::strin
 {
   ADMOBJECTS_CIT it;
 
-  for (it = admobjects.begin(); it != admobjects.end(); ++it) {
-    if (it->second->GetType() == ADMAudioProgramme::Type) {
+  for (it = admobjects.begin(); it != admobjects.end(); ++it)
+  {
+    if (it->second->GetType() == ADMAudioProgramme::Type)
+    {
       it->second->Dump(str, indent, eol, level);
     }
   }
@@ -403,10 +430,12 @@ void ADMData::GenerateXML(std::string& str, const std::string& indent, const std
          "%s<audioFormatExtended>%s",
          CreateIndent(indent, ind_level).c_str(), eol.c_str()); ind_level++;
 
-  for (it = admobjects.begin(); it != admobjects.end(); ++it) {
+  for (it = admobjects.begin(); it != admobjects.end(); ++it)
+  {
     const ADMObject *obj = it->second;
 
-    if (obj->GetType() == ADMAudioProgramme::Type) {
+    if (obj->GetType() == ADMAudioProgramme::Type)
+    {
       obj->GenerateXML(str, indent, eol, ind_level);
     }
   }
@@ -434,7 +463,8 @@ void ADMData::CreateCursors(std::vector<PositionCursor *>& list, uint_t channel,
   channel   = MIN(channel,   tracklist.size() - 1);
   nchannels = MIN(nchannels, tracklist.size() - channel);
 
-  for (i = 0; i < nchannels; i++) {
+  for (i = 0; i < nchannels; i++)
+  {
     list.push_back(new ADMTrackCursor(tracklist[channel + i]));
   }
 }
@@ -451,7 +481,8 @@ void ADMData::Serialize(uint8_t *dst, uint_t& len) const
   ADMObject::SerializeData(dst, len, (uint32_t)admobjects.size());
   ADMObject::SerializeSync(dst, len, len0);
 
-  for (it = admobjects.begin(); it != admobjects.end(); ++it) {
+  for (it = admobjects.begin(); it != admobjects.end(); ++it)
+  {
     it->second->Serialize(dst, len);
   }
 

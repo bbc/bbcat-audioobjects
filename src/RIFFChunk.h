@@ -37,7 +37,8 @@ BBC_AUDIOTOOLBOX_START
  */
 /*--------------------------------------------------------------------------------*/
 class RIFFFile;
-class RIFFChunk {
+class RIFFChunk
+{
 public:
   virtual ~RIFFChunk();
 
@@ -146,7 +147,8 @@ protected:
   /*--------------------------------------------------------------------------------*/
   virtual void ByteSwapData() {}
 
-  typedef enum {
+  typedef enum
+  {
     ChunkHandling_SkipOverChunk,
     ChunkHandling_RemainInChunkData,
     ChunkHandling_ReadChunk,
@@ -193,7 +195,8 @@ protected:
   /** Structure to contain providers to create chunk objects from chunk ID's
    */
   /*--------------------------------------------------------------------------------*/
-  typedef struct {
+  typedef struct
+  {
     RIFFChunk *(*fn)(uint32_t id, void *context);
     void      *context;
   } PROVIDER;

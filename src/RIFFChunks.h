@@ -18,7 +18,8 @@ BBC_AUDIOTOOLBOX_START
  * Don't read the data, no specific handling
  */
 /*--------------------------------------------------------------------------------*/
-class RIFFRIFFChunk : public RIFFChunk {
+class RIFFRIFFChunk : public RIFFChunk
+{
 public:
   RIFFRIFFChunk(uint32_t chunk_id) : RIFFChunk(chunk_id) {}
   virtual ~RIFFRIFFChunk() {}
@@ -28,7 +29,8 @@ public:
 
 protected:
   // provider function for this object
-  static RIFFChunk *Create(uint32_t id, void *context) {
+  static RIFFChunk *Create(uint32_t id, void *context)
+  {
     (void)context;
     return new RIFFRIFFChunk(id);
   }
@@ -46,7 +48,8 @@ protected:
  * a specific ReadChunk() function
  */
 /*--------------------------------------------------------------------------------*/
-class RIFFWAVEChunk : public RIFFChunk {
+class RIFFWAVEChunk : public RIFFChunk
+{
 public:
   RIFFWAVEChunk(uint32_t chunk_id) : RIFFChunk(chunk_id) {}
   virtual ~RIFFWAVEChunk() {}
@@ -56,7 +59,8 @@ public:
 
 protected:
   // provider function for this object
-  static RIFFChunk *Create(uint32_t id, void *context) {
+  static RIFFChunk *Create(uint32_t id, void *context)
+  {
     (void)context;
     return new RIFFWAVEChunk(id);
   }
@@ -75,7 +79,8 @@ protected:
  * format handling facilities
  */
 /*--------------------------------------------------------------------------------*/
-class RIFFfmtChunk : public RIFFChunk, public SoundFormat {
+class RIFFfmtChunk : public RIFFChunk, public SoundFormat
+{
 public:
   RIFFfmtChunk(uint32_t chunk_id) : RIFFChunk(chunk_id),
                                     SoundFormat() {}
@@ -86,7 +91,8 @@ public:
 
 protected:
   // provider function for this object
-  static RIFFChunk *Create(uint32_t id, void *context) {
+  static RIFFChunk *Create(uint32_t id, void *context)
+  {
     (void)context;
     return new RIFFfmtChunk(id);
   }
@@ -109,7 +115,8 @@ protected:
  *
  */
 /*--------------------------------------------------------------------------------*/
-class RIFFbextChunk : public RIFFChunk {
+class RIFFbextChunk : public RIFFChunk
+{
 public:
   RIFFbextChunk(uint32_t chunk_id) : RIFFChunk(chunk_id) {}
   virtual ~RIFFbextChunk() {}
@@ -119,7 +126,8 @@ public:
 
 protected:
   // provider function for this object
-  static RIFFChunk *Create(uint32_t id, void *context) {
+  static RIFFChunk *Create(uint32_t id, void *context)
+  {
     (void)context;
     return new RIFFbextChunk(id);
   }
@@ -138,7 +146,8 @@ protected:
  *
  */
 /*--------------------------------------------------------------------------------*/
-class RIFFchnaChunk : public RIFFChunk {
+class RIFFchnaChunk : public RIFFChunk
+{
 public:
   RIFFchnaChunk(uint32_t chunk_id) : RIFFChunk(chunk_id) {}
   virtual ~RIFFchnaChunk() {}
@@ -148,7 +157,8 @@ public:
 
 protected:
   // provider function for this object
-  static RIFFChunk *Create(uint32_t id, void *context) {
+  static RIFFChunk *Create(uint32_t id, void *context)
+  {
     (void)context;
     return new RIFFchnaChunk(id);
   }
@@ -167,7 +177,8 @@ protected:
  *
  */
 /*--------------------------------------------------------------------------------*/
-class RIFFaxmlChunk : public RIFFChunk {
+class RIFFaxmlChunk : public RIFFChunk
+{
 public:
   RIFFaxmlChunk(uint32_t chunk_id) : RIFFChunk(chunk_id) {}
   virtual ~RIFFaxmlChunk() {}
@@ -177,7 +188,8 @@ public:
 
 protected:
   // provider function for this object
-  static RIFFChunk *Create(uint32_t id, void *context) {
+  static RIFFChunk *Create(uint32_t id, void *context)
+  {
     (void)context;
     return new RIFFaxmlChunk(id);
   }
@@ -197,7 +209,8 @@ protected:
  *
  */
 /*--------------------------------------------------------------------------------*/
-class RIFFdataChunk : public RIFFChunk, public SoundFileSamples {
+class RIFFdataChunk : public RIFFChunk, public SoundFileSamples
+{
 public:
   RIFFdataChunk(uint32_t chunk_id) : RIFFChunk(chunk_id),
                                      SoundFileSamples() {}
@@ -208,7 +221,8 @@ public:
 
 protected:
   // provider function for this object
-  static RIFFChunk *Create(uint32_t id, void *context) {
+  static RIFFChunk *Create(uint32_t id, void *context)
+  {
     (void)context;
     return new RIFFdataChunk(id);
   }

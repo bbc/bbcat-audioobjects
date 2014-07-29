@@ -11,7 +11,8 @@
 
 BBC_AUDIOTOOLBOX_START
 
-class ADMData {
+class ADMData
+{
 public:
   ADMData();
   virtual ~ADMData();
@@ -56,7 +57,8 @@ public:
   static void RegisterProvider(CREATOR fn, void *context = NULL);
 
 protected:
-  typedef struct {
+  typedef struct
+  {
     std::string type;
     std::string id;
     std::string name;
@@ -77,7 +79,8 @@ protected:
   /** Optional post parse handler
    */
   /*--------------------------------------------------------------------------------*/
-  virtual void PostParse(ADMObject *obj, const std::string& type, void *userdata) {
+  virtual void PostParse(ADMObject *obj, const std::string& type, void *userdata)
+  {
     UNUSED_PARAMETER(obj);
     UNUSED_PARAMETER(type);
     UNUSED_PARAMETER(userdata);
@@ -86,7 +89,8 @@ protected:
   static std::string FormatString(const char *fmt, ...);
 
 protected:
-  typedef struct {
+  typedef struct
+  {
     CREATOR fn;
     void    *context;
   } PROVIDER;
