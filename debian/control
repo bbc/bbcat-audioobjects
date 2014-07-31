@@ -2,9 +2,9 @@ Source: aplibs-audioobjects
 Priority: optional
 Maintainer: Richard Day <richard.day@bbc.co.uk>
 Standards-Version: 3.9.3
-Build-Depends: debhelper (>= 9), pkg-config, aplibs-dsp (>= 0.1.1.0), aplibs-render (>= 0.1.0.0), libtinyxml-dev (>= 2.6.2)
+Build-Depends: debhelper (>= 9), pkg-config, aplibs-render (>= 0.1.0.0), libtinyxml-dev (>= 2.6.2)
 
 Package: aplibs-audioobjects
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, aplibs-render (>= 0.1.0.0)
 Description: Audio Objects library
