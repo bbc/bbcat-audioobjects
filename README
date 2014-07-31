@@ -1,6 +1,74 @@
-Some of the code in this distribution is either copied from or a modified version of code from the SoundScapeRenderer project.
-That project was written by staff at the Technical University of Berlin and released under GPLv3. It is currently hosted here: <http://soundscaperenderer.github.io/>
+Purpose
 
-This library includes the configuration option: --enable-gpl [default: yes] which allows this code to be removed if necessary.
+Audio Objects handling library
 
-The FractionalDelay class uses libsamplerate. If you want to distribute this with libsamplerate, see <http://www.mega-nerd.com/SRC/license.html>.
+Dependencies
+
+apf - git@git0.rd.bbc.co.uk:apf/apf.git
+aplibs-dsp - git@git0.rd.bbc.co.uk:aplibs/aplibs-dsp.git
+aplibs-render - git@git0.rd.bbc.co.uk:aplibs/aplibs-render.git
+netcdf-bbc - git@git0.rd.bbc.co.uk:aplibs/netcdf-bbc.git (for SOFA file support)
+netcdf-cxx4-bbc - git@git0.rd.bbc.co.uk:aplibs/netcdf-cxx4-bbc.git (for SOFA file support)
+
+Files
+
+autogen.sh - simple autotools script
+configure.ac - configure configuration for autotools
+COPYING - information on copying this library
+debian/ - Debian control and version information
+doxygen.am - Doxygen automake file
+doxygen.cfg - Doxygen configuration
+m4 - folder for autotools
+Makefile.am - makefile for automake
+README - this file
+src/ - source folder containing C/C++ source and header files
+
+
+src/Makefile.am                         | Makefile for automake
+
+src/ADMAudioFileSamples.cpp             | Handler for reading audio samples AND position from ADM object and BWF file 
+src/ADMAudioFileSamples.h               |
+
+src/ADMData.cpp                         | Base class for ADM data handlers
+src/ADMData.h                           |
+
+src/ADMObjects.cpp                      | Individual component ADM objects
+src/ADMObjects.h                        |
+
+src/ADMRIFFFile.cpp                     | ADM RIFF (BWF) file support
+src/ADMRIFFFile.h                       |
+
+src/crc32.cpp                           | 32-bit CRC
+src/crc32.h                             |
+
+src/FilePositionGenerator.cpp           | Position generator using a file as a source
+src/FilePositionGenerator.h             |
+
+src/mt19937ar.c                         | Implementation of the MT19937AR PRNG
+src/mt19937ar.h                         |
+
+src/PlaybackEngine.cpp                  | File playback engine derived from AudioPositionProcessor 
+src/PlaybackEngine.h                    |
+
+src/Playlist.cpp                        | Simple multi-file playlist
+src/Playlist.h                          |
+
+src/RIFFChunk_Definitions.h             | RIFF chunk definitions
+
+src/RIFFChunk.cpp                       | Base class for RIFF chunk handlers
+src/RIFFChunk.h                         |
+
+src/RIFFChunks.cpp                      | RIFF chunk handlers
+src/RIFFChunks.h                        |
+
+src/RIFFFile.cpp                        | RIFF file support
+src/RIFFFile.h                          |
+
+src/SoundFileAttributes.cpp             | Sound format and data classes
+src/SoundFileAttributes.h               |
+
+src/SoundFileWithPosition.h             | Sound data class which understands position
+
+src/TinyXMLADMData.cpp                  | An implementation of ADM decoding using TinyXML
+src/TinyXMLADMData.h                    |
+
