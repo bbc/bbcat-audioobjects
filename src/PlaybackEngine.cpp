@@ -115,10 +115,10 @@ void PlaybackEngine::SetFileChannelsAndSampleRate()
 }
 
 /*--------------------------------------------------------------------------------*/
-/** Update positions of channels currently being played out
+/** Update all positions if necessary
  */
 /*--------------------------------------------------------------------------------*/
-void PlaybackEngine::UpdatePositions()
+void PlaybackEngine::UpdateAllPositions(bool force)
 {
   ThreadLock lock(tlock);
 
@@ -126,7 +126,7 @@ void PlaybackEngine::UpdatePositions()
   if (!inputchannels) SetFileChannelsAndSampleRate();
 
   // update positions from PositionGenerator and to renderer
-  AudioPositionProcessor::UpdatePositions();
+  AudioPositionProcessor::UpdateAllPositions(force);
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -138,6 +138,7 @@ void PlaybackEngine::UpdatePositions()
  * @param ndstchannels number channels desired in destination buffer
  * @param nsrcframes number of sample frames in source buffer
  * @param ndstframes maximum number of sample frames that can be put in destination
+ * @param level level to mix output to destination
  *
  * @return number of frames written to destination
  *
@@ -147,7 +148,7 @@ void PlaybackEngine::UpdatePositions()
  */
 /*--------------------------------------------------------------------------------*/
 uint_t PlaybackEngine::Render(const Sample_t *src, Sample_t *dst,
-                              uint_t nsrcchannels, uint_t ndstchannels, uint_t nsrcframes, uint_t ndstframes)
+                              uint_t nsrcchannels, uint_t ndstchannels, uint_t nsrcframes, uint_t ndstframes, Sample_t level)
 {
   uint_t frames = 0;
 
@@ -182,7 +183,7 @@ uint_t PlaybackEngine::Render(const Sample_t *src, Sample_t *dst,
     // allow LESS samples to be written to output than sent to renderer (for non-unity time rendering processes)
     uint_t nwritten = AudioPositionProcessor::Render(&samples[0], dst,
                                                      inputchannels, ndstchannels,
-                                                     nread, ndstframes);
+                                                     nread, ndstframes, level);
 
     // if the renderer has finished outputting, break out
     if ((nread == 0) && (nwritten == 0)) break;
