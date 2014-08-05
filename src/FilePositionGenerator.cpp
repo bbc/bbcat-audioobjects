@@ -10,8 +10,8 @@
 
 BBC_AUDIOTOOLBOX_START
 
-FilePositionGenerator::FilePositionGenerator(SoundPositionRenderer *_renderer, Playlist& _playlist) : PositionGenerator(_renderer),
-                                                                                                      playlist(_playlist)
+FilePositionGenerator::FilePositionGenerator(PositionHandler *_handler, Playlist& _playlist) : PositionGenerator(_handler),
+                                                                                               playlist(_playlist)
 {
 }
 

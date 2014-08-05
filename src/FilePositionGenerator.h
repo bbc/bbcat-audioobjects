@@ -9,7 +9,7 @@ class Playlist;
 class FilePositionGenerator : public PositionGenerator
 {
 public:
-  FilePositionGenerator(SoundPositionRenderer *_renderer, Playlist& _playlist);
+  FilePositionGenerator(PositionHandler *_handler, Playlist& _playlist);
   virtual ~FilePositionGenerator();
 
   virtual void Process();

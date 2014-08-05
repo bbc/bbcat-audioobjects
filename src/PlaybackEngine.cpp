@@ -15,7 +15,7 @@ BBC_AUDIOTOOLBOX_START
 PlaybackEngine::PlaybackEngine() : AudioPositionProcessor()
 {
   samples.resize(4096);
-  SetExplicitGenerator(new FilePositionGenerator(this, playlist));
+  SetGenerator(new FilePositionGenerator(this, playlist));
 }
 
 PlaybackEngine::~PlaybackEngine()
