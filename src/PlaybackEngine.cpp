@@ -93,6 +93,12 @@ bool PlaybackEngine::AddObject(const ADMRIFFFile& file, const char *name)
   return success;
 }
 
+void PlaybackEngine::Clear()
+{
+  ThreadLock lock(tlock);
+  playlist.Clear();
+}
+
 void PlaybackEngine::Reset()
 {
   ThreadLock lock(tlock);
