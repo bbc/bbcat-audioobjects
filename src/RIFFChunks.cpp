@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 #define DEBUG_LEVEL 1
 #include <aplibs-dsp/ByteSwap.h>
@@ -18,6 +19,14 @@ BBC_AUDIOTOOLBOX_START
  * Don't read the data, no specific handling
  */
 /*--------------------------------------------------------------------------------*/
+
+// just return true - no data to write
+bool RIFFRIFFChunk::WriteChunkData(SoundFile *file)
+{
+  UNUSED_PARAMETER(file);
+  return true;
+}
+
 void RIFFRIFFChunk::Register()
 {
   RIFFChunk::RegisterProvider("RIFF", &Create);
@@ -38,6 +47,24 @@ bool RIFFWAVEChunk::ReadChunk(SoundFile *file)
 
   // there is no data after WAVE to read
   return true;
+}
+
+// special write chunk function (no length or data)
+bool RIFFWAVEChunk::WriteChunk(SoundFile *file)
+{
+  uint32_t data[] = {id};
+  bool success = false;
+
+  // treat ID  as big-endian
+  ByteSwap(data[0], SWAP_FOR_BE);
+
+  if (file->fwrite(data, NUMBEROF(data), sizeof(data[0])) > 0)
+  {
+    datapos = file->ftell();
+    success = true;
+  }
+
+  return success;
 }
 
 void RIFFWAVEChunk::Register()
@@ -88,30 +115,71 @@ bool RIFFfmtChunk::ProcessChunkData()
     DEBUG2(("Reading format data"));
 
     // set parameters within SoundFormat according to data from this chunk
-    samplerate     = chunk.SampleRate;
-    channels       = chunk.Channels;
-    bytespersample = (chunk.BitsPerSample + 7) >> 3;
+    SetSampleRate(chunk.SampleRate);
+    SetChannels(chunk.Channels);
 
     // best guess at sample data format
     if (chunk.BitsPerSample <= 16)
     {
-      format = SampleFormat_16bit;
+      SetSampleFormat(SampleFormat_16bit);
     }
     else if (chunk.BitsPerSample <= 24)
     {
-      format = SampleFormat_24bit;
+      SetSampleFormat(SampleFormat_24bit);
     }
     else
     {
-      format = SampleFormat_32bit;
+      SetSampleFormat(SampleFormat_32bit);
     }
 
     // WAVE is always little-endian
-    bigendian = false;
+    SetSamplesBigEndian(false);
 
     success = true;
   }
   else ERROR("Format is %04x, not PCM", chunk.Format);
+
+  return success;
+}
+
+// create write data
+bool RIFFfmtChunk::CreateWriteData()
+{
+  bool success = (length && data);
+
+  if (!success)
+  {
+    WAVEFORMAT_CHUNK chunk;
+
+    memset(&chunk, 0, sizeof(chunk));
+
+    chunk.Format         = WAVE_FORMAT_PCM;
+    chunk.SampleRate     = samplerate;
+    chunk.Channels       = channels;
+    chunk.BytesPerSecond = samplerate * channels * bytespersample;
+    switch (format)
+    {
+      case SampleFormat_16bit:
+        // ONLY use 16 bit samples if sample format is explicitly 16 bit
+        chunk.BitsPerSample = 16;
+        break;
+
+      default:
+        // ALL other sample formats get stored as 24 bits 
+        chunk.BitsPerSample = 24;
+        break;
+    }
+    // block align MUST be even!
+    chunk.BlockAlign = ((channels * bytespersample) & 1) ? 2 * bytespersample : bytespersample;
+
+    length = sizeof(chunk);
+    if ((data = new uint8_t[length]) != NULL)
+    {
+      memcpy(data, &chunk, length);
+
+      success = true;
+    }
+  }
 
   return success;
 }
@@ -140,6 +208,29 @@ void RIFFbextChunk::ByteSwapData()
     BYTESWAP_VAR(chunk.TimeReferenceHigh);
     BYTESWAP_VAR(chunk.Version);
   }
+}
+
+// create write data
+bool RIFFbextChunk::CreateWriteData()
+{
+  bool success = (length && data);
+
+  if (!success)
+  {
+    BROADCAST_CHUNK chunk;
+
+    memset(&chunk, 0, sizeof(chunk));
+
+    length = sizeof(chunk);
+    if ((data = new uint8_t[length]) != NULL)
+    {
+      memcpy(data, &chunk, length);
+
+      success = true;
+    }
+  }
+  
+  return success;
 }
 
 /*----------------------------------------------------------------------------------------------------*/
@@ -189,6 +280,19 @@ void RIFFaxmlChunk::Register()
 
 /*----------------------------------------------------------------------------------------------------*/
 
+RIFFdataChunk::~RIFFdataChunk()
+{
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Initialise chunk for writing - called when empty chunk is first created
+ */
+/*--------------------------------------------------------------------------------*/
+bool RIFFdataChunk::InitialiseForWriting()
+{
+  return CreateTempFile();
+}
+
 /*--------------------------------------------------------------------------------*/
 /** data chunk - WAVE data
  *
@@ -208,6 +312,53 @@ bool RIFFdataChunk::ReadChunk(SoundFile *file)
     // link file to SoundFileSamples object
     SetFile(file, datapos, length);
 
+    success = true;
+  }
+
+  return success;
+}
+
+// set up data length before data is written
+bool RIFFdataChunk::CreateWriteData()
+{
+  // set length
+  length = totalbytes;
+  return true;
+}
+
+// copy sample data from temporary file
+bool RIFFdataChunk::WriteChunkData(SoundFile *file)
+{
+  std::vector<uint8_t> buffer;
+  SoundFile *srcfile = this->file;
+  bool success = false;
+
+  // create temp buffer
+  buffer.resize(0x10000);
+
+  uint8_t  *buf    = &buffer[0];
+  uint_t   buflen  = buffer.size();
+  uint32_t length1 = length;
+  size_t   bytes;
+
+  DEBUG1(("Copying data from '%s' to '%s'", srcfile->getfilename().c_str(), file->getfilename().c_str()));
+
+  // copy raw sample data from this->file to file
+  srcfile->fflush();
+  srcfile->rewind();
+  while (length1 && ((bytes = srcfile->fread(buf, 1, buflen)) > 0))
+  {
+    if ((bytes = file->fwrite(buf, 1, MIN(length1, bytes))) > 0) length1 -= bytes;
+    else {
+      ERROR("Failed to write data to destination, error %s", strerror(errno));
+      break;
+    }
+  }
+
+  if (length1) ERROR("%lu bytes left to write to destination", (ulong_t)length1);
+  else
+  {
+    DEBUG1(("Copied data from '%s' to '%s'", srcfile->getfilename().c_str(), file->getfilename().c_str()));
     success = true;
   }
 

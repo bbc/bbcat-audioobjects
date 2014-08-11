@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 #define DEBUG_LEVEL 1
 #include <aplibs-dsp/ByteSwap.h>
@@ -144,6 +145,110 @@ bool RIFFChunk::ReadData(SoundFile *file)
 }
 
 /*--------------------------------------------------------------------------------*/
+/** Write chunk data
+ *
+ * @return true if chunk successfully written
+ *
+ * @note MUST be done when the file is closed!
+ */
+/*--------------------------------------------------------------------------------*/
+bool RIFFChunk::WriteChunk(SoundFile *file)
+{
+  bool success = CreateWriteData();
+
+  if (success)
+  {
+    uint32_t data[] = {id, length};
+
+    // treat ID and length as big-endian
+    ByteSwap(data[0], SWAP_FOR_BE);
+    ByteSwap(data[1], SWAP_FOR_BE);
+
+    if (file->fwrite(data, NUMBEROF(data), sizeof(data[0])) > 0)
+    {
+      datapos = file->ftell();
+      success = WriteChunkData(file);
+    }
+    else
+    {
+      ERROR("Failed to write chunk header, error %s", strerror(errno));
+    }
+  }
+
+  return success;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Supply chunk data for writing
+ */
+/*--------------------------------------------------------------------------------*/
+bool RIFFChunk::CreateWriteData(const void *_data, uint_t _length)
+{
+  bool success = false;
+
+  if (_data && data)
+  {
+    delete[] data;
+    data = NULL;
+  }
+
+  length = _length;
+  if (_data && ((data = new uint8_t[length]) != NULL))
+  {
+    memcpy(data, _data, length);
+    success = true;
+  }
+
+  return success;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Create blank data of the right size
+ */
+/*--------------------------------------------------------------------------------*/
+bool RIFFChunk::CreateWriteData(uint_t _length)
+{
+  bool success = false;
+
+  if (data)
+  {
+    delete[] data;
+    data = NULL;
+  }
+
+  length = _length;
+  if ((data = new uint8_t[length]) != NULL)
+  {
+    memset(data, 0, length);
+    success = true;
+  }
+
+  return success;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Write chunk data
+ *
+ * @return true if chunk successfully written
+ *
+ * @note if data exists it will be written otherwise this function will fail!
+ */
+/*--------------------------------------------------------------------------------*/
+bool RIFFChunk::WriteChunkData(SoundFile *file)
+{
+  bool success = false;
+
+  if (data)
+  {
+    // byte swap JUST before writing!
+    ByteSwapData();
+    success = (file->fwrite(data, 1, length) == length);
+  }
+
+  return success;
+}
+
+/*--------------------------------------------------------------------------------*/
 /** Delete read data
  */
 /*--------------------------------------------------------------------------------*/
@@ -205,7 +310,7 @@ const char *RIFFChunk::GetChunkName(uint32_t id)
 }
 
 /*--------------------------------------------------------------------------------*/
-/** The primary chunk creation function
+/** The primary chunk creation function when reading files
  *
  * @param file open file positioned at chunk ID point
  *
@@ -267,6 +372,57 @@ RIFFChunk *RIFFChunk::Create(SoundFile *file)
   }
 
   return chunk;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** The primary chunk creation function when writing files
+ *
+ * @param file open file
+ * @param id RIFF ID
+ * @param name RIFF name
+ *
+ * @return RIFFChunk object for the chunk
+ *
+ */
+/*--------------------------------------------------------------------------------*/
+RIFFChunk *RIFFChunk::Create(uint32_t id)
+{
+  RIFFChunk *chunk = NULL;
+
+  // find provider to create RIFFChunk object
+  std::map<uint32_t, PROVIDER>::iterator it = providermap.find(id);
+
+  if (it != providermap.end())
+  {
+    // a provider is available
+    const PROVIDER& provider = it->second;
+
+    if ((chunk = (*provider.fn)(id, provider.context)) != NULL)
+    {
+      DEBUG4(("Found provider for chunk '%s'", GetChunkName(id)));
+    }
+  }
+  else
+  {
+    // if no provider is available, use the base-class to provide basic functionality
+    DEBUG2(("No handler found for chunk '%s', creating empty one", GetChunkName(id)));
+
+    chunk = new RIFFChunk(id);
+  }
+
+  if (chunk && !chunk->InitialiseForWriting())
+  {
+    ERROR("Failed to initialise chunk '%s' for writing", GetChunkName(id));
+    delete chunk;
+    chunk = NULL;
+  }
+
+  return chunk;
+}
+
+RIFFChunk *RIFFChunk::Create(const char *name)
+{
+  return Create(IFFID(name));
 }
 
 bool RIFFChunk::SwapBigEndian()

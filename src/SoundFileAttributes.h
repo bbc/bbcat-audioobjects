@@ -31,6 +31,10 @@ public:
   virtual long int ftell() const {return ::ftell(fp);}
   virtual int      fseek(long int offset, int origin) {return ::fseek(fp, offset, origin);}
   virtual int      ferror() const {return ::ferror(fp);}
+  virtual int      fflush() const {return ::fflush(fp);}
+  virtual void     rewind() {::rewind(fp);}
+
+  const std::string& getfilename() const {return filename;}
 
 protected:
   std::string filename;
@@ -50,6 +54,11 @@ public:
   virtual uint_t         GetBytesPerFrame()    const {return channels * bytespersample;}
   virtual SampleFormat_t GetSampleFormat()     const {return format;}
   virtual bool           GetSamplesBigEndian() const {return bigendian;}
+
+  virtual void           SetSampleRate(uint32_t val)         {samplerate = val;}
+  virtual void           SetChannels(uint_t val)             {channels = val;}
+  virtual void           SetSampleFormat(SampleFormat_t val) {format = val; bytespersample = bbcat::GetBytesPerSample(format);}
+  virtual void           SetSamplesBigEndian(bool val)       {bigendian = val;}
 
 protected:
   uint32_t       samplerate;
@@ -101,21 +110,30 @@ public:
   virtual uint_t ReadSamples(float    *dst, uint_t frames, uint_t firstchannel = 0, uint_t nchannels = ~0) {return ReadSamples((uint8_t *)dst, SampleFormatOf(dst), frames, firstchannel, nchannels);}
   virtual uint_t ReadSamples(double   *dst, uint_t frames, uint_t firstchannel = 0, uint_t nchannels = ~0) {return ReadSamples((uint8_t *)dst, SampleFormatOf(dst), frames, firstchannel, nchannels);}
 
+  virtual uint_t WriteSamples(const uint8_t  *buffer, SampleFormat_t type, uint_t frames, uint_t firstchannel = 0, uint_t nchannels = ~0);
+  virtual uint_t WriteSamples(const sint16_t *dst, uint_t frames, uint_t firstchannel = 0, uint_t nchannels = ~0) {return WriteSamples((const uint8_t *)dst, SampleFormatOf(dst), frames, firstchannel, nchannels);}
+  virtual uint_t WriteSamples(const sint32_t *dst, uint_t frames, uint_t firstchannel = 0, uint_t nchannels = ~0) {return WriteSamples((const uint8_t *)dst, SampleFormatOf(dst), frames, firstchannel, nchannels);}
+  virtual uint_t WriteSamples(const float    *dst, uint_t frames, uint_t firstchannel = 0, uint_t nchannels = ~0) {return WriteSamples((const uint8_t *)dst, SampleFormatOf(dst), frames, firstchannel, nchannels);}
+  virtual uint_t WriteSamples(const double   *dst, uint_t frames, uint_t firstchannel = 0, uint_t nchannels = ~0) {return WriteSamples((const uint8_t *)dst, SampleFormatOf(dst), frames, firstchannel, nchannels);}
+
 protected:
   virtual void UpdateData();
   virtual void UpdatePosition() {}
 
+  virtual bool CreateTempFile();
+
 protected:
   const SoundFormat *format;
-  SoundFile             *file;
-  Clip_t                clip;
-  ulong_t               filepos;
-  ulong_t               samplepos;
-  ulong_t               totalsamples;
-  ulong_t               totalbytes;
-  uint8_t               *samplebuffer;
-  uint_t                samplebufferframes;
-  bool                  readonly;
+  SoundFile         *file;
+  Clip_t            clip;
+  ulong_t           filepos;
+  ulong_t           samplepos;
+  ulong_t           totalsamples;
+  ulong_t           totalbytes;
+  uint8_t           *samplebuffer;
+  uint_t            samplebufferframes;
+  bool              readonly;
+  bool              istempfile;
 };
 
 BBC_AUDIOTOOLBOX_END

@@ -73,6 +73,34 @@ public:
   virtual void DeleteData();
 
   /*--------------------------------------------------------------------------------*/
+  /** Write chunk
+   *
+   * @return true if chunk successfully written
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual bool WriteChunk(SoundFile *file);
+
+  /*--------------------------------------------------------------------------------*/
+  /** Supply chunk data for writing
+  */
+  /*--------------------------------------------------------------------------------*/
+  virtual bool CreateWriteData(const void *_data, uint_t _length);
+
+  /*--------------------------------------------------------------------------------*/
+  /** Create blank data of the right size
+  */
+  /*--------------------------------------------------------------------------------*/
+  virtual bool CreateWriteData(uint_t _length);
+
+  /*--------------------------------------------------------------------------------*/
+  /** Create data for writing to chunk
+  *
+  * @return true if data created successfully
+  */
+  /*--------------------------------------------------------------------------------*/
+  virtual bool CreateWriteData() {return true;}
+
+  /*--------------------------------------------------------------------------------*/
   /** Register a chunk handler
    *
    * @param id 32-bit chunk ID (big-endian format)
@@ -104,7 +132,7 @@ public:
   static const char *GetChunkName(uint32_t id);
 
   /*--------------------------------------------------------------------------------*/
-  /** The primary chunk creation function
+  /** The primary chunk creation function when reading files
    *
    * @param file open file positioned at chunk ID point
    *
@@ -114,6 +142,20 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   static RIFFChunk *Create(SoundFile *file);
+
+  /*--------------------------------------------------------------------------------*/
+  /** The primary chunk creation function when writing files
+   *
+   * @param file open file
+   * @param id RIFF ID
+   * @param name RIFF name
+   *
+   * @return RIFFChunk object for the chunk
+   *
+   */
+  /*--------------------------------------------------------------------------------*/
+  static RIFFChunk *Create(uint32_t id);
+  static RIFFChunk *Create(const char *name);
 
 protected:
   /*--------------------------------------------------------------------------------*/
@@ -126,6 +168,11 @@ private:
   RIFFChunk(const RIFFChunk& obj) {(void)obj;}    // do not allow copies
 
 protected:
+  /*--------------------------------------------------------------------------------*/
+  /** Initialise chunk for writing - called when empty chunk is first created
+  */
+  /*--------------------------------------------------------------------------------*/
+  virtual bool InitialiseForWriting() {return true;}
   /*--------------------------------------------------------------------------------*/
   /** Read chunk data length and decide what to do
    *
@@ -146,6 +193,16 @@ protected:
    */
   /*--------------------------------------------------------------------------------*/
   virtual void ByteSwapData() {}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Write chunk data
+   *
+   * @return true if chunk successfully written
+   *
+   * @note if data exists it will be written otherwise the chunk will be blanked 
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual bool WriteChunkData(SoundFile *file);
 
   typedef enum
   {
@@ -176,7 +233,7 @@ protected:
    */
   /*--------------------------------------------------------------------------------*/
   virtual bool DeleteDataAfterProcessing() const {return false;}
-
+ 
   /*--------------------------------------------------------------------------------*/
   /** Return whether it is necessary to byte swap data
    *

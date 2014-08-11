@@ -83,6 +83,13 @@ public:
   const std::string& GetTypeLabel() const {return typeLabel;}
 
   /*--------------------------------------------------------------------------------*/
+  /** Return owner of this object
+   */
+  /*--------------------------------------------------------------------------------*/
+  const ADMData& GetOwner() const {return owner;}
+  ADMData& GetOwner() {return owner;}
+
+  /*--------------------------------------------------------------------------------*/
   /** Set internal variables from values added to internal list (e.g. from XML)
    */
   /*--------------------------------------------------------------------------------*/
@@ -171,6 +178,15 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   virtual void XMLData(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, std::vector<const ADMObject *>& reflist) const;
+
+  /*--------------------------------------------------------------------------------*/
+  /** Generate a textual list of references 
+   *
+   * @param str string to be modified
+   *
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void GenerateReferenceList(std::string& str) const {UNUSED_PARAMETER(str);}
 
   /*--------------------------------------------------------------------------------*/
   /** Serialize (or prepare to serialize) this object
@@ -368,6 +384,25 @@ protected:
    */
   /*--------------------------------------------------------------------------------*/
   virtual void XMLClose(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level) const;
+
+  /*--------------------------------------------------------------------------------*/
+  /** Generate a textual reference 
+   *
+   * @param str string to be modified
+   *
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void GenerateObjectReference(std::string& str) const {Printf(str, "%s:%s", GetType().c_str(), GetName().c_str());}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Generate a textual reference 
+   *
+   * @param str string to be modified
+   * @param obj object to link to
+   *
+   */
+  /*--------------------------------------------------------------------------------*/
+  void GenerateReference(std::string& str, const ADMObject *obj) const {GenerateObjectReference(str); str += "->"; obj->GenerateObjectReference(str); str += "\n";}
 
   /*--------------------------------------------------------------------------------*/
   /** Serialize (or prepare to serialize) additional parts of this object
@@ -582,6 +617,15 @@ public:
   /*--------------------------------------------------------------------------------*/
   virtual void XMLData(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, std::vector<const ADMObject *>& reflist) const;
 
+  /*--------------------------------------------------------------------------------*/
+  /** Generate a textual list of references 
+   *
+   * @param str string to be modified
+   *
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void GenerateReferenceList(std::string& str) const;
+
   // static type name
   static const std::string Type;
 
@@ -687,6 +731,15 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   virtual void XMLData(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, std::vector<const ADMObject *>& reflist) const;
+
+  /*--------------------------------------------------------------------------------*/
+  /** Generate a textual list of references 
+   *
+   * @param str string to be modified
+   *
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void GenerateReferenceList(std::string& str) const;
 
   // static type name
   static const std::string Type;
@@ -836,6 +889,15 @@ public:
              (obj1->GetChildrenStartChannel() < obj2->GetChildrenStartChannel())));
   }
 
+  /*--------------------------------------------------------------------------------*/
+  /** Generate a textual list of references 
+   *
+   * @param str string to be modified
+   *
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void GenerateReferenceList(std::string& str) const;
+
   // static type name
   static const std::string Type;
 
@@ -875,10 +937,10 @@ protected:
   std::vector<ADMAudioObject     *> objectrefs;
   std::vector<ADMAudioPackFormat *> packformatrefs;
   std::vector<ADMAudioTrack      *> trackrefs;
-  uint64_t                       startTime;
-  uint64_t                       duration;
-  uint_t                         childrenMinChannel;
-  uint_t                         childrenMaxChannel;
+  uint64_t                          startTime;
+  uint64_t                          duration;
+  uint_t                            childrenMinChannel;
+  uint_t                            childrenMaxChannel;
 };
 
 /*----------------------------------------------------------------------------------------------------*/
@@ -896,11 +958,12 @@ public:
    * @note type passed to base constructor is fixed by static member variable Type 
    */
   /*--------------------------------------------------------------------------------*/
-  ADMAudioTrack(ADMData& _owner, const std::string& _id, const std::string& _name) : ADMObject(_owner, _id, _name),
-                                                                                     ADMLevelObject(),
-                                                                                     ADMTimeObject(),
-                                                                                     trackNum(0),
-                                                                                     sampleRate(0),
+  ADMAudioTrack(ADMData& _owner, const std::string& _id, const std::string& _name) :
+    ADMObject(_owner, _id, _name),
+    ADMLevelObject(),
+    ADMTimeObject(),
+    trackNum(0),
+    sampleRate(0),
     bitDepth(0) {Register();}
 
   /*--------------------------------------------------------------------------------*/
@@ -1004,6 +1067,15 @@ public:
     return (track1->trackNum < track2->trackNum);
   }
 
+  /*--------------------------------------------------------------------------------*/
+  /** Generate a textual list of references 
+   *
+   * @param str string to be modified
+   *
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void GenerateReferenceList(std::string& str) const;
+
   // static type name
   static const std::string Type;
 
@@ -1028,6 +1100,15 @@ protected:
    */
   /*--------------------------------------------------------------------------------*/
   virtual bool XMLEmpty() const {return (ADMObject::XMLEmpty() && (trackformatrefs.size() == 0) && (packformatrefs.size() == 0));}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Generate a textual reference 
+   *
+   * @param str string to be modified
+   *
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void GenerateObjectReference(std::string& str) const {Printf(str, "%s:%u", GetType().c_str(), trackNum);}
 
   /*--------------------------------------------------------------------------------*/
   /** Serialize (or prepare to serialize) additional parts of this object
@@ -1124,6 +1205,15 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   virtual void XMLData(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, std::vector<const ADMObject *>& reflist) const;
+
+  /*--------------------------------------------------------------------------------*/
+  /** Generate a textual list of references 
+   *
+   * @param str string to be modified
+   *
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void GenerateReferenceList(std::string& str) const;
 
   // static type name
   static const std::string Type;
@@ -1253,6 +1343,15 @@ public:
   /*--------------------------------------------------------------------------------*/
   virtual void XMLData(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, std::vector<const ADMObject *>& reflist) const;
 
+  /*--------------------------------------------------------------------------------*/
+  /** Generate a textual list of references 
+   *
+   * @param str string to be modified
+   *
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void GenerateReferenceList(std::string& str) const;
+
   // static type name
   static const std::string Type;
 
@@ -1344,6 +1443,11 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   const std::vector<ADMAudioBlockFormat *>& GetBlockFormatRefs() const {return blockformatrefs;}
+  /*--------------------------------------------------------------------------------*/
+  /** Return list of AudioBlockFormats
+   */
+  /*--------------------------------------------------------------------------------*/
+  std::vector<ADMAudioBlockFormat *>& GetBlockFormatRefs() {return blockformatrefs;}
 
   /*--------------------------------------------------------------------------------*/
   /** Empty functions (to disable parent functionality)
@@ -1357,6 +1461,15 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   virtual void XMLData(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, std::vector<const ADMObject *>& reflist) const;
+
+  /*--------------------------------------------------------------------------------*/
+  /** Generate a textual list of references 
+   *
+   * @param str string to be modified
+   *
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void GenerateReferenceList(std::string& str) const;
 
   // static type name
   static const std::string Type;
@@ -1477,6 +1590,15 @@ public:
   /*--------------------------------------------------------------------------------*/
   virtual void XMLData(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, std::vector<const ADMObject *>& reflist) const;
 
+  /*--------------------------------------------------------------------------------*/
+  /** Generate a textual list of references 
+   *
+   * @param str string to be modified
+   *
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void GenerateReferenceList(std::string& str) const;
+
   // static type name
   static const std::string Type;
 
@@ -1533,11 +1655,12 @@ public:
    * @note type passed to base constructor is fixed by static member variable Type 
    */
   /*--------------------------------------------------------------------------------*/
-  ADMAudioBlockFormat(ADMData& _owner, const std::string& _id, const std::string& _name) : ADMObject(_owner, _id, _name),
-                                                                                           ADMLevelObject(),
-                                                                                           rtime(0),
-                                                                                           duration(0),
-                                                                                           position(),
+  ADMAudioBlockFormat(ADMData& _owner, const std::string& _id, const std::string& _name) :
+    ADMObject(_owner, _id, _name),
+    ADMLevelObject(),
+    rtime(0),
+    duration(0),
+    position(),
     supplement() {Register();}
 
   /*--------------------------------------------------------------------------------*/
@@ -1613,6 +1736,12 @@ public:
   const ParameterSet& GetPositionSupplement() const {return supplement;}
 
   /*--------------------------------------------------------------------------------*/
+  /** Set position for this blockformat
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void SetPosition(const Position& pos, const ParameterSet *supplement = NULL);
+
+  /*--------------------------------------------------------------------------------*/
   /** Output additional XML data for this object
    */
   /*--------------------------------------------------------------------------------*/
@@ -1622,6 +1751,15 @@ public:
   {
     return (block1->rtime < block2->rtime);
   }
+
+  /*--------------------------------------------------------------------------------*/
+  /** Generate a textual list of references 
+   *
+   * @param str string to be modified
+   *
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void GenerateReferenceList(std::string& str) const;
 
   // static type name
   static const std::string Type;
@@ -1670,13 +1808,13 @@ protected:
 class ADMTrackCursor : public PositionCursor
 {
 public:
-  ADMTrackCursor(const ADMAudioTrack *itrack = NULL);
+  ADMTrackCursor(const ADMAudioTrack *_track = NULL);
   ADMTrackCursor(const ADMTrackCursor& obj);
   virtual ~ADMTrackCursor();
 
-  void Setup(const ADMAudioTrack *itrack);
+  void Setup(const ADMAudioTrack *_track);
 
-  ADMTrackCursor& operator = (const ADMAudioTrack *itrack) {Setup(itrack); return *this;}
+  ADMTrackCursor& operator = (const ADMAudioTrack *_track) {Setup(_track); return *this;}
   ADMTrackCursor& operator = (const ADMTrackCursor& obj);
 
   /*--------------------------------------------------------------------------------*/
@@ -1697,10 +1835,24 @@ public:
   /*--------------------------------------------------------------------------------*/
   virtual const ParameterSet *GetPositionSupplement() const;
 
+  /*--------------------------------------------------------------------------------*/
+  /** Set position for current time
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void SetPosition(const Position& pos, const ParameterSet *supplement = NULL);
+  
+  /*--------------------------------------------------------------------------------*/
+  /** End position updates by marking the end of the last block
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void EndPositionChanges();
+
 protected:
-  const ADMAudioTrack                      *track;
-  const std::vector<ADMAudioBlockFormat *> *blockformats;
-  uint_t blockindex;
+  const ADMAudioTrack                *track;
+  ADMAudioChannelFormat              *channelformat;
+  std::vector<ADMAudioBlockFormat *> *blockformats;
+  uint64_t                           currenttime;
+  uint_t                             blockindex;
 };
 
 BBC_AUDIOTOOLBOX_END

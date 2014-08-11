@@ -21,6 +21,7 @@ libap_audioobjects_@APLIBS_AUDIOOBJECTS_MAJORMINOR@_la_CPPFLAGS =	\
 libap_audioobjects_@APLIBS_AUDIOOBJECTS_MAJORMINOR@_la_SOURCES =	\
 	ADMAudioFileSamples.cpp											\
 	ADMData.cpp														\
+	ADMFileWriteRenderer.cpp										\
 	ADMObjects.cpp													\
 	ADMRIFFFile.cpp													\
 	crc32.cpp														\
@@ -37,6 +38,7 @@ libap_audioobjects_@APLIBS_AUDIOOBJECTS_MAJORMINOR@_la_SOURCES =	\
 pkginclude_HEADERS =							\
 	ADMAudioFileSamples.h						\
 	ADMData.h									\
+	ADMFileWriteRenderer.h						\
 	ADMObjects.h								\
 	ADMRIFFFile.h								\
 	crc32.h										\

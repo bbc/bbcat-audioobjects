@@ -94,7 +94,7 @@ ADMObject::ADMObject(ADMData& _owner, const std::string& _id, const std::string&
 /*--------------------------------------------------------------------------------*/
 void ADMObject::Register()
 {
-  owner.Register(this, GetType());
+  owner.Register(this);
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -1307,6 +1307,20 @@ void ADMAudioProgramme::XMLData(std::string& str, const std::string& indent, con
 }
 
 /*--------------------------------------------------------------------------------*/
+/** Generate a textual list of references 
+ *
+ * @param str string to be modified
+ *
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMAudioProgramme::GenerateReferenceList(std::string& str) const
+{
+  uint_t i;
+
+  for (i = 0; i < contentrefs.size(); i++) GenerateReference(str, contentrefs[i]);
+}
+  
+/*--------------------------------------------------------------------------------*/
 /** Serialize (or prepare to serialize) additional parts of this object
  *
  * @param dst destination buffer or NULL to calculate required buffer size
@@ -1403,6 +1417,20 @@ void ADMAudioContent::XMLData(std::string& str, const std::string& indent, const
 }
 
 /*--------------------------------------------------------------------------------*/
+/** Generate a textual list of references 
+ *
+ * @param str string to be modified
+ *
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMAudioContent::GenerateReferenceList(std::string& str) const
+{
+  uint_t i;
+
+  for (i = 0; i < objectrefs.size(); i++) GenerateReference(str, objectrefs[i]);
+}
+
+/*--------------------------------------------------------------------------------*/
 /** Serialize (or prepare to serialize) additional parts of this object
  *
  * @param dst destination buffer or NULL to calculate required buffer size
@@ -1437,12 +1465,13 @@ const std::string ADMAudioObject::Reference = Type + "IDRef";
  * @note type passed to base constructor is fixed by static member variable Type 
  */
 /*--------------------------------------------------------------------------------*/
-ADMAudioObject::ADMAudioObject(ADMData& _owner, const std::string& _id, const std::string& _name) : ADMObject(_owner, _id, _name),
-                                                                                                    ADMLevelObject(),
-                                                                                                    ADMTimeObject(),
-                                                                                                    startTime(0),
+ADMAudioObject::ADMAudioObject(ADMData& _owner, const std::string& _id, const std::string& _name) :
+  ADMObject(_owner, _id, _name),
+  ADMLevelObject(),
+  ADMTimeObject(),
+  startTime(0),
   duration(0),
-                                                                                                    childrenMinChannel(~0),
+  childrenMinChannel(~0),
   childrenMaxChannel(0)
 {
   Register();
@@ -1610,6 +1639,22 @@ void ADMAudioObject::XMLData(std::string& str, const std::string& indent, const 
 }
 
 /*--------------------------------------------------------------------------------*/
+/** Generate a textual list of references 
+ *
+ * @param str string to be modified
+ *
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMAudioObject::GenerateReferenceList(std::string& str) const
+{
+  uint_t i;
+
+  for (i = 0; i < objectrefs.size(); i++) GenerateReference(str, objectrefs[i]);
+  for (i = 0; i < packformatrefs.size(); i++) GenerateReference(str, packformatrefs[i]);
+  for (i = 0; i < trackrefs.size(); i++) GenerateReference(str, trackrefs[i]);
+}
+
+/*--------------------------------------------------------------------------------*/
 /** Serialize (or prepare to serialize) additional parts of this object
  *
  * @param dst destination buffer or NULL to calculate required buffer size
@@ -1770,6 +1815,21 @@ void ADMAudioTrack::UpdateLimits()
 }
 
 /*--------------------------------------------------------------------------------*/
+/** Generate a textual list of references 
+ *
+ * @param str string to be modified
+ *
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMAudioTrack::GenerateReferenceList(std::string& str) const
+{
+  uint_t i;
+
+  for (i = 0; i < trackformatrefs.size(); i++) GenerateReference(str, trackformatrefs[i]);
+  for (i = 0; i < packformatrefs.size(); i++) GenerateReference(str, packformatrefs[i]);
+}
+
+/*--------------------------------------------------------------------------------*/
 /** Serialize (or prepare to serialize) additional parts of this object
  *
  * @param dst destination buffer or NULL to calculate required buffer size
@@ -1917,6 +1977,21 @@ void ADMAudioPackFormat::UpdateLimits()
     obj->UpdateLimits();
     Update(obj);
   }
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Generate a textual list of references 
+ *
+ * @param str string to be modified
+ *
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMAudioPackFormat::GenerateReferenceList(std::string& str) const
+{
+  uint_t i;
+
+  for (i = 0; i < channelformatrefs.size(); i++) GenerateReference(str, channelformatrefs[i]);
+  for (i = 0; i < packformatrefs.size(); i++) GenerateReference(str, packformatrefs[i]);
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -2096,6 +2171,21 @@ void ADMAudioStreamFormat::XMLData(std::string& str, const std::string& indent, 
 }
 
 /*--------------------------------------------------------------------------------*/
+/** Generate a textual list of references 
+ *
+ * @param str string to be modified
+ *
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMAudioStreamFormat::GenerateReferenceList(std::string& str) const
+{
+  uint_t i;
+
+  for (i = 0; i < channelformatrefs.size(); i++) GenerateReference(str, channelformatrefs[i]);
+  for (i = 0; i < packformatrefs.size(); i++) GenerateReference(str, packformatrefs[i]);
+}
+
+/*--------------------------------------------------------------------------------*/
 /** Serialize (or prepare to serialize) additional parts of this object
  *
  * @param dst destination buffer or NULL to calculate required buffer size
@@ -2216,6 +2306,20 @@ void ADMAudioTrackFormat::UpdateLimits()
 }
 
 /*--------------------------------------------------------------------------------*/
+/** Generate a textual list of references 
+ *
+ * @param str string to be modified
+ *
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMAudioTrackFormat::GenerateReferenceList(std::string& str) const
+{
+  uint_t i;
+
+  for (i = 0; i < streamformatrefs.size(); i++) GenerateReference(str, streamformatrefs[i]);
+}
+
+/*--------------------------------------------------------------------------------*/
 /** Serialize (or prepare to serialize) additional parts of this object
  *
  * @param dst destination buffer or NULL to calculate required buffer size
@@ -2316,6 +2420,18 @@ void ADMAudioChannelFormat::XMLData(std::string& str, const std::string& indent,
 }
 
 /*--------------------------------------------------------------------------------*/
+/** Generate a textual list of references 
+ *
+ * @param str string to be modified
+ *
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMAudioChannelFormat::GenerateReferenceList(std::string& str) const
+{
+  UNUSED_PARAMETER(str);
+}
+
+/*--------------------------------------------------------------------------------*/
 /** Serialize (or prepare to serialize) additional parts of this object
  *
  * @param dst destination buffer or NULL to calculate required buffer size
@@ -2386,6 +2502,17 @@ void ADMAudioBlockFormat::SetValues()
     }
     else ++it;
   }
+}
+
+
+/*--------------------------------------------------------------------------------*/
+/** Set position for this blockformat
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMAudioBlockFormat::SetPosition(const Position& pos, const ParameterSet *supplement)
+{
+  position = pos;
+  if (supplement) this->supplement = *supplement;
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -2467,6 +2594,18 @@ void ADMAudioBlockFormat::XMLData(std::string& str, const std::string& indent, c
 }
 
 /*--------------------------------------------------------------------------------*/
+/** Generate a textual list of references 
+ *
+ * @param str string to be modified
+ *
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMAudioBlockFormat::GenerateReferenceList(std::string& str) const
+{
+  UNUSED_PARAMETER(str);
+}
+
+/*--------------------------------------------------------------------------------*/
 /** Serialize (or prepare to serialize) additional parts of this object
  *
  * @param dst destination buffer or NULL to calculate required buffer size
@@ -2483,17 +2622,21 @@ void ADMAudioBlockFormat::SerializeEx(uint8_t *dst, uint_t& len) const
 
 /*----------------------------------------------------------------------------------------------------*/
 
-ADMTrackCursor::ADMTrackCursor(const ADMAudioTrack *itrack) : PositionCursor(),
+ADMTrackCursor::ADMTrackCursor(const ADMAudioTrack *_track) : PositionCursor(),
                                                               track(NULL),
+                                                              channelformat(NULL),
                                                               blockformats(NULL),
+                                                              currenttime(0),
                                                               blockindex(0)
 {
-  if (itrack) Setup(itrack);
+  if (_track) Setup(_track);
 }
 
 ADMTrackCursor::ADMTrackCursor(const ADMTrackCursor& obj) : PositionCursor(),
                                                             track(obj.track),
+                                                            channelformat(obj.channelformat),
                                                             blockformats(obj.blockformats),
+                                                            currenttime(obj.currenttime),
                                                             blockindex(obj.blockindex)
 {
 }
@@ -2502,12 +2645,12 @@ ADMTrackCursor::~ADMTrackCursor()
 {
 }
 
-void ADMTrackCursor::Setup(const ADMAudioTrack *itrack)
+void ADMTrackCursor::Setup(const ADMAudioTrack *_track)
 {
   blockformats = NULL;
   blockindex   = 0;
 
-  if ((track = itrack) != NULL)
+  if ((track = _track) != NULL)
   {
     const ADMAudioTrackFormat *trackformat;
 
@@ -2517,9 +2660,7 @@ void ADMTrackCursor::Setup(const ADMAudioTrack *itrack)
 
       if ((streamformat = trackformat->GetStreamFormatRefs().front()) != NULL)
       {
-        const ADMAudioChannelFormat *channelformat;
-
-        if ((channelformat = streamformat->GetChannelFormatRefs().front()) != NULL)
+        if ((channelformat = const_cast<ADMAudioChannelFormat *>(streamformat->GetChannelFormatRefs().front())) != NULL)
         {
           blockformats = &channelformat->GetBlockFormatRefs();
         }
@@ -2533,9 +2674,11 @@ void ADMTrackCursor::Setup(const ADMAudioTrack *itrack)
 
 ADMTrackCursor& ADMTrackCursor::operator = (const ADMTrackCursor& obj)
 {
-  track        = obj.track;
-  blockformats = obj.blockformats;
-  blockindex   = obj.blockindex;
+  track         = obj.track;
+  channelformat = obj.channelformat;
+  blockformats  = obj.blockformats;
+  currenttime   = obj.currenttime;
+  blockindex    = obj.blockindex;
   return *this;
 }
 
@@ -2566,6 +2709,57 @@ const ParameterSet *ADMTrackCursor::GetPositionSupplement() const
 }
 
 /*--------------------------------------------------------------------------------*/
+/** Set position for current time
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMTrackCursor::SetPosition(const Position& pos, const ParameterSet *supplement)
+{
+  const Position     *current_pos        = GetPosition();
+  const ParameterSet *current_supplement = GetPositionSupplement();
+
+  // decide whether a new blockformat is required
+  if (!current_pos                                                                || // if no existing entries; or
+      (current_pos && (pos != *current_pos))                                      || // if position has changed; or
+      (supplement  && !current_supplement)                                        || // a supplement is supplied when no current one exists; or
+      (!supplement && current_supplement)                                         || // no supplement is suppled when current one does exist; or
+      (supplement  && current_supplement && (*supplement != *current_supplement)))   // supplement has changed
+  {
+    ADMData& adm = channelformat->GetOwner();
+    ADMAudioBlockFormat *blockformat;
+
+    // close current one off by setting end time
+    if (blockindex < blockformats->size())
+    {
+      blockformat = (*blockformats)[blockindex];
+
+      blockformat->SetDuration(currenttime - blockformat->GetRTime());
+    }
+
+    // create new blockformat
+    if ((blockformat = adm.CreateBlockFormat("", channelformat)) != NULL)
+    {
+      blockformat->SetRTime(currenttime);
+      blockformat->SetPosition(pos, supplement);
+    }
+  }
+}
+
+/*--------------------------------------------------------------------------------*/
+/** End position updates by marking the end of the last block
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMTrackCursor::EndPositionChanges()
+{
+  // close last block format off by setting end time
+  if (blockformats->size() > 0)
+  {
+    ADMAudioBlockFormat *blockformat = blockformats->back();
+
+    blockformat->SetDuration(currenttime - blockformat->GetRTime());
+  }
+}
+
+/*--------------------------------------------------------------------------------*/
 /** Get position at specified time (ns)
  */
 /*--------------------------------------------------------------------------------*/
@@ -2581,6 +2775,8 @@ bool ADMTrackCursor::Seek(uint64_t t)
     while ((blockindex       > 0) && (t <  (*blockformats)[blockindex]->GetRTime()))     blockindex--;
     while (((blockindex + 1) < n) && (t >= (*blockformats)[blockindex + 1]->GetRTime())) blockindex++;
   }
+
+  currenttime = t;
 
   return (blockindex != oldindex);
 }

@@ -23,6 +23,10 @@ ADMData::~ADMData()
   Delete();
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Delete all objects within this ADM
+ */
+/*--------------------------------------------------------------------------------*/
 void ADMData::Delete()
 {
   ADMOBJECTS_IT it;
@@ -36,6 +40,14 @@ void ADMData::Delete()
   tracklist.clear();
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Read ADM data from the chna RIFF chunk
+ *
+ * @param data ptr to chna chunk data 
+ *
+ * @return true if data read successfully
+ */
+/*--------------------------------------------------------------------------------*/
 bool ADMData::SetChna(const uint8_t *data)
 {
   const CHNA_CHUNK& chna = *(const CHNA_CHUNK *)data;
@@ -70,9 +82,20 @@ bool ADMData::SetChna(const uint8_t *data)
     else ERROR("Failed to create AudioTrack for UID %u", i);
   }
 
+  SortTracks();
+    
   return success;
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Read ADM data from the axml RIFF chunk
+ *
+ * @param data ptr to axml chunk data 
+ * @param length length of axml data
+ *
+ * @return true if data read successfully
+ */
+/*--------------------------------------------------------------------------------*/
 bool ADMData::SetAxml(const uint8_t *data, uint_t length)
 {
   std::string str;
@@ -82,6 +105,14 @@ bool ADMData::SetAxml(const uint8_t *data, uint_t length)
   return SetAxml(str);
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Read ADM data from explicit XML
+ *
+ * @param data XML data stored as a string
+ *
+ * @return true if data read successfully
+ */
+/*--------------------------------------------------------------------------------*/
 bool ADMData::SetAxml(const std::string& data)
 {
   bool success = false;
@@ -90,19 +121,6 @@ bool ADMData::SetAxml(const std::string& data)
 
   if (TranslateXML(data))
   {
-    success = true;
-  }
-
-  return success;
-}
-
-bool ADMData::Set(const uint8_t *chna, const uint8_t *axml, uint_t axmllength)
-{
-  bool success = false;
-
-  if (SetChna(chna) && SetAxml(axml, axmllength))
-  {
-    SortTracks();
     ConnectReferences();
     UpdateLimits();
 
@@ -112,6 +130,29 @@ bool ADMData::Set(const uint8_t *chna, const uint8_t *axml, uint_t axmllength)
   return success;
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Read ADM data from the chna and axml RIFF chunks
+ *
+ * @param chna ptr to chna chunk data 
+ * @param axml ptr to axml chunk data 
+ * @param axmllength length of axml data
+ *
+ * @return true if data read successfully
+ */
+/*--------------------------------------------------------------------------------*/
+bool ADMData::Set(const uint8_t *chna, const uint8_t *axml, uint_t axmllength)
+{
+  return (SetChna(chna) && SetAxml(axml, axmllength));
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Create chna chunk data
+ *
+ * @param len reference to length variable to be updated with the size of the chunk
+ *
+ * @return ptr to chunk data
+ */
+/*--------------------------------------------------------------------------------*/
 uint8_t *ADMData::GetChna(uint32_t& len) const
 {
   CHNA_CHUNK *p = NULL;
@@ -131,11 +172,17 @@ uint8_t *ADMData::GetChna(uint32_t& len) const
       p->UIDs[i].TrackNum = track->GetTrackNum();
       strncpy(p->UIDs[i].UID, track->GetID().c_str(), sizeof(p->UIDs[i].UID));
 
-      const ADMAudioTrackFormat *trackref = track->GetTrackFormatRefs().front();
-      if (trackref) strncpy(p->UIDs[i].TrackRef, trackref->GetID().c_str(), sizeof(p->UIDs[i].TrackRef));
+      const ADMAudioTrackFormat *trackref = NULL;
+      if (track->GetTrackFormatRefs().size() && ((trackref = track->GetTrackFormatRefs()[0]) != NULL))
+      {
+        strncpy(p->UIDs[i].TrackRef, trackref->GetID().c_str(), sizeof(p->UIDs[i].TrackRef));
+      }
 
-      const ADMAudioPackFormat *packref = track->GetPackFormatRefs().front();
-      if (packref) strncpy(p->UIDs[i].PackRef, packref->GetID().c_str(), sizeof(p->UIDs[i].PackRef));
+      const ADMAudioPackFormat *packref = NULL;
+      if (track->GetPackFormatRefs().size() && ((packref = track->GetPackFormatRefs()[0]) != NULL))
+      {
+        strncpy(p->UIDs[i].PackRef, packref->GetID().c_str(), sizeof(p->UIDs[i].PackRef));
+      }
 
       DEBUG2(("Track %u/%u: Index %u UID '%s' TrackFormatRef '%s' PackFormatRef '%s'",
               i + 1, p->UIDCount,
@@ -150,6 +197,16 @@ uint8_t *ADMData::GetChna(uint32_t& len) const
   return (uint8_t *)p;
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Create axml chunk data
+ *
+ * @param indent indent string to use within XML
+ * @param eol end of line string to use within XML
+ * @param ind_level initial indentation level
+ *
+ * @return string containing XML data for axml chunk
+ */
+/*--------------------------------------------------------------------------------*/
 std::string ADMData::GetAxml(const std::string& indent, const std::string& eol, uint_t ind_level) const
 {
   std::string str;
@@ -172,6 +229,10 @@ std::string ADMData::GetAxml(const std::string& indent, const std::string& eol, 
   return str;
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Create an ADM capable of decoding supplied XML as axml chunk
+ */
+/*--------------------------------------------------------------------------------*/
 ADMData *ADMData::Create()
 {
   ADMData *data = NULL;
@@ -187,6 +248,10 @@ ADMData *ADMData::Create()
   return data;
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Register a provider for the above
+ */
+/*--------------------------------------------------------------------------------*/
 void ADMData::RegisterProvider(CREATOR fn, void *context)
 {
   PROVIDER provider =
@@ -198,9 +263,16 @@ void ADMData::RegisterProvider(CREATOR fn, void *context)
   providerlist.push_back(provider);
 }
 
-void ADMData::Register(ADMObject *obj, const std::string& type)
+/*--------------------------------------------------------------------------------*/
+/** Register an ADM sub-object with this ADM
+ *
+ * @param obj ptr to ADM object
+ *
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMData::Register(ADMObject *obj)
 {
-  std::string uuid = type + "/" + obj->GetID();
+  std::string uuid = obj->GetType() + "/" + obj->GetID();
 
   admobjects[uuid] = obj;
 
@@ -211,6 +283,8 @@ void ADMData::Register(ADMObject *obj, const std::string& type)
       tracklist.push_back(track);
     }
   }
+
+  obj->SetReferences();
 }
 
 bool ADMData::ValidType(const std::string& type) const
@@ -226,15 +300,27 @@ bool ADMData::ValidType(const std::string& type) const
           (type == ADMAudioTrack::Type));
 }
 
-ADMObject *ADMData::Create(const std::string& type, const std::string& id, const std::string& name)
+/*--------------------------------------------------------------------------------*/
+/** Create an ADM sub-object within this ADM object
+ *
+ * @param type object type - should always be the static 'Type' member of the object to be created (e.g. ADMAudioProgramme::Type)
+ * @param id unique ID for the object (or empty string to create one using CreateID())
+ * @param name human-readable name of the object
+ *
+ * @return ptr to object or NULL if type unrecognized or the object already exists
+ */
+/*--------------------------------------------------------------------------------*/
+ADMObject *ADMData::Create(const std::string& type, const std::string& id, const std::string& name, const ADMAudioChannelFormat *channelformat)
 {
   ADMObject *obj = NULL;
 
   if (ValidType(type))
   {
     ADMOBJECTS_MAP::const_iterator it;
-    std::string uuid = type + "/" + id;
+    // if id is empty, create one
+    std::string uuid = type + "/" + ((id != "") ? id : CreateID(type, channelformat));
 
+    // ensure the id doesn't already exist
     if ((it = admobjects.find(uuid)) == admobjects.end())
     {
       if      (type == ADMAudioProgramme::Type)     obj = new ADMAudioProgramme(*this, id, name);
@@ -251,6 +337,282 @@ ADMObject *ADMData::Create(const std::string& type, const std::string& id, const
   }
 
   return obj;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Create an unique ID for the specified type
+ *
+ * @param type object type - should always be the static 'Type' member of the object to be created (e.g. ADMAudioProgramme::Type)
+ * @param channelformat ptr to channelformat object if type is ADMAudioBlockFormat::Type
+ *
+ * @return unique ID
+ */
+/*--------------------------------------------------------------------------------*/
+std::string ADMData::CreateID(const std::string& type, const ADMAudioChannelFormat *channelformat) const
+{
+  std::string id;
+
+  if (ValidType(type))
+  {
+    // create type dependant prefix
+    if      (type == ADMAudioProgramme::Type)     id = "APR_";
+    else if (type == ADMAudioContent::Type)       id = "ACO_";
+    else if (type == ADMAudioObject::Type)        id = "AO_";
+    else if (type == ADMAudioPackFormat::Type)    id = "AP_";
+    else if (type == ADMAudioBlockFormat::Type)   id = "AB_";
+    else if (type == ADMAudioChannelFormat::Type) id = "AC_";
+    else if (type == ADMAudioStreamFormat::Type)  id = "AS_";
+    else if (type == ADMAudioTrackFormat::Type)   id = "AT_";
+    else if (type == ADMAudioTrack::Type)         id = "ATU_";
+
+    // if type is an audioBlockFormat type (and a channel format is specified), append channel format's ID onto ID
+    if ((type == ADMAudioBlockFormat::Type) && channelformat && (channelformat->GetID().substr(0, 3) == "AC_"))
+    {
+      id += channelformat->GetID().substr(3) + "_";
+    }
+
+    // find unique ID using existing map
+    ADMOBJECTS_MAP::const_iterator it;
+    uint_t n = 0;
+
+    // for audioBlockFormat, the supplied channelformat object can give a good initial test value
+    if ((type == ADMAudioBlockFormat::Type) && channelformat) n = channelformat->GetBlockFormatRefs().size();
+    else
+    {
+      // count up objects of this type in admobjects
+      for (it = admobjects.begin(); it != admobjects.end(); ++it)
+      {
+        // if object of same type, increment initial test value
+        if (it->second->GetType() == type) n++;
+      }
+    }
+
+    std::string format;
+    // format for audioProgrammes, audioContents and audioObjects are slightly different (four digit ID vs eight digit ID)
+    if ((type == ADMAudioProgramme::Type) ||
+        (type == ADMAudioContent::Type)   ||
+        (type == ADMAudioObject::Type))
+    {
+      format = "%s/%s%04u";     // type/id_<num>
+    }
+    else
+    {
+      format = "%s/%s%08u";     // type/id_<num>
+    }
+
+    // increment test value until ID is unique
+    while (true)
+    {
+      std::string uuid;
+      
+      Printf(uuid, format.c_str(), type.c_str(), id.c_str(), ++n);
+
+      // test this ID
+      if ((it = admobjects.find(uuid)) == admobjects.end())
+      {
+        // ID not already in list -> must be unique
+        id = uuid;
+        break;
+      }
+    }
+  }
+
+  DEBUG2(("Unique ID for type '%s' (channelformat '%s'): %s", type.c_str(), channelformat ? channelformat->ToString().c_str() : "", id.c_str()));
+
+  return id;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Create audioProgramme object
+ *
+ * @param name name of object
+ *
+ * @note ID will be create automatically
+ *
+ * @return ADMAudioProgramme object
+ */
+/*--------------------------------------------------------------------------------*/
+ADMAudioProgramme *ADMData::CreateProgramme(const std::string& name)
+{
+  return new ADMAudioProgramme(*this, CreateID(ADMAudioProgramme::Type), name);
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Create audioContent object
+ *
+ * @param name name of object
+ * @param programme audioProgramme object to attach this object to or NULL
+ *
+ * @note ID will be create automatically
+ *
+ * @return ADMAudioContent object
+ */
+/*--------------------------------------------------------------------------------*/
+ADMAudioContent *ADMData::CreateContent(const std::string& name, ADMAudioProgramme *programme)
+{
+  ADMAudioContent *content;
+
+  if ((content = new ADMAudioContent(*this, CreateID(ADMAudioContent::Type), name)) != NULL)
+  {
+    if (programme) programme->Add(content);
+  }
+
+  return content;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Create audioObject object
+ *
+ * @param name name of object
+ * @param content audioContent object to attach this object to or NULL
+ *
+ * @note ID will be create automatically
+ *
+ * @return ADMAudioObject object
+ */
+/*--------------------------------------------------------------------------------*/
+ADMAudioObject *ADMData::CreateObject(const std::string& name, ADMAudioContent *content)
+{
+  ADMAudioObject *object;
+
+  if ((object = new ADMAudioObject(*this, CreateID(ADMAudioObject::Type), name)) != NULL)
+  {
+    if (content) content->Add(object);
+  }
+
+  return object;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Create audioPackFormat object
+ *
+ * @param name name of object
+ * @param object audioObject object to attach this object to or NULL
+ *
+ * @note ID will be create automatically
+ *
+ * @return ADMAudioPackFormat object
+ */
+/*--------------------------------------------------------------------------------*/
+ADMAudioPackFormat *ADMData::CreatePackFormat(const std::string& name, ADMAudioObject *object)
+{
+  ADMAudioPackFormat *packFormat;
+
+  if ((packFormat = new ADMAudioPackFormat(*this, CreateID(ADMAudioPackFormat::Type), name)) != NULL)
+  {
+    if (object) object->Add(packFormat);
+  }
+
+  return packFormat;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Create audioTrack object
+ *
+ * @param name name of object
+ * @param object audioObject object to attach this object to or NULL
+ *
+ * @note ID will be create automatically
+ *
+ * @return ADMAudioTrack object
+ */
+/*--------------------------------------------------------------------------------*/
+ADMAudioTrack *ADMData::CreateTrack(const std::string& name, ADMAudioObject *object)
+{
+  ADMAudioTrack *track;
+
+  if ((track = new ADMAudioTrack(*this, CreateID(ADMAudioTrack::Type), name)) != NULL)
+  {
+    if (object) object->Add(track);
+  }
+
+  return track;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Create audioChannelFormat object
+ *
+ * @param name name of object
+ * @param packFormat audioPackFormat object to attach this object to or NULL
+ * @param streamFormat audioStreamFormat object to attach this object to or NULL
+ *
+ * @note ID will be create automatically
+ *
+ * @return ADMAudioChannelFormat object
+ */
+/*--------------------------------------------------------------------------------*/
+ADMAudioChannelFormat *ADMData::CreateChannelFormat(const std::string& name, ADMAudioPackFormat *packFormat, ADMAudioStreamFormat *streamFormat)
+{
+  ADMAudioChannelFormat *channelFormat;
+
+  if ((channelFormat = new ADMAudioChannelFormat(*this, CreateID(ADMAudioChannelFormat::Type), name)) != NULL)
+  {
+    if (packFormat) packFormat->Add(channelFormat);
+    if (streamFormat) streamFormat->Add(channelFormat);
+  }
+
+  return channelFormat;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Create audioBlockFormat object
+ *
+ * @param name name of object
+ * @param channelFormat audioChannelFormat object to attach this object to or NULL
+ *
+ * @note ID will be create automatically
+ *
+ * @return ADMAudioBlockFormat object
+ */
+/*--------------------------------------------------------------------------------*/
+ADMAudioBlockFormat *ADMData::CreateBlockFormat(const std::string& name, ADMAudioChannelFormat *channelFormat)
+{
+  ADMAudioBlockFormat *blockFormat;
+
+  if ((blockFormat = new ADMAudioBlockFormat(*this, CreateID(ADMAudioBlockFormat::Type), name)) != NULL)
+  {
+    if (channelFormat) channelFormat->Add(blockFormat);
+  }
+
+  return blockFormat;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Create audioTrackFormat object
+ *
+ * @param name name of object
+ *
+ * @note ID will be create automatically
+ *
+ * @return ADMAudioTrackFormat object
+ */
+/*--------------------------------------------------------------------------------*/
+ADMAudioTrackFormat *ADMData::CreateTrackFormat(const std::string& name)
+{
+  return new ADMAudioTrackFormat(*this, CreateID(ADMAudioTrackFormat::Type), name);
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Create audioStreamFormat object
+ *
+ * @param name name of object
+ * @param trackFormat audioTrackFormat object to attach this object to or NULL
+ *
+ * @note ID will be create automatically
+ *
+ * @return ADMAudioStreamFormat object
+ */
+/*--------------------------------------------------------------------------------*/
+ADMAudioStreamFormat *ADMData::CreateStreamFormat(const std::string& name, ADMAudioTrackFormat *trackFormat)
+{
+  ADMAudioStreamFormat *streamFormat;
+
+  if ((streamFormat = new ADMAudioStreamFormat(*this, CreateID(ADMAudioStreamFormat::Type), name)) != NULL)
+  {
+    if (trackFormat) trackFormat->Add(streamFormat);
+  }
+
+  return streamFormat;
 }
 
 ADMObject *ADMData::Parse(const std::string& type, void *userdata)
@@ -271,6 +633,12 @@ ADMObject *ADMData::Parse(const std::string& type, void *userdata)
   return obj;
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Return the object associated with the specified reference
+ *
+ * @param value a name/value pair specifying object type and name
+ */
+/*--------------------------------------------------------------------------------*/
 ADMObject *ADMData::GetReference(const ADMVALUE& value)
 {
   ADMObject *obj = NULL;
@@ -285,7 +653,6 @@ ADMObject *ADMData::GetReference(const ADMVALUE& value)
   else
   {
     cmp = "IDRef";
-
     if ((uuid.size() >= cmp.size()) && (uuid.compare(uuid.size() - cmp.size(), cmp.size(), cmp) == 0))
     {
       uuid = uuid.substr(0, uuid.size() - cmp.size());
@@ -348,7 +715,6 @@ void ADMData::GetADMList(const std::string& type, std::vector<const ADMObject *>
 
     if (obj->GetType() == type)
     {
-            
       list.push_back(obj);
     }
   }
@@ -384,7 +750,7 @@ const ADMObject *ADMData::GetObjectByName(const std::string& name, const std::st
 
 std::string ADMData::FormatString(const char *fmt, ...)
 {
-  std::string  str;
+  std::string str;
   va_list ap;
 
   va_start(ap, fmt);
@@ -454,6 +820,18 @@ void ADMData::GenerateXML(std::string& str, const std::string& indent, const std
   Printf(str,
          "%s</coreMetadata>%s",
          CreateIndent(indent, ind_level).c_str(), eol.c_str());
+}
+
+void ADMData::GenerateReferenceList(std::string& str)
+{
+  ADMOBJECTS_CIT it;
+
+  for (it = admobjects.begin(); it != admobjects.end(); ++it)
+  {
+    const ADMObject *obj = it->second;
+
+    obj->GenerateReferenceList(str);
+  }
 }
 
 void ADMData::CreateCursors(std::vector<PositionCursor *>& list, uint_t channel, uint_t nchannels) const

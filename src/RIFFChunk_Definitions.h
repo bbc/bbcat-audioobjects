@@ -85,8 +85,8 @@ typedef PACKEDSTRUCT
 #define chna_ID IFFID("chna")
 typedef PACKEDSTRUCT
 {
-  uint16_t    TrackCount;
-  uint16_t    UIDCount;
+  uint16_t   TrackCount;
+  uint16_t   UIDCount;
   PACKEDSTRUCT
   {
     uint16_t TrackNum;

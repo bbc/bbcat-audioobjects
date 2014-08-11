@@ -28,6 +28,35 @@ public:
   ADMRIFFFile();
   virtual ~ADMRIFFFile();
   
+  /*--------------------------------------------------------------------------------*/
+  /** Open a WAVE/RIFF file
+   *
+   * @param filename filename of file to open
+   *
+   * @return true if file opened and interpreted correctly (including any extra chunks if present)
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual bool Open(const char *filename);
+
+  /*--------------------------------------------------------------------------------*/
+  /** Create a WAVE/RIFF file
+   *
+   * @param filename filename of file to create
+   * @param samplerate sample rate of audio
+   * @param nchannels number of audio channels
+   * @param format sample format of audio in file
+   *
+   * @return true if file created properly
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual bool Create(const char *filename, uint32_t samplerate = 48000, uint_t nchannels = 2, SampleFormat_t format = SampleFormat_24bit);
+
+  /*--------------------------------------------------------------------------------*/
+  /** Close file
+   *
+   * @note this may take some time because it copies sample data from a temporary file
+   */
+  /*--------------------------------------------------------------------------------*/
   virtual void Close();
 
   ADMData *GetADM() const {return adm;}

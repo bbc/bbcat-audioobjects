@@ -14,12 +14,8 @@
 BBC_AUDIOTOOLBOX_START
 
 ADMRIFFFile::ADMRIFFFile() : RIFFFile(),
-                             adm(ADMData::Create())
+                             adm(NULL)
 {
-  if (!adm)
-  {
-    ERROR("No providers for ADM XML decoding!");
-  }
 }
 
 ADMRIFFFile::~ADMRIFFFile()
@@ -27,8 +23,116 @@ ADMRIFFFile::~ADMRIFFFile()
   Close();
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Open a WAVE/RIFF file
+ *
+ * @param filename filename of file to open
+ *
+ * @return true if file opened and interpreted correctly (including any extra chunks if present)
+ */
+/*--------------------------------------------------------------------------------*/
+bool ADMRIFFFile::Open(const char *filename)
+{
+  bool success = false;
+
+  if ((adm = ADMData::Create()) != NULL)
+  {
+    success = RIFFFile::Open(filename);
+  }
+  else ERROR("No providers for ADM XML decoding!");
+
+  return success;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Create a WAVE/RIFF file
+ *
+ * @param filename filename of file to create
+ * @param samplerate sample rate of audio
+ * @param nchannels number of audio channels
+ * @param format sample format of audio in file
+ *
+ * @return true if file created properly
+ */
+/*--------------------------------------------------------------------------------*/
+bool ADMRIFFFile::Create(const char *filename, uint32_t samplerate, uint_t nchannels, SampleFormat_t format)
+{
+  bool success = false;
+
+  if ((adm = ADMData::Create()) != NULL)
+  {
+    if (RIFFFile::Create(filename, samplerate, nchannels, format))
+    {
+      uint_t i;
+
+      for (i = 0; i < nchannels; i++)
+      {
+        ADMAudioTrack *track;
+        std::string id, name;
+
+        Printf(id, "ATU_%08u", i + 1);
+        Printf(name, "Track %u", i + 1);
+
+        if ((track = new ADMAudioTrack(*adm, id, name)) != NULL)
+        {
+          track->SetTrackNum(i + 1);
+          track->SetSampleRate(GetSampleRate());
+          track->SetBitDepth(GetBytesPerSample());
+        }
+      }
+
+      success = true;
+    }
+  }
+  else ERROR("No providers for ADM XML decoding!");
+
+  return success;
+}
+
 void ADMRIFFFile::Close()
 {
+  if (adm && writing)
+  {
+    RIFFChunk *chunk;
+    uint32_t  chnalen;
+    uint8_t   *chna;
+
+    adm->SortTracks();
+    adm->ConnectReferences();
+    adm->UpdateLimits();
+
+    // set up chna and axml chunks
+    if ((chna = adm->GetChna(chnalen)) != NULL)
+    {
+      if ((chunk = AddChunk(chna_ID)) != NULL)
+      {
+        chunk->CreateWriteData(chna, chnalen);
+      }
+      else ERROR("Failed to add chna chunk");
+
+      delete[] chna;
+    }
+    else ERROR("No chna data available");
+
+    if ((chunk = AddChunk(axml_ID)) != NULL)
+    {
+      std::string str = adm->GetAxml();
+
+      chunk->CreateWriteData(str.c_str(), str.size());
+
+      DEBUG1(("AXML: %s", str.c_str()));
+    }
+    else ERROR("Failed to add axml chunk");
+
+    {
+      std::string str;
+
+      adm->Dump(str);
+      DEBUG1(("ADM: %s", str.c_str()));
+    }
+  }
+
+  // write chunks, copy samples and close file
   RIFFFile::Close();
 
   if (adm)
@@ -43,8 +147,8 @@ bool ADMRIFFFile::PostReadChunks()
 
   if (success)
   {
-    RIFFchnaChunk *chna = dynamic_cast<RIFFchnaChunk *>(GetChunk("chna"));
-    RIFFaxmlChunk *axml = dynamic_cast<RIFFaxmlChunk *>(GetChunk("axml"));
+    RIFFChunk *chna = GetChunk(chna_ID);
+    RIFFChunk *axml = GetChunk(axml_ID);
 
     if (adm &&
         chna && chna->GetData() &&
@@ -52,23 +156,23 @@ bool ADMRIFFFile::PostReadChunks()
     {
       success = adm->Set(chna->GetData(), axml->GetData(), axml->GetLength());
 
-#if 0
+#if DEBUG_LEVEL >= 2
       {
-        string str;
+        std::string str;
         adm->Dump(str);
                 
         DEBUG("%s", str.c_str());
       }
 
       {
-        string str;
+        std::string str;
         adm->GenerateXML(str);
                 
         DEBUG("%s", str.c_str());
       }
 
       DEBUG("Audio objects:");
-      vector<const ADMObject *>list;
+      std::vector<const ADMObject *> list;
       adm->GetADMList(ADMAudioObject::Type, list);
       uint_t i;
       for (i = 0; i < list.size(); i++)

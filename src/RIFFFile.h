@@ -34,12 +34,32 @@ public:
   virtual bool Open(const char *filename);
 
   /*--------------------------------------------------------------------------------*/
+  /** Create a WAVE/RIFF file
+   *
+   * @param filename filename of file to create
+   * @param samplerate sample rate of audio
+   * @param nchannels number of audio channels
+   * @param format sample format of audio in file
+   *
+   * @return true if file created properly
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual bool Create(const char *filename, uint32_t samplerate = 48000, uint_t nchannels = 2, SampleFormat_t format = SampleFormat_24bit);
+
+  /*--------------------------------------------------------------------------------*/
   /** Return whether a file is open
    *
    * @return true if file is open
    */
   /*--------------------------------------------------------------------------------*/
   bool IsOpen() const {return (file && (file->isopen()));}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Close file
+   *
+   * @note this may take some time because it copies sample data from a temporary file
+   */
+  /*--------------------------------------------------------------------------------*/
   virtual void Close();
 
   /*--------------------------------------------------------------------------------*/
@@ -152,6 +172,18 @@ public:
   RIFFChunk *GetChunk(uint32_t id) {return chunkmap[id];}
 
   /*--------------------------------------------------------------------------------*/
+  /** Create and add a chunk to a file being written
+   *
+   * @param id chunk type ID
+   * @param name chunk type name
+   *
+   * @return pointer to chunk object or NULL
+   */
+  /*--------------------------------------------------------------------------------*/
+  RIFFChunk *AddChunk(uint32_t id);
+  RIFFChunk *AddChunk(const char *name);
+
+  /*--------------------------------------------------------------------------------*/
   /** Return chunk specified by chunk ID
    *
    * @param name chunk type name as a 4 character string
@@ -186,6 +218,24 @@ public:
   sint_t ReadFrames(int32_t *buffer, uint_t nframes = 1) {return ReadFrames((uint8_t *)buffer, SampleFormatOf(buffer), nframes);}
   sint_t ReadFrames(float   *buffer, uint_t nframes = 1) {return ReadFrames((uint8_t *)buffer, SampleFormatOf(buffer), nframes);}
   sint_t ReadFrames(double  *buffer, uint_t nframes = 1) {return ReadFrames((uint8_t *)buffer, SampleFormatOf(buffer), nframes);}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Write sample frames
+   *
+   * @param buffer source buffer
+   * @param type desired sample buffer format
+   * @param nframes number of sample frames to write
+   *
+   * @note all channels must be written
+   *
+   * @return number of frames written or -1 for an error (no open file for example)
+   */
+  /*--------------------------------------------------------------------------------*/
+  sint_t WriteFrames(const uint8_t *buffer, SampleFormat_t type, uint_t nframes) {return filesamples ? filesamples->WriteSamples((const uint8_t *)buffer, type, nframes) : -1;}
+  sint_t WriteFrames(const int16_t *buffer, uint_t nframes = 1) {return WriteFrames((const uint8_t *)buffer, SampleFormatOf(buffer), nframes);}
+  sint_t WriteFrames(const int32_t *buffer, uint_t nframes = 1) {return WriteFrames((const uint8_t *)buffer, SampleFormatOf(buffer), nframes);}
+  sint_t WriteFrames(const float   *buffer, uint_t nframes = 1) {return WriteFrames((const uint8_t *)buffer, SampleFormatOf(buffer), nframes);}
+  sint_t WriteFrames(const double  *buffer, uint_t nframes = 1) {return WriteFrames((const uint8_t *)buffer, SampleFormatOf(buffer), nframes);}
 
 protected:
   /*--------------------------------------------------------------------------------*/
@@ -231,8 +281,9 @@ protected:
 protected:
   SoundFile         *file;
   uint8_t           filetype;
-  const SoundFormat *fileformat;
+  SoundFormat       *fileformat;
   SoundFileSamples  *filesamples;
+  bool              writing;
 
   std::vector<RIFFChunk *>        chunklist;
   std::map<uint32_t, RIFFChunk *> chunkmap;

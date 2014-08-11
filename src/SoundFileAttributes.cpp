@@ -84,28 +84,32 @@ SoundFormat::~SoundFormat()
 
 /*----------------------------------------------------------------------------------------------------*/
 
-SoundFileSamples::SoundFileSamples() : format(NULL),
-                                       file(NULL),
-                                       filepos(0),
-                                       samplepos(0),
-                                       totalsamples(0),
-                                       totalbytes(0),
-                                       samplebuffer(NULL),
-                                       samplebufferframes(256),
-                                       readonly(true)
+SoundFileSamples::SoundFileSamples() :
+  format(NULL),
+  file(NULL),
+  filepos(0),
+  samplepos(0),
+  totalsamples(0),
+  totalbytes(0),
+  samplebuffer(NULL),
+  samplebufferframes(256),
+  readonly(true),
+  istempfile(false)
 {
   memset(&clip, 0, sizeof(clip));
 }
 
-SoundFileSamples::SoundFileSamples(const SoundFileSamples *obj) : format(NULL),
-                                                                  file(NULL),
-                                                                  filepos(0),
-                                                                  samplepos(0),
-                                                                  totalsamples(0),
-                                                                  totalbytes(0),
-                                                                  samplebuffer(NULL),
+SoundFileSamples::SoundFileSamples(const SoundFileSamples *obj) :
+  format(NULL),
+  file(NULL),
+  filepos(0),
+  samplepos(0),
+  totalsamples(0),
+  totalbytes(0),
+  samplebuffer(NULL),
   samplebufferframes(256),
-  readonly(true)
+  readonly(true),
+  istempfile(false)
 {
   memset(&clip, 0, sizeof(clip));
 
@@ -117,7 +121,37 @@ SoundFileSamples::SoundFileSamples(const SoundFileSamples *obj) : format(NULL),
 SoundFileSamples::~SoundFileSamples()
 {
   if (samplebuffer) delete[] samplebuffer;
-  if (file)         delete file;
+  if (file)
+  {
+    std::string filename = file->getfilename();
+
+    file->fclose();
+
+    // delete file if it has been used as a temporary file
+    if (istempfile) remove(filename.c_str());
+
+    delete file;
+  }
+}
+
+bool SoundFileSamples::CreateTempFile()
+{
+  std::string filename;
+  bool success = false;
+
+  if (!file) file = new SoundFile;
+
+  if (file)
+  {
+    // create temporary file for samples
+    Printf(filename, "samples-%016lx.raw", (ulong_t)this);
+
+    success    = file->fopen(filename.c_str(), "wb+");
+    readonly   = false;
+    istempfile = true;
+  }
+
+  return success;
 }
 
 void SoundFileSamples::SetFormat(const SoundFormat *format)
@@ -211,6 +245,73 @@ uint_t SoundFileSamples::ReadSamples(uint8_t *buffer, SampleFormat_t type, uint_
       {
         ERROR("Failed to seek to correct position in file, error %s", strerror(file->ferror()));
         n = 0;
+        break;
+      }
+    }
+
+    UpdatePosition();
+  }
+  else ERROR("No file or sample buffer");
+
+  return n;
+}
+
+uint_t SoundFileSamples::WriteSamples(const uint8_t *buffer, SampleFormat_t type, uint_t frames, uint_t firstchannel, uint_t nchannels)
+{
+  uint_t n = 0;
+
+  if (file && file->isopen() && samplebuffer && !readonly)
+  {
+    uint_t bpf = format->GetBytesPerFrame();
+
+    firstchannel = MIN(firstchannel, clip.nchannels - 1);
+    nchannels    = MIN(nchannels,    clip.nchannels - firstchannel);
+
+    n = 0;
+    while (frames)
+    {
+      uint_t nframes = MIN(frames, samplebufferframes);
+      size_t res;
+
+      if (nchannels < format->GetChannels())
+      {
+        // read existing sample data to allow overwriting of channels
+        res = file->fread(samplebuffer, bpf, nframes);
+
+        // clear rest of buffer
+        if (res < (bpf * nframes)) memset(samplebuffer + res * bpf, 0, (nframes - res) * bpf);
+
+        // move back in file for write
+        if (res) file->fseek(-(long)(res * bpf), SEEK_CUR);
+      }
+
+      // copy/interleave/convert samples
+      TransferSamples(buffer, type, MACHINE_IS_BIG_ENDIAN, 0, nchannels,
+                      samplebuffer, format->GetSampleFormat(), format->GetSamplesBigEndian(), clip.channel + firstchannel, format->GetChannels(),
+                      nchannels,
+                      nframes);
+
+      if ((res = file->fwrite(samplebuffer, bpf, nframes)) > 0)
+      {
+        nframes    = res;
+        n         += nframes;
+        buffer    += nframes * nchannels * GetBytesPerSample(type);
+        frames    -= nframes;
+        samplepos += nframes;
+
+        totalsamples  = MAX(totalsamples,  samplepos);
+        clip.nsamples = MAX(clip.nsamples, totalsamples - clip.start);
+
+        totalbytes    = totalsamples * format->GetBytesPerFrame();
+      }
+      else if (res <= 0)
+      {
+        ERROR("Failed to write %u frames (%u bytes) to file, error %s", nframes, nframes * bpf, strerror(file->ferror()));
+        break;
+      }
+      else
+      {
+        DEBUG3(("No data left!"));
         break;
       }
     }

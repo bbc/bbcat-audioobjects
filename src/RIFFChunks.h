@@ -38,7 +38,8 @@ protected:
 protected:
   // do NOT read OR skip over data
   virtual ChunkHandling_t GetChunkHandling() const {return ChunkHandling_RemainInChunkData;}
-
+  // just return true - no data to write
+  virtual bool WriteChunkData(SoundFile *file);
 };
 
 /*--------------------------------------------------------------------------------*/
@@ -53,6 +54,9 @@ class RIFFWAVEChunk : public RIFFChunk
 public:
   RIFFWAVEChunk(uint32_t chunk_id) : RIFFChunk(chunk_id) {}
   virtual ~RIFFWAVEChunk() {}
+
+  // special write chunk function (no length or data)
+  virtual bool WriteChunk(SoundFile *file);
 
   // provider function register for this object
   static void Register();
@@ -85,6 +89,9 @@ public:
   RIFFfmtChunk(uint32_t chunk_id) : RIFFChunk(chunk_id),
                                     SoundFormat() {}
   virtual ~RIFFfmtChunk() {}
+
+  // create write data
+  virtual bool CreateWriteData();
 
   // provider function register for this object
   static void Register();
@@ -120,6 +127,9 @@ class RIFFbextChunk : public RIFFChunk
 public:
   RIFFbextChunk(uint32_t chunk_id) : RIFFChunk(chunk_id) {}
   virtual ~RIFFbextChunk() {}
+
+  // create write data
+  virtual bool CreateWriteData();
 
   // provider function register for this object
   static void Register();
@@ -204,7 +214,7 @@ protected:
  *
  * The data is not read (it could be too big to fit in memory)
  *
- * Note that the object is also derived from SoundfileSamples which provides sample
+ * Note that the object is also derived from SoundFileSamples which provides sample
  * reading and conversion facilities
  *
  */
@@ -214,7 +224,10 @@ class RIFFdataChunk : public RIFFChunk, public SoundFileSamples
 public:
   RIFFdataChunk(uint32_t chunk_id) : RIFFChunk(chunk_id),
                                      SoundFileSamples() {}
-  virtual ~RIFFdataChunk() {}
+  virtual ~RIFFdataChunk();
+
+  // set up data length before data is written
+  virtual bool CreateWriteData();
 
   // provider function register for this object
   static void Register();
@@ -228,8 +241,12 @@ protected:
   }
 
 protected:
+  // initialise chunk when writing a file
+  virtual bool InitialiseForWriting();
   // perform additional initialisation after chunk read
   virtual bool ReadChunk(SoundFile *file);
+  // copy sample data from temporary file
+  virtual bool WriteChunkData(SoundFile *file);
 };
 
 /*--------------------------------------------------------------------------------*/
