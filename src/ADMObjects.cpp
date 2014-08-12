@@ -8,7 +8,7 @@
 #include <map>
 #include <algorithm>
 
-#define DEBUG_LEVEL 2
+#define DEBUG_LEVEL 1
 #include <aplibs-dsp/ByteSwap.h>
 
 #include "ADMObjects.h"
