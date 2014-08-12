@@ -104,6 +104,7 @@ void ADMObject::Register()
 void ADMObject::SetValues()
 {
   SetValue(typeLabel, "typeLabel");
+  SetValue(typeDefinition, "typeDefinition");
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -273,6 +274,7 @@ void ADMObject::XMLAttributes(std::string& str) const
 
   // typeLabel can appear in most objects, handle it here
   XMLAttribute(str, "typeLabel", typeLabel);
+  XMLAttribute(str, "typeDefinition", typeDefinition);
 
   // output XML attribute values from list - this allows arbitary attributes to be stored
   for (it = values.begin(); it != values.end(); ++it)
@@ -755,6 +757,7 @@ void ADMObject::Dump(std::map<const ADMObject *,bool>& handledmap, std::string& 
 
     // output known variables
     Dump(str, indent, eol, ind_level, "typeLabel", typeLabel);
+    Dump(str, indent, eol, ind_level, "typeDefinition", typeDefinition);
 
     // call derived function to output variables from derived classes and recurse through references
     DumpEx(handledmap, str, indent, eol, ind_level);
@@ -929,6 +932,7 @@ void ADMObject::Serialize(uint8_t *dst, uint_t& len) const
   SerializeItem(dst, len, "id", id);
   SerializeItem(dst, len, "name", name);
   SerializeItem(dst, len, "typeLabel", typeLabel);
+  SerializeItem(dst, len, "typeDefinition", typeDefinition);
   SerializeData(dst, len, values);
   SerializeEx(dst, len);
   SerializeObjectCRC(dst, len, len0);
@@ -1867,8 +1871,6 @@ const std::string ADMAudioPackFormat::Reference = Type + "IDRef";
 void ADMAudioPackFormat::SetValues()
 {
   ADMObject::SetValues();
-
-  SetValue(typeDefinition, "typeDefinition");
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -1895,8 +1897,6 @@ void ADMAudioPackFormat::DumpEx(std::map<const ADMObject *,bool>& handledmap, st
 {
   uint_t i;
 
-  Dump(str, indent, eol, ind_level, "typeDefinition", typeDefinition);
-
   DumpTime(str, indent, eol, ind_level, "start", GetChildrenStartTime());
   DumpTime(str, indent, eol, ind_level, "end",   GetChildrenEndTime());
 
@@ -1918,8 +1918,6 @@ void ADMAudioPackFormat::DumpEx(std::map<const ADMObject *,bool>& handledmap, st
 void ADMAudioPackFormat::XMLAttributes(std::string& str) const
 {
   ADMObject::XMLAttributes(str);
-
-  XMLAttribute(str, "typeDefinition", typeDefinition);
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -2006,8 +2004,6 @@ void ADMAudioPackFormat::SerializeEx(uint8_t *dst, uint_t& len) const
 {
   uint_t i;
 
-  SerializeItem(dst, len, "typeDefinition", typeDefinition);
-
   for (i = 0; i < channelformatrefs.size(); i++)
   {
     SerializeData(dst, len, channelformatrefs[i]);
@@ -2031,6 +2027,9 @@ const std::string ADMAudioStreamFormat::Reference = Type + "IDRef";
 void ADMAudioStreamFormat::SetValues()
 {
   ADMObject::SetValues();
+
+  SetValue(formatLabel,      "formatLabel");
+  SetValue(formatDefinition, "formatDefinition");
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -2118,6 +2117,9 @@ void ADMAudioStreamFormat::DumpEx(std::map<const ADMObject *,bool>& handledmap, 
   DumpTime(str, indent, eol, ind_level, "start", GetChildrenStartTime());
   DumpTime(str, indent, eol, ind_level, "end",   GetChildrenEndTime());
 
+  Dump(str, indent, eol, ind_level, "formatLabel", formatLabel);
+  Dump(str, indent, eol, ind_level, "formatDefinition", formatDefinition);
+
   for (i = 0; i < channelformatrefs.size(); i++)
   {
     channelformatrefs[i]->Dump(handledmap, str, indent, eol, ind_level + 1);
@@ -2141,6 +2143,9 @@ void ADMAudioStreamFormat::DumpEx(std::map<const ADMObject *,bool>& handledmap, 
 void ADMAudioStreamFormat::XMLAttributes(std::string& str) const
 {
   ADMObject::XMLAttributes(str);
+
+  XMLAttribute(str, "formatLabel",      formatLabel);
+  XMLAttribute(str, "formatDefinition", formatDefinition);
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -2196,6 +2201,9 @@ void ADMAudioStreamFormat::GenerateReferenceList(std::string& str) const
 void ADMAudioStreamFormat::SerializeEx(uint8_t *dst, uint_t& len) const
 {
   uint_t i;
+
+  SerializeItem(dst, len, "formatLabel",      formatLabel);
+  SerializeItem(dst, len, "formatDefinition", formatDefinition);
 
   for (i = 0; i < channelformatrefs.size(); i++)
   {
@@ -2331,7 +2339,8 @@ void ADMAudioTrackFormat::SerializeEx(uint8_t *dst, uint_t& len) const
 {
   uint_t i;
 
-  SerializeItem(dst, len, "formatLabel", formatLabel);
+  SerializeItem(dst, len, "formatLabel",      formatLabel);
+  SerializeItem(dst, len, "formatDefinition", formatDefinition);
 
   for (i = 0; i < streamformatrefs.size(); i++)
   {

@@ -6,7 +6,7 @@
 
 #include <string>
 
-#define DEBUG_LEVEL 1
+#define DEBUG_LEVEL 2
 
 #include "ADMRIFFFile.h"
 #include "RIFFChunk_Definitions.h"
@@ -68,12 +68,11 @@ bool ADMRIFFFile::Create(const char *filename, uint32_t samplerate, uint_t nchan
       for (i = 0; i < nchannels; i++)
       {
         ADMAudioTrack *track;
-        std::string id, name;
+        std::string name;
 
-        Printf(id, "ATU_%08u", i + 1);
         Printf(name, "Track %u", i + 1);
 
-        if ((track = new ADMAudioTrack(*adm, id, name)) != NULL)
+        if ((track = adm->CreateTrack(name)) != NULL)
         {
           track->SetTrackNum(i + 1);
           track->SetSampleRate(GetSampleRate());
@@ -120,16 +119,9 @@ void ADMRIFFFile::Close()
 
       chunk->CreateWriteData(str.c_str(), str.size());
 
-      DEBUG1(("AXML: %s", str.c_str()));
+      DEBUG3(("AXML: %s", str.c_str()));
     }
     else ERROR("Failed to add axml chunk");
-
-    {
-      std::string str;
-
-      adm->Dump(str);
-      DEBUG1(("ADM: %s", str.c_str()));
-    }
   }
 
   // write chunks, copy samples and close file
@@ -156,7 +148,7 @@ bool ADMRIFFFile::PostReadChunks()
     {
       success = adm->Set(chna->GetData(), axml->GetData(), axml->GetLength());
 
-#if DEBUG_LEVEL >= 2
+#if DEBUG_LEVEL >= 4
       {
         std::string str;
         adm->Dump(str);

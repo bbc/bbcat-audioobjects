@@ -30,6 +30,7 @@ PlaybackEngine::~PlaybackEngine()
 /*--------------------------------------------------------------------------------*/
 void PlaybackEngine::AddFile(SoundFileSamples *file)
 {
+  ThreadLock lock(tlock);
   bool empty = playlist.Empty();
 
   playlist.AddFile(file);
@@ -50,6 +51,7 @@ void PlaybackEngine::AddFile(SoundFileSamples *file)
 /*--------------------------------------------------------------------------------*/
 bool PlaybackEngine::AddObject(const ADMRIFFFile& file, const char *name)
 {
+  ThreadLock lock(tlock);
   const ADMData *adm;
   bool success = false;
 
@@ -156,6 +158,7 @@ void PlaybackEngine::UpdateAllPositions(bool force)
 uint_t PlaybackEngine::Render(const Sample_t *src, Sample_t *dst,
                               uint_t nsrcchannels, uint_t ndstchannels, uint_t nsrcframes, uint_t ndstframes, Sample_t level)
 {
+  ThreadLock lock(tlock);
   uint_t frames = 0;
 
   UNUSED_PARAMETER(src);

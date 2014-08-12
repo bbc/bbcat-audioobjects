@@ -24,16 +24,17 @@ libap_audioobjects_@APLIBS_AUDIOOBJECTS_MAJORMINOR@_la_SOURCES =	\
 	ADMFileWriteRenderer.cpp										\
 	ADMObjects.cpp													\
 	ADMRIFFFile.cpp													\
-	crc32.cpp														\
 	FilePositionGenerator.cpp										\
-	mt19937ar.c														\
+	OpenTLEventList.cpp												\
 	PlaybackEngine.cpp												\
 	Playlist.cpp													\
 	RIFFChunk.cpp													\
 	RIFFChunks.cpp													\
 	RIFFFile.cpp													\
 	SoundFileAttributes.cpp											\
-	TinyXMLADMData.cpp
+	TinyXMLADMData.cpp												\
+	crc32.cpp														\
+	mt19937ar.c
 
 pkginclude_HEADERS =							\
 	ADMAudioFileSamples.h						\
@@ -41,18 +42,19 @@ pkginclude_HEADERS =							\
 	ADMFileWriteRenderer.h						\
 	ADMObjects.h								\
 	ADMRIFFFile.h								\
-	crc32.h										\
 	FilePositionGenerator.h						\
-	mt19937ar.h									\
+	OpenTLEventList.h							\
 	PlaybackEngine.h							\
 	Playlist.h									\
-	RIFFChunk_Definitions.h						\
 	RIFFChunk.h									\
+	RIFFChunk_Definitions.h						\
 	RIFFChunks.h								\
 	RIFFFile.h									\
 	SoundFileAttributes.h						\
 	SoundFileWithPosition.h						\
-	TinyXMLADMData.h
+	TinyXMLADMData.h							\
+	crc32.h										\
+	mt19937ar.h
 
 noinst_HEADERS =
 

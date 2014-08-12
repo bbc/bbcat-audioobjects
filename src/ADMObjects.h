@@ -83,6 +83,13 @@ public:
   const std::string& GetTypeLabel() const {return typeLabel;}
 
   /*--------------------------------------------------------------------------------*/
+  /** Set and Get object typeDefinition
+   */
+  /*--------------------------------------------------------------------------------*/
+  void SetTypeDefinition(const std::string& str) {typeDefinition = str;}
+  const std::string& GetTypeDefinition() const {return typeDefinition;}
+
+  /*--------------------------------------------------------------------------------*/
   /** Return owner of this object
    */
   /*--------------------------------------------------------------------------------*/
@@ -472,6 +479,7 @@ protected:
   std::string id;
   std::string name;
   std::string typeLabel;
+  std::string typeDefinition;
   ADMVALUES   values;
 };
 
@@ -1293,6 +1301,20 @@ public:
   virtual SerialDataType_t GetSerialDataType() const {return SerialDataType_StreamFormat;}
 
   /*--------------------------------------------------------------------------------*/
+  /** Set and Get formatLabel
+   */
+  /*--------------------------------------------------------------------------------*/
+  void SetFormatLabel(const std::string& str) {formatLabel = str;}
+  const std::string& GetFormatLabel() const {return formatLabel;}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Set and Get formatDefinition
+   */
+  /*--------------------------------------------------------------------------------*/
+  void SetFormatDefinition(const std::string& str) {formatDefinition = str;}
+  const std::string& GetFormatDefinition() const {return formatDefinition;}
+
+  /*--------------------------------------------------------------------------------*/
   /** Set internal variables from values added to internal list (e.g. from XML)
    */
   /*--------------------------------------------------------------------------------*/
@@ -1388,6 +1410,8 @@ protected:
   virtual void SerializeEx(uint8_t *dst, uint_t& len) const;
 
 protected:
+  std::string                          formatLabel;
+  std::string                          formatDefinition;
   std::vector<ADMAudioChannelFormat *> channelformatrefs;
   std::vector<ADMAudioTrackFormat *>   trackformatrefs;
   std::vector<ADMAudioPackFormat *>    packformatrefs;
