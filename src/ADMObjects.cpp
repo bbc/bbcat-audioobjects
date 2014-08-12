@@ -2734,7 +2734,7 @@ void ADMTrackCursor::SetPosition(const Position& pos, const ParameterSet *supple
       (supplement  && current_supplement && (*supplement != *current_supplement)))   // supplement has changed
   {
     ADMData&            adm = channelformat->GetOwner();
-    ADMAudioBlockFormat *blockformat;
+    ADMAudioBlockFormat *blockformat     = NULL;
     bool                newblockrequired = true;
 
     // close current one off by setting end time
@@ -2758,6 +2758,8 @@ void ADMTrackCursor::SetPosition(const Position& pos, const ParameterSet *supple
       blockformat->SetRTime(currenttime);
       blockformat->SetPosition(pos, supplement);
     }
+
+    if (blockformat) DEBUG2(("Set position to %s", blockformat->GetPosition().ToString().c_str()));
   }
 }
 
