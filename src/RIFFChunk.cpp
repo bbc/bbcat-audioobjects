@@ -160,9 +160,9 @@ bool RIFFChunk::WriteChunk(SoundFile *file)
   {
     uint32_t data[] = {id, length};
 
-    // treat ID and length as big-endian
+    // treat ID as big-endian, length is little-endian
     ByteSwap(data[0], SWAP_FOR_BE);
-    ByteSwap(data[1], SWAP_FOR_BE);
+    ByteSwap(data[1], SWAP_FOR_LE);
 
     if (file->fwrite(data, NUMBEROF(data), sizeof(data[0])) > 0)
     {

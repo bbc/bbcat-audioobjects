@@ -303,8 +303,6 @@ uint_t SoundFileSamples::WriteSamples(const uint8_t *buffer, SampleFormat_t type
         clip.nsamples = MAX(clip.nsamples, totalsamples - clip.start);
 
         totalbytes    = totalsamples * format->GetBytesPerFrame();
-
-        file->fflush();
       }
       else if (res <= 0)
       {
