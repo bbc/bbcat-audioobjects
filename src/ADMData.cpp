@@ -988,6 +988,7 @@ bool ADMData::CreateFromOpenTLFile(const char *filename)
 
     fclose(fp);
   }
+  else ERROR("Failed to open file '%s'", filename);
 
   if (success)
   {
