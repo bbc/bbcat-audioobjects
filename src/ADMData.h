@@ -285,6 +285,14 @@ public:
    *
    * @param filename file listing track files to use for each channel
    *
+   * The file MUST be of the following format with each entry on its own line:
+   * <directory where OpenTL track files are stored>
+   * <ADM programme name>
+   * <ADM content name>
+   * <track>:<filename>
+   *
+   * Where <track> is 1..number of tracks available within ADM
+   *   and <filename> is the filename of the track file for that track
    */
   /*--------------------------------------------------------------------------------*/
   bool CreateFromOpenTLFile(const char *filename);
