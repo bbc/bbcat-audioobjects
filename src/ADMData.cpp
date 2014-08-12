@@ -5,7 +5,7 @@
 
 #include <algorithm>
 
-#define DEBUG_LEVEL 2
+#define DEBUG_LEVEL 1
 #include "ADMData.h"
 #include "RIFFChunk_Definitions.h"
 #include "OpenTLEventList.h"
@@ -1040,6 +1040,7 @@ bool ADMData::CreateFromOpenTLFile(const char *filename)
         streamFormat->Add(trackFormat);
         streamFormat->Add(channelFormat);
         audioTrack->Add(trackFormat);
+        audioTrack->Add(packFormat);
 
         // iterate through each event
         for (j = 0; j < evlist.size(); j++)

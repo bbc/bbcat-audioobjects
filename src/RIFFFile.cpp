@@ -174,12 +174,12 @@ void RIFFFile::Close()
       {
         uint32_t bytes = chunklist[i]->GetLength();
 
-        DEBUG2(("Chunk '%s' has length %lu bytes", chunklist[i]->GetName(), (ulong_t)bytes));
+        DEBUG3(("Chunk '%s' has length %lu bytes", chunklist[i]->GetName(), (ulong_t)bytes));
         
         totalbytes += bytes;
       }
 
-      DEBUG2(("Total bytes %lu bytes", (ulong_t)totalbytes));
+      DEBUG3(("Total size %lu bytes", (ulong_t)totalbytes));
 
       // set total length of RIFF chunk
       chunkmap[RIFF_ID]->CreateWriteData(NULL, totalbytes);
