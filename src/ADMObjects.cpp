@@ -2733,19 +2733,27 @@ void ADMTrackCursor::SetPosition(const Position& pos, const ParameterSet *supple
       (!supplement && current_supplement)                                         || // no supplement is suppled when current one does exist; or
       (supplement  && current_supplement && (*supplement != *current_supplement)))   // supplement has changed
   {
-    ADMData& adm = channelformat->GetOwner();
+    ADMData&            adm = channelformat->GetOwner();
     ADMAudioBlockFormat *blockformat;
+    bool                newblockrequired = true;
 
     // close current one off by setting end time
     if (blockindex < blockformats->size())
     {
       blockformat = (*blockformats)[blockindex];
 
-      blockformat->SetDuration(currenttime - blockformat->GetRTime());
+      if (blockformat->GetRTime() == currenttime)
+      {
+        // new position at same time as original -> just update this position
+        blockformat->SetPosition(pos, supplement);
+        // no need to create new blockformat
+        newblockrequired = false;
+      }
+      else blockformat->SetDuration(currenttime - blockformat->GetRTime());
     }
 
-    // create new blockformat
-    if ((blockformat = adm.CreateBlockFormat("", channelformat)) != NULL)
+    // create new blockformat if required
+    if (newblockrequired && ((blockformat = adm.CreateBlockFormat("", channelformat)) != NULL))
     {
       blockformat->SetRTime(currenttime);
       blockformat->SetPosition(pos, supplement);
