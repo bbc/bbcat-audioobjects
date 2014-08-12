@@ -2663,13 +2663,13 @@ void ADMTrackCursor::Setup(const ADMAudioTrack *_track)
   {
     const ADMAudioTrackFormat *trackformat;
 
-    if ((trackformat = track->GetTrackFormatRefs().front()) != NULL)
+    if ((track->GetTrackFormatRefs().size() > 0) && ((trackformat = track->GetTrackFormatRefs().front()) != NULL))
     {
       const ADMAudioStreamFormat *streamformat;
 
-      if ((streamformat = trackformat->GetStreamFormatRefs().front()) != NULL)
+      if ((trackformat->GetStreamFormatRefs().size() > 0) && ((streamformat = trackformat->GetStreamFormatRefs().front()) != NULL))
       {
-        if ((channelformat = const_cast<ADMAudioChannelFormat *>(streamformat->GetChannelFormatRefs().front())) != NULL)
+        if ((streamformat->GetChannelFormatRefs().size() > 0) && ((channelformat = const_cast<ADMAudioChannelFormat *>(streamformat->GetChannelFormatRefs().front())) != NULL))
         {
           blockformats = &channelformat->GetBlockFormatRefs();
         }
@@ -2699,7 +2699,7 @@ const Position *ADMTrackCursor::GetPosition() const
 {
   const Position *res = NULL;
 
-  if (blockindex < blockformats->size()) res = &(*blockformats)[blockindex]->GetPosition();
+  if (blockformats && (blockindex < blockformats->size())) res = &(*blockformats)[blockindex]->GetPosition();
 
   return res;
 }
@@ -2712,7 +2712,7 @@ const ParameterSet *ADMTrackCursor::GetPositionSupplement() const
 {
   const ParameterSet *res = NULL;
 
-  if (blockindex < blockformats->size()) res = &(*blockformats)[blockindex]->GetPositionSupplement();
+  if (blockformats && (blockindex < blockformats->size())) res = &(*blockformats)[blockindex]->GetPositionSupplement();
 
   return res;
 }
@@ -2723,43 +2723,46 @@ const ParameterSet *ADMTrackCursor::GetPositionSupplement() const
 /*--------------------------------------------------------------------------------*/
 void ADMTrackCursor::SetPosition(const Position& pos, const ParameterSet *supplement)
 {
-  const Position     *current_pos        = GetPosition();
-  const ParameterSet *current_supplement = GetPositionSupplement();
-
-  // decide whether a new blockformat is required
-  if (!current_pos                                                                || // if no existing entries; or
-      (current_pos && (pos != *current_pos))                                      || // if position has changed; or
-      (supplement  && !current_supplement)                                        || // a supplement is supplied when no current one exists; or
-      (!supplement && current_supplement)                                         || // no supplement is suppled when current one does exist; or
-      (supplement  && current_supplement && (*supplement != *current_supplement)))   // supplement has changed
+  if (blockformats)
   {
-    ADMData&            adm = channelformat->GetOwner();
-    ADMAudioBlockFormat *blockformat     = NULL;
-    bool                newblockrequired = true;
+    const Position     *current_pos        = GetPosition();
+    const ParameterSet *current_supplement = GetPositionSupplement();
 
-    // close current one off by setting end time
-    if (blockindex < blockformats->size())
+    // decide whether a new blockformat is required
+    if (!current_pos                                                                || // if no existing entries; or
+        (current_pos && (pos != *current_pos))                                      || // if position has changed; or
+        (supplement  && !current_supplement)                                        || // a supplement is supplied when no current one exists; or
+        (!supplement && current_supplement)                                         || // no supplement is suppled when current one does exist; or
+        (supplement  && current_supplement && (*supplement != *current_supplement)))   // supplement has changed
     {
-      blockformat = (*blockformats)[blockindex];
+      ADMData&            adm = channelformat->GetOwner();
+      ADMAudioBlockFormat *blockformat     = NULL;
+      bool                newblockrequired = true;
 
-      if (blockformat->GetRTime() == currenttime)
+      // close current one off by setting end time
+      if (blockindex < blockformats->size())
       {
-        // new position at same time as original -> just update this position
-        blockformat->SetPosition(pos, supplement);
-        // no need to create new blockformat
-        newblockrequired = false;
+        blockformat = (*blockformats)[blockindex];
+
+        if (blockformat->GetRTime() == currenttime)
+        {
+          // new position at same time as original -> just update this position
+          blockformat->SetPosition(pos, supplement);
+          // no need to create new blockformat
+          newblockrequired = false;
+        }
+        else blockformat->SetDuration(currenttime - blockformat->GetRTime());
       }
-      else blockformat->SetDuration(currenttime - blockformat->GetRTime());
-    }
 
-    // create new blockformat if required
-    if (newblockrequired && ((blockformat = adm.CreateBlockFormat("", channelformat)) != NULL))
-    {
-      blockformat->SetRTime(currenttime);
-      blockformat->SetPosition(pos, supplement);
-    }
+      // create new blockformat if required
+      if (newblockrequired && ((blockformat = adm.CreateBlockFormat("", channelformat)) != NULL))
+      {
+        blockformat->SetRTime(currenttime);
+        blockformat->SetPosition(pos, supplement);
+      }
 
-    if (blockformat) DEBUG2(("Set position to %s at %lu", blockformat->GetPosition().ToString().c_str(), (ulong_t)currenttime));
+      if (blockformat) DEBUG2(("Set position to %s at %lu", blockformat->GetPosition().ToString().c_str(), (ulong_t)currenttime));
+    }
   }
 }
 
@@ -2770,7 +2773,7 @@ void ADMTrackCursor::SetPosition(const Position& pos, const ParameterSet *supple
 void ADMTrackCursor::EndPositionChanges()
 {
   // close last block format off by setting end time
-  if (blockformats->size() > 0)
+  if (blockformats && (blockformats->size() > 0))
   {
     ADMAudioBlockFormat *blockformat = blockformats->back();
 
