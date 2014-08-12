@@ -2759,7 +2759,7 @@ void ADMTrackCursor::SetPosition(const Position& pos, const ParameterSet *supple
       blockformat->SetPosition(pos, supplement);
     }
 
-    if (blockformat) DEBUG2(("Set position to %s", blockformat->GetPosition().ToString().c_str()));
+    if (blockformat) DEBUG2(("Set position to %s at %lu", blockformat->GetPosition().ToString().c_str(), (ulong_t)currenttime));
   }
 }
 
