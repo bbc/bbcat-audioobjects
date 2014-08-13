@@ -15,7 +15,7 @@ public:
   OpenTLEventList();
   ~OpenTLEventList();
 
-  bool Readfile(const char *filename);
+  bool Readfile(const char *filename, ulong_t samplerate);
 
   const std::string& GetName()       const {return name;}
   const std::string& GetObjectName() const {return objectname;}

@@ -899,6 +899,7 @@ void ADMData::Serialize(uint8_t *dst, uint_t& len) const
  *
  * The file MUST be of the following format with each entry on its own line:
  * <directory where OpenTL track files are stored>
+ * <sample rate of original project> [<start-s> [<stop-s>]]
  * <ADM programme name>
  * <ADM content name>
  * <track>:<filename>
@@ -911,6 +912,8 @@ bool ADMData::CreateFromOpenTLFile(const char *filename)
 {
   std::vector<OpenTLEventList> tracks;
   std::string programmename, contentname;
+  ulong_t admstart   = 0, admstop = ~(ulong_t)0;
+  ulong_t samplerate = 48000;
   FILE *fp;
   bool success = false;
 
@@ -931,10 +934,27 @@ bool ADMData::CreateFromOpenTLFile(const char *filename)
       }
       else if (ln == 2)
       {
+        double s1 = 0.0, s2 = 0.0;
+        int n;
+
+        if ((n = sscanf(line, "%lu %lf %lf", &samplerate, &s1, &s2)) > 0)
+        {
+          if (n > 1) admstart = (ulong_t)(s1 * 1.0e9);
+          if (n > 2) admstop  = (ulong_t)(s2 * 1.0e9);
+        }
+        else
+        {
+          ERROR("Unable to decode line 2 of '%s'", filename);
+          success = false;
+          break;
+        }
+      }
+      else if (ln == 3)
+      {
         // ADM programme name
         programmename = line;
       }
-      else if (ln == 3)
+      else if (ln == 4)
       {
         // ADM content name
         contentname = line;
@@ -972,7 +992,7 @@ bool ADMData::CreateFromOpenTLFile(const char *filename)
 
               DEBUG3(("Reading track %u events from '%s'", tr, trackfile.c_str()));
 
-              if (evlist.Readfile(trackfile.c_str()))
+              if (evlist.Readfile(trackfile.c_str(), samplerate))
               {
                 DEBUG3(("Track %u '%s' has %u events", tr, evlist.GetName().c_str(), (uint_t)evlist.GetEventList().size()));
               }
@@ -1058,38 +1078,51 @@ bool ADMData::CreateFromOpenTLFile(const char *filename)
           const OpenTLEventList::EVENT& event      = evlist[j];
           const std::string&            objectname = event.objectname;
           ADMAudioObject *obj;
+          ulong_t start = event.start;
+          ulong_t stop  = start + event.length;
 
-          // find existing audio object (audio objects can cover a number of tracks)
-          if ((obj = dynamic_cast<ADMAudioObject *>(const_cast<ADMObject *>(GetObjectByName(objectname, ADMAudioObject::Type)))) != NULL)
+          if ((stop >= admstart) && (start < admstop))
           {
-            // modify times of object to include this event
-            uint64_t t1 = MIN(obj->GetStartTime(), (uint64_t)event.start);
-            uint64_t t2 = MAX(obj->GetStartTime() + obj->GetDuration(), (uint64_t)(event.start + event.length));
+            ulong_t length;
 
-            DEBUG3(("Updating audio object '%s' using track %u event %u (%lu for %lu)", objectname.c_str(), i + 1, j + 1, (ulong_t)t1, (ulong_t)(t2 - t1)));
+            start  = MAX(start, admstart);
+            stop   = MIN(stop,  admstop);
 
-            obj->SetStartTime(t1);
-            obj->SetDuration(t2 - t1);
-          }
-          else
-          {
-            // no existing object -> create a new one
-            if ((obj = CreateObject(objectname, content)) != NULL)
+            length = stop - start;
+            start -= admstart;
+
+            // find existing audio object (audio objects can cover a number of tracks)
+            if ((obj = dynamic_cast<ADMAudioObject *>(const_cast<ADMObject *>(GetObjectByName(objectname, ADMAudioObject::Type)))) != NULL)
             {
-              DEBUG3(("New audio object '%s', first seen on track %u event %u (%lu for %lu)", objectname.c_str(), i + 1, j + 1, event.start, event.length));
+              // modify times of object to include this event
+              uint64_t t1 = MIN(obj->GetStartTime(), (uint64_t)start);
+              uint64_t t2 = MAX(obj->GetStartTime() + obj->GetDuration(), (uint64_t)(start + length));
 
-              // and set its times
-              obj->SetStartTime(event.start);
-              obj->SetDuration(event.length);
+              DEBUG3(("Updating audio object '%s' using track %u event %u (%lu for %lu)", objectname.c_str(), i + 1, j + 1, (ulong_t)t1, (ulong_t)(t2 - t1)));
+
+              obj->SetStartTime(t1);
+              obj->SetDuration(t2 - t1);
             }
-          }
+            else
+            {
+              // no existing object -> create a new one
+              if ((obj = CreateObject(objectname, content)) != NULL)
+              {
+                DEBUG3(("New audio object '%s', first seen on track %u event %u (%lu for %lu)", objectname.c_str(), i + 1, j + 1, start, length));
 
-          if (obj)
-          {
-            // add the pack to the object
-            obj->Add(packFormat);
-            // add the track to the object
-            obj->Add(audioTrack);
+                // and set its times
+                obj->SetStartTime(start);
+                obj->SetDuration(length);
+              }
+            }
+
+            if (obj)
+            {
+              // add the pack to the object
+              obj->Add(packFormat);
+              // add the track to the object
+              obj->Add(audioTrack);
+            }
           }
         }
       }

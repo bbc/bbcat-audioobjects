@@ -46,7 +46,7 @@ std::string OpenTLEventList::RemoveSpeakerSuffix(const std::string &str) const
   return res;
 }
 
-bool OpenTLEventList::Readfile(const char *filename)
+bool OpenTLEventList::Readfile(const char *filename, ulong_t samplerate)
 {
   FILE *fp;
   bool success = false;
@@ -132,6 +132,10 @@ bool OpenTLEventList::Readfile(const char *filename)
             else                                                      objectcount[ev.objectname]++;
 
             Printf(ev.objectname, "_%u", objectcount[ev.objectname]);
+
+            // convert from samples to ns time
+            ev.start  = (ulong_t)(((ullong_t)ev.start  * 1000000000ULL) / samplerate);
+            ev.length = (ulong_t)(((ullong_t)ev.length * 1000000000ULL) / samplerate);
 
             list.push_back(ev);
           }
