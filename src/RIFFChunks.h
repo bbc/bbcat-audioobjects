@@ -55,6 +55,9 @@ public:
   RIFFWAVEChunk(uint32_t chunk_id) : RIFFChunk(chunk_id) {}
   virtual ~RIFFWAVEChunk() {}
 
+  // WAVE chunk ONLY takes up 4 bytes
+  virtual uint32_t GetLengthOnFile() const {return 4;}
+
   // special write chunk function (no length or data)
   virtual bool WriteChunk(SoundFile *file);
 

@@ -61,10 +61,10 @@ public:
   uint32_t       GetLength() const {return length;}
 
   /*--------------------------------------------------------------------------------*/
-  /** Return chunk data length as stored on file (with padding if necessary)
+  /** Return chunk data length as stored on file (header plus length plus padding if necessary)
    */
   /*--------------------------------------------------------------------------------*/
-  uint32_t       GetLengthOnFile() const {return length + (length & align);}
+  virtual uint32_t GetLengthOnFile() const {return 8 + length + (length & align);}
 
   /*--------------------------------------------------------------------------------*/
   /** Return chunk data (or NULL if data has not yet been read)
