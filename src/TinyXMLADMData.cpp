@@ -98,7 +98,7 @@ void TinyXMLADMData::ParseHeader(ADMHEADER& header, const std::string& type, voi
     }
   }
 
-  DEBUG4(("Parse header (type='%s', id='%s', name='%s')", header.type.c_str(), header.id.c_str(), header.name.c_str()));
+  DEBUG2(("Parse header (type='%s', id='%s', name='%s')", header.type.c_str(), header.id.c_str(), header.name.c_str()));
 }
 
 void TinyXMLADMData::ParseValue(ADMObject *obj, const std::string& type, void *userdata)
@@ -168,7 +168,6 @@ void TinyXMLADMData::ParseValues(ADMObject *obj, const std::string& type, void *
               attr_name.c_str(), attr->Value()));
     }
   }
-
 
   // parse subnode elements and create values from them
   for (subnode = node->FirstChild(); subnode; subnode = subnode->NextSibling())

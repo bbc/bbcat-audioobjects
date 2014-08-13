@@ -93,10 +93,8 @@ protected:
   virtual void SetFileChannelsAndSampleRate();
 
 protected:
-  ThreadLockObject      tlock;
   Playlist              playlist;
-  std::vector<Sample_t> samples;
-  uint32_t              reporttick;
+  std::vector<Sample_t> samplesbuffer;
 };
 
 BBC_AUDIOTOOLBOX_END

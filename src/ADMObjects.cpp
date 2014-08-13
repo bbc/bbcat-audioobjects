@@ -2773,11 +2773,27 @@ void ADMTrackCursor::SetPosition(const Position& pos, const ParameterSet *supple
 void ADMTrackCursor::EndPositionChanges()
 {
   // close last block format off by setting end time
-  if (blockformats && (blockformats->size() > 0))
+  if (blockformats)
   {
-    ADMAudioBlockFormat *blockformat = blockformats->back();
+    if (blockformats->size() > 0)
+    {
+      ADMAudioBlockFormat *blockformat = blockformats->back();
 
-    blockformat->SetDuration(currenttime - blockformat->GetRTime());
+      blockformat->SetDuration(currenttime - blockformat->GetRTime());
+
+      DEBUG2(("Set duration of last block at %lu to %lu", (ulong_t)currenttime, (ulong_t)blockformat->GetDuration()));
+    }
+    else
+    {
+      ADMData&            adm = channelformat->GetOwner();
+      ADMAudioBlockFormat *blockformat;
+
+      if ((blockformat = adm.CreateBlockFormat("", channelformat)) != NULL)
+      {
+        blockformat->SetDuration(currenttime - blockformat->GetRTime());
+        DEBUG2(("Created empty block with duration at %lu of %lu", (ulong_t)currenttime, (ulong_t)blockformat->GetDuration()));
+      }
+    }
   }
 }
 

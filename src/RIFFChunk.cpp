@@ -21,7 +21,8 @@ std::map<uint32_t, RIFFChunk::PROVIDER> RIFFChunk::providermap;
 RIFFChunk::RIFFChunk(uint32_t chunk_id) : id(chunk_id),
                                           length(0),
                                           datapos(0),
-                                          data(NULL)
+                                          data(NULL),
+                                          align(1)
 {
   // create ASCII name from ID
   char _name[] = {(char)(id >> 24), (char)(id >> 16), (char)(id >> 8), (char)id};
@@ -61,7 +62,7 @@ bool RIFFChunk::ReadChunk(SoundFile *file)
       default:
       case ChunkHandling_SkipOverChunk:
         // skip to end of chunk
-        if (file->fseek(datapos + length, SEEK_SET) == 0) success = true;
+        if (file->fseek(datapos + length + (length & align), SEEK_SET) == 0) success = true;
         else
         {
           ERROR("Failed to seek to end of chunk '%s' (position %lu), error %s", GetName(), datapos + length, strerror(file->ferror()));
@@ -94,7 +95,7 @@ bool RIFFChunk::ReadChunk(SoundFile *file)
           // failed to read data, skip over it for next chunk
           ERROR("Failed to read %lu bytes of chunk '%s', error %s", (ulong_t)length, GetName(), strerror(file->ferror()));
 
-          if (file->fseek(datapos + length, SEEK_SET) != 0)
+          if (file->fseek(datapos + length + (length & align), SEEK_SET) != 0)
           {
             ERROR("Failed to seek to end of chunk '%s' (position %lu) (after chunk read failure), error %s", GetName(), datapos + length, strerror(file->ferror()));
           }
@@ -131,7 +132,11 @@ bool RIFFChunk::ReadData(SoundFile *file)
           // swap byte ordering for data
           ByteSwapData();
 
-          success = true;
+          if (length & align)
+          {
+            success = (file->fseek(length & align, SEEK_CUR) == 0);
+          }
+          else success = true;
         }
         else ERROR("Failed to read %lu bytes for chunk '%s' data, error %s", (ulong_t)length, GetName(), strerror(file->ferror()));
       }
@@ -164,10 +169,20 @@ bool RIFFChunk::WriteChunk(SoundFile *file)
     ByteSwap(data[0], SWAP_FOR_BE);
     ByteSwap(data[1], SWAP_FOR_LE);
 
-    if (file->fwrite(data, NUMBEROF(data), sizeof(data[0])) > 0)
+    if (file->fwrite(data, sizeof(data[0]), NUMBEROF(data)) > 0)
     {
       datapos = file->ftell();
-      success = WriteChunkData(file);
+      if (WriteChunkData(file))
+      {
+        // if chunk length is odd, write an extra byte to pad the file
+        if (length & align)
+        {
+          uint8_t _pad = 0;
+
+          success = (file->fwrite(&_pad, sizeof(_pad), 1) > 0);
+        }
+        else success = true;
+      }
     }
     else
     {

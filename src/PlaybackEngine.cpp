@@ -14,7 +14,7 @@ BBC_AUDIOTOOLBOX_START
 
 PlaybackEngine::PlaybackEngine() : AudioPositionProcessor()
 {
-  samples.resize(4096);
+  samplesbuffer.resize(4096);
   SetGenerator(new FilePositionGenerator(this, playlist));
 }
 
@@ -178,7 +178,7 @@ uint_t PlaybackEngine::Render(const Sample_t *src, Sample_t *dst,
       if (!inputchannels) SetFileChannelsAndSampleRate();
 
       // calculate maximum number of frames that can be read and read them into a temporary buffer
-      nread = file->ReadSamples(&samples[0], MIN(samples.size() / inputchannels, ndstframes));
+      nread = file->ReadSamples(&samplesbuffer[0], MIN(samplesbuffer.size() / inputchannels, ndstframes));
 
       // end of this file, move onto next one
       if (nread == 0)
@@ -190,7 +190,7 @@ uint_t PlaybackEngine::Render(const Sample_t *src, Sample_t *dst,
     }
 
     // allow LESS samples to be written to output than sent to renderer (for non-unity time rendering processes)
-    uint_t nwritten = AudioPositionProcessor::Render(&samples[0], dst,
+    uint_t nwritten = AudioPositionProcessor::Render(&samplesbuffer[0], dst,
                                                      inputchannels, ndstchannels,
                                                      nread, ndstframes, level);
 

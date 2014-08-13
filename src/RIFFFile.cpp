@@ -4,7 +4,7 @@
 #include <string.h>
 #include <math.h>
 
-#define DEBUG_LEVEL 2
+#define DEBUG_LEVEL 1
 
 #include "RIFFFile.h"
 #include "RIFFChunk_Definitions.h"
@@ -118,7 +118,8 @@ bool RIFFFile::Create(const char *filename, uint32_t samplerate, uint_t nchannel
 
   if (!IsOpen())
   {
-    if (((file = new SoundFile) != NULL) && file->fopen(filename, "wb+"))
+    if (samplerate && nchannels &&
+        ((file = new SoundFile) != NULL) && file->fopen(filename, "wb+"))
     {
       const uint32_t ids[] = {RIFF_ID, WAVE_ID, fmt_ID, data_ID};
       uint_t i;
@@ -172,7 +173,7 @@ void RIFFFile::Close()
       uint32_t totalbytes = 0;
       for (i = 0; i < chunklist.size(); i++)
       {
-        uint32_t bytes = chunklist[i]->GetLength();
+        uint32_t bytes = chunklist[i]->GetLengthOnFile();
 
         DEBUG3(("Chunk '%s' has length %lu bytes", chunklist[i]->GetName(), (ulong_t)bytes));
         
@@ -192,6 +193,7 @@ void RIFFFile::Close()
         // all but the data chunk can be written (it MUST be last)
         if ((chunk = chunklist[i])->GetID() != data_ID)
         {
+          DEBUG2(("Writing chunk '%s' size %lu bytes (actually %lu bytes)", chunklist[i]->GetName(), (ulong_t)chunklist[i]->GetLength(), (ulong_t)chunklist[i]->GetLengthOnFile()));
           chunk->WriteChunk(file);
         }
       }

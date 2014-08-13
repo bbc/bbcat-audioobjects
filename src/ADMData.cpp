@@ -51,7 +51,11 @@ void ADMData::Delete()
 bool ADMData::SetChna(const uint8_t *data)
 {
   const CHNA_CHUNK& chna = *(const CHNA_CHUNK *)data;
+  std::string terminator;
   bool success = true;
+
+  // create string with a single 0 byte in it to detect terminators
+  terminator.push_back(0);
 
   uint16_t i;
   for (i = 0; i < chna.UIDCount; i++)
@@ -71,10 +75,14 @@ bool ADMData::SetChna(const uint8_t *data)
 
       value.name = ADMAudioTrackFormat::Reference;
       value.value.assign(chna.UIDs[i].TrackRef, sizeof(chna.UIDs[i].TrackRef));
+      // trim any zero bytes of the end of the strin
+      value.value = value.value.substr(0, value.value.find(terminator));
       track->AddValue(value);
             
       value.name = ADMAudioPackFormat::Reference;
       value.value.assign(chna.UIDs[i].PackRef, sizeof(chna.UIDs[i].PackRef));
+      // trim any zero bytes of the end of the strin
+      value.value = value.value.substr(0, value.value.find(terminator));
       track->AddValue(value);
 
       track->SetValues();
@@ -117,7 +125,7 @@ bool ADMData::SetAxml(const std::string& data)
 {
   bool success = false;
 
-  DEBUG4(("XML: %s", data.c_str()));
+  DEBUG3(("Read XML:\n%s", data.c_str()));
 
   if (TranslateXML(data))
   {
@@ -225,6 +233,8 @@ std::string ADMData::GetAxml(const std::string& indent, const std::string& eol, 
   Printf(str,
          "%s</ebuCoreMain>%s",
          CreateIndent(indent, ind_level).c_str(), eol.c_str());
+
+  DEBUG3(("Generated XML:\n%s", str.c_str()));
 
   return str;
 }
@@ -637,7 +647,7 @@ ADMObject *ADMData::Parse(const std::string& type, void *userdata)
   ADMObject *obj;
 
   ParseHeader(header, type, userdata);
-    
+
   if ((obj = Create(type, header.id, header.name)) != NULL)
   {
     ParseValues(obj, type, userdata);
@@ -678,8 +688,7 @@ ADMObject *ADMData::GetReference(const ADMVALUE& value)
   uuid += "/" + value.value;
 
   if ((it = admobjects.find(uuid)) != admobjects.end()) obj = it->second;
-
-  if (!obj) DEBUG2(("Failed to find reference '%s'", uuid.c_str()));
+  else DEBUG3(("Failed to find reference '%s', object list:", uuid.c_str()));
 
   return obj;
 }

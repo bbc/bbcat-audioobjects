@@ -61,6 +61,12 @@ public:
   uint32_t       GetLength() const {return length;}
 
   /*--------------------------------------------------------------------------------*/
+  /** Return chunk data length as stored on file (with padding if necessary)
+   */
+  /*--------------------------------------------------------------------------------*/
+  uint32_t       GetLengthOnFile() const {return length + (length & align);}
+
+  /*--------------------------------------------------------------------------------*/
   /** Return chunk data (or NULL if data has not yet been read)
    */
   /*--------------------------------------------------------------------------------*/
@@ -264,6 +270,7 @@ protected:
   uint32_t    length;         ///< chunk data length
   ulong_t     datapos;        ///< chunk data file position
   uint8_t     *data;          ///< chunk data (if read)
+  uint8_t     align;          ///< file alignment: 0 for no alignment, 1 for even byte alignment
 
   static std::map<uint32_t,PROVIDER> providermap;
 };
