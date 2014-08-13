@@ -256,7 +256,7 @@ uint_t SoundFileSamples::ReadSamples(uint8_t *buffer, SampleFormat_t type, uint_
   return n;
 }
 
-uint_t SoundFileSamples::WriteSamples(const uint8_t *buffer, SampleFormat_t type, uint_t frames, uint_t firstchannel, uint_t nchannels)
+uint_t SoundFileSamples::WriteSamples(const uint8_t *buffer, SampleFormat_t type, uint_t srcchannel, uint_t nsrcchannels, uint_t nsrcframes, uint_t firstchannel, uint_t nchannels)
 {
   uint_t n = 0;
 
@@ -268,9 +268,9 @@ uint_t SoundFileSamples::WriteSamples(const uint8_t *buffer, SampleFormat_t type
     nchannels    = MIN(nchannels,    clip.nchannels - firstchannel);
 
     n = 0;
-    while (frames)
+    while (nsrcframes)
     {
-      uint_t nframes = MIN(frames, samplebufferframes);
+      uint_t nframes = MIN(nsrcframes, samplebufferframes);
       size_t res;
 
       if (nchannels < format->GetChannels())
@@ -286,18 +286,18 @@ uint_t SoundFileSamples::WriteSamples(const uint8_t *buffer, SampleFormat_t type
       }
 
       // copy/interleave/convert samples
-      TransferSamples(buffer, type, MACHINE_IS_BIG_ENDIAN, 0, nchannels,
-                      samplebuffer, format->GetSampleFormat(), format->GetSamplesBigEndian(), clip.channel + firstchannel, format->GetChannels(),
-                      nchannels,
+      TransferSamples(buffer, type, MACHINE_IS_BIG_ENDIAN, srcchannel, nsrcchannels,
+                      samplebuffer, format->GetSampleFormat(), format->GetSamplesBigEndian(), clip.channel + firstchannel, nchannels,
+                      ~0,       // number of channels actually transfer will be limited by nsrcchannels and nchannels above
                       nframes);
 
       if ((res = file->fwrite(samplebuffer, bpf, nframes)) > 0)
       {
-        nframes    = res;
-        n         += nframes;
-        buffer    += nframes * nchannels * GetBytesPerSample(type);
-        frames    -= nframes;
-        samplepos += nframes;
+        nframes     = res;
+        n          += nframes;
+        buffer     += nframes * nsrcchannels * GetBytesPerSample(type);
+        nsrcframes -= nframes;
+        samplepos  += nframes;
 
         totalsamples  = MAX(totalsamples,  samplepos);
         clip.nsamples = MAX(clip.nsamples, totalsamples - clip.start);

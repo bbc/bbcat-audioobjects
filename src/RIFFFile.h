@@ -231,11 +231,11 @@ public:
    * @return number of frames written or -1 for an error (no open file for example)
    */
   /*--------------------------------------------------------------------------------*/
-  sint_t WriteFrames(const uint8_t *buffer, SampleFormat_t type, uint_t nframes) {return filesamples ? filesamples->WriteSamples((const uint8_t *)buffer, type, nframes) : -1;}
-  sint_t WriteFrames(const int16_t *buffer, uint_t nframes = 1) {return WriteFrames((const uint8_t *)buffer, SampleFormatOf(buffer), nframes);}
-  sint_t WriteFrames(const int32_t *buffer, uint_t nframes = 1) {return WriteFrames((const uint8_t *)buffer, SampleFormatOf(buffer), nframes);}
-  sint_t WriteFrames(const float   *buffer, uint_t nframes = 1) {return WriteFrames((const uint8_t *)buffer, SampleFormatOf(buffer), nframes);}
-  sint_t WriteFrames(const double  *buffer, uint_t nframes = 1) {return WriteFrames((const uint8_t *)buffer, SampleFormatOf(buffer), nframes);}
+  sint_t WriteFrames(const uint8_t *buffer, SampleFormat_t type, uint_t srcchannel, uint_t nsrcchannels, uint_t nsrcframes = 1) {return filesamples ? filesamples->WriteSamples((const uint8_t *)buffer, type, srcchannel, nsrcchannels, nsrcframes) : -1;}
+  sint_t WriteFrames(const int16_t *buffer, uint_t srcchannel, uint_t nsrcchannels, uint_t nsrcframes = 1) {return WriteFrames((const uint8_t *)buffer, SampleFormatOf(buffer), srcchannel, nsrcchannels, nsrcframes);}
+  sint_t WriteFrames(const int32_t *buffer, uint_t srcchannel, uint_t nsrcchannels, uint_t nsrcframes = 1) {return WriteFrames((const uint8_t *)buffer, SampleFormatOf(buffer), srcchannel, nsrcchannels, nsrcframes);}
+  sint_t WriteFrames(const float   *buffer, uint_t srcchannel, uint_t nsrcchannels, uint_t nsrcframes = 1) {return WriteFrames((const uint8_t *)buffer, SampleFormatOf(buffer), srcchannel, nsrcchannels, nsrcframes);}
+  sint_t WriteFrames(const double  *buffer, uint_t srcchannel, uint_t nsrcchannels, uint_t nsrcframes = 1) {return WriteFrames((const uint8_t *)buffer, SampleFormatOf(buffer), srcchannel, nsrcchannels, nsrcframes);}
 
 protected:
   /*--------------------------------------------------------------------------------*/

@@ -68,7 +68,7 @@ uint_t ADMFileWriteRenderer::Render(const Sample_t *src, Sample_t *dst,
   if (filesamples)
   {
     // write to file
-    filesamples->WriteSamples(src, nsrcframes, 0, nsrcchannels);
+    filesamples->WriteSamples(src, 0, nsrcchannels, nsrcframes);
   }
 
   return MIN(nsrcframes, ndstframes);

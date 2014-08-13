@@ -110,11 +110,11 @@ public:
   virtual uint_t ReadSamples(float    *dst, uint_t frames, uint_t firstchannel = 0, uint_t nchannels = ~0) {return ReadSamples((uint8_t *)dst, SampleFormatOf(dst), frames, firstchannel, nchannels);}
   virtual uint_t ReadSamples(double   *dst, uint_t frames, uint_t firstchannel = 0, uint_t nchannels = ~0) {return ReadSamples((uint8_t *)dst, SampleFormatOf(dst), frames, firstchannel, nchannels);}
 
-  virtual uint_t WriteSamples(const uint8_t  *buffer, SampleFormat_t type, uint_t frames, uint_t firstchannel = 0, uint_t nchannels = ~0);
-  virtual uint_t WriteSamples(const sint16_t *dst, uint_t frames, uint_t firstchannel = 0, uint_t nchannels = ~0) {return WriteSamples((const uint8_t *)dst, SampleFormatOf(dst), frames, firstchannel, nchannels);}
-  virtual uint_t WriteSamples(const sint32_t *dst, uint_t frames, uint_t firstchannel = 0, uint_t nchannels = ~0) {return WriteSamples((const uint8_t *)dst, SampleFormatOf(dst), frames, firstchannel, nchannels);}
-  virtual uint_t WriteSamples(const float    *dst, uint_t frames, uint_t firstchannel = 0, uint_t nchannels = ~0) {return WriteSamples((const uint8_t *)dst, SampleFormatOf(dst), frames, firstchannel, nchannels);}
-  virtual uint_t WriteSamples(const double   *dst, uint_t frames, uint_t firstchannel = 0, uint_t nchannels = ~0) {return WriteSamples((const uint8_t *)dst, SampleFormatOf(dst), frames, firstchannel, nchannels);}
+  virtual uint_t WriteSamples(const uint8_t  *buffer, SampleFormat_t type, uint_t srcchannel, uint_t nsrcchannels, uint_t nsrcframes = 1, uint_t firstchannel = 0, uint_t nchannels = ~0);
+  virtual uint_t WriteSamples(const sint16_t *dst, uint_t srcchannel, uint_t nsrcchannels, uint_t nsrcframes = 1, uint_t firstchannel = 0, uint_t nchannels = ~0) {return WriteSamples((const uint8_t *)dst, SampleFormatOf(dst), srcchannel, nsrcchannels, nsrcframes, firstchannel, nchannels);}
+  virtual uint_t WriteSamples(const sint32_t *dst, uint_t srcchannel, uint_t nsrcchannels, uint_t nsrcframes = 1, uint_t firstchannel = 0, uint_t nchannels = ~0) {return WriteSamples((const uint8_t *)dst, SampleFormatOf(dst), srcchannel, nsrcchannels, nsrcframes, firstchannel, nchannels);}
+  virtual uint_t WriteSamples(const float    *dst, uint_t srcchannel, uint_t nsrcchannels, uint_t nsrcframes = 1, uint_t firstchannel = 0, uint_t nchannels = ~0) {return WriteSamples((const uint8_t *)dst, SampleFormatOf(dst), srcchannel, nsrcchannels, nsrcframes, firstchannel, nchannels);}
+  virtual uint_t WriteSamples(const double   *dst, uint_t srcchannel, uint_t nsrcchannels, uint_t nsrcframes = 1, uint_t firstchannel = 0, uint_t nchannels = ~0) {return WriteSamples((const uint8_t *)dst, SampleFormatOf(dst), srcchannel, nsrcchannels, nsrcframes, firstchannel, nchannels);}
 
 protected:
   virtual void UpdateData();
