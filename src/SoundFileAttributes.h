@@ -10,6 +10,10 @@
 
 BBC_AUDIOTOOLBOX_START
 
+/*--------------------------------------------------------------------------------*/
+/** Class mimicking FILE functions but which keeps the filename and open mode allowing duplication 
+ */
+/*--------------------------------------------------------------------------------*/
 class SoundFile
 {
 public:

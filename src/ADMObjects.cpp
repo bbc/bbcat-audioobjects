@@ -2755,10 +2755,12 @@ void ADMTrackCursor::SetPosition(const Position& pos, const ParameterSet *supple
       }
 
       // create new blockformat if required
-      if (newblockrequired && ((blockformat = adm.CreateBlockFormat("", channelformat)) != NULL))
+      if (newblockrequired && ((blockformat = new ADMAudioBlockFormat(adm, adm.CreateID(ADMAudioBlockFormat::Type, channelformat), "")) != NULL))
       {
         blockformat->SetRTime(currenttime);
         blockformat->SetPosition(pos, supplement);
+        channelformat->Add(blockformat);
+        Seek(currenttime);
       }
 
       if (blockformat) DEBUG2(("Set position to %s at %lu", blockformat->GetPosition().ToString().c_str(), (ulong_t)currenttime));
