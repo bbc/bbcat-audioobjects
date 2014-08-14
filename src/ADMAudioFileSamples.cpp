@@ -59,6 +59,8 @@ void ADMAudioFileSamples::UpdatePosition()
 {
   uint_t i;
 
+  SoundFileSamples::UpdatePosition();
+
   for (i = 0; i < cursors.size(); i++)
   {
     cursors[i]->Seek(GetAbsolutePositionNS());
