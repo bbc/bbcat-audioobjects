@@ -56,7 +56,7 @@ public:
   virtual SampleFormat_t GetSampleFormat()     const {return format;}
   virtual bool           GetSamplesBigEndian() const {return bigendian;}
 
-  virtual void           SetSampleRate(uint32_t val)         {samplerate = val; timebase.SetDenominator(samplerate);}
+  virtual void           SetSampleRate(uint32_t val)         {samplerate = val; timebase.SetDenominator(samplerate); timebase.Reset();}
   virtual void           SetChannels(uint_t val)             {channels = val;}
   virtual void           SetSampleFormat(SampleFormat_t val) {format = val; bytespersample = bbcat::GetBytesPerSample(format);}
   virtual void           SetSamplesBigEndian(bool val)       {bigendian = val;}
@@ -87,18 +87,24 @@ public:
   const SoundFormat *GetFormat() const {return format;}
   virtual void SetFile(const SoundFile *file, ulong_t pos, ulong_t bytes, bool readonly = true);
 
-  uint_t  GetStartChannel()     const {return clip.channel;}
-  uint_t  GetChannels()         const {return clip.nchannels;}
+  uint_t  GetStartChannel()             const {return clip.channel;}
+  uint_t  GetChannels()                 const {return clip.nchannels;}
 
-  ulong_t GetPosition()         const {return samplepos;}
-  ulong_t GetLength()           const {return clip.nsamples;}
-  ulong_t GetAbsolutePosition() const {return clip.start + samplepos;}
-  ulong_t GetAbsoluteLength()   const {return clip.start + clip.nsamples;}
+  ulong_t GetSamplePosition()           const {return samplepos;}
+  ulong_t GetSampleLength()             const {return clip.nsamples;}
+  ulong_t GetAbsoluteSamplePosition()   const {return clip.start + samplepos;}
+  ulong_t GetAbsoluteSampleLength()     const {return clip.start + clip.nsamples;}
 
-  void    SetPosition(ulong_t pos)         {samplepos = MIN(pos, clip.nsamples); UpdatePosition();}
-  void    SetAbsolutePosition(ulong_t pos) {samplepos = LIMIT(pos, clip.start, clip.start + clip.nsamples) - clip.start; UpdatePosition();}
+  void    SetSamplePosition(ulong_t pos)         {samplepos = MIN(pos, clip.nsamples); UpdatePosition();}
+  void    SetAbsoluteSamplePosition(ulong_t pos) {samplepos = LIMIT(pos, clip.start, clip.start + clip.nsamples) - clip.start; UpdatePosition();}
 
-  const UniversalTime& GetPositionNanoSeconds() const {return timebase;}
+  uint64_t GetPositionNS()              const {return timebase.Calc(GetSamplePosition());}
+  double   GetPositionSeconds()         const {return timebase.CalcSeconds(GetSamplePosition());}
+
+  uint64_t GetAbsolutePositionNS()      const {return timebase.GetTime();}
+  double   GetAbsolutePositionSeconds() const {return timebase.GetTimeSeconds();}
+
+  const UniversalTime& GetTimeBase()    const {return timebase;}
 
   typedef struct
   {
@@ -124,7 +130,7 @@ public:
 
 protected:
   virtual void UpdateData();
-  virtual void UpdatePosition() {timebase.Set(GetAbsolutePosition());}
+  virtual void UpdatePosition() {timebase.Set(GetAbsoluteSamplePosition());}
 
   virtual bool CreateTempFile();
 

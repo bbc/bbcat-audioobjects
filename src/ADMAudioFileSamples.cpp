@@ -57,12 +57,11 @@ ADMAudioFileSamples::~ADMAudioFileSamples()
 
 void ADMAudioFileSamples::UpdatePosition()
 {
-  uint64_t t = ADMObject::SamplesToTime(GetAbsolutePosition(), GetFormat()->GetSampleRate());
-  uint_t   i;
+  uint_t i;
 
   for (i = 0; i < cursors.size(); i++)
   {
-    cursors[i]->Seek(t);
+    cursors[i]->Seek(GetAbsolutePositionNS());
   }
 }
 

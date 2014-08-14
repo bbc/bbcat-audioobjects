@@ -27,7 +27,7 @@ ADMFileWriteRenderer::~ADMFileWriteRenderer()
 /*--------------------------------------------------------------------------------*/
 void ADMFileWriteRenderer::Close()
 {
-  uint64_t t = filesamples ? filesamples->GetPositionNanoSeconds().GetTime() : 0;
+  uint64_t t = filesamples ? filesamples->GetPositionNS() : 0;
   uint_t i;
 
   for (i = 0; i < cursors.size(); i++)
@@ -133,7 +133,7 @@ void ADMFileWriteRenderer::UpdatePositionEx(uint_t channel, const Position& pos,
   {
     PositionCursor *cursor = cursors[channel];
 
-    if (filesamples) cursor->Seek(filesamples->GetPositionNanoSeconds().GetTime());
+    if (filesamples) cursor->Seek(filesamples->GetPositionNS());
     cursor->SetPosition(pos, supplement);
   }
 }

@@ -62,7 +62,7 @@ void Playlist::Clear()
 void Playlist::Reset()
 {
   it = list.begin();
-  if (it != list.end()) (*it)->SetPosition(0);
+  if (it != list.end()) (*it)->SetSamplePosition(0);
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -74,7 +74,7 @@ void Playlist::Next()
   if (it != list.end())
   {
     // advance along list and reset position of file if not at end of list
-    if ((++it) != list.end()) (*it)->SetPosition(0);
+    if ((++it) != list.end()) (*it)->SetSamplePosition(0);
     // else if looping enabled then reset to the start of the list
     else if (loop_all) Reset();
   }
