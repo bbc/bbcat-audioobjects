@@ -337,6 +337,8 @@ void SoundFileSamples::UpdateData()
       0, ~(uint_t)0,
     };
     SetClip(newclip);
+
+    timebase = format->GetTimeBase();
   }
 }
 
