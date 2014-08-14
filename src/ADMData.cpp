@@ -947,7 +947,7 @@ bool ADMData::CreateFromFile(const char *filename)
 
         if ((programme = CreateProgramme(programmename)) != NULL)
         {
-          if ((content = CreateContent(contentname)) == NULL)
+          if ((content = CreateContent(contentname, programme)) == NULL)
           {
             ERROR("Failed to create content '%s'", contentname.c_str());
             success = false;
