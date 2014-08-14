@@ -902,34 +902,29 @@ void ADMData::Serialize(uint8_t *dst, uint_t& len) const
 }
 
 /*--------------------------------------------------------------------------------*/
-/** Create ADM from OpenTL based tracklist
+/** Create ADM from a simple text file
  *
- * @param filename file listing track files to use for each channel
+ * @param filename file describing the basic ADM layout
  *
  * The file MUST be of the following format with each entry on its own line:
- * <directory where OpenTL track files are stored>
- * <sample rate of original project> [<start> [<length>]]
- * <ADM programme name>
- * <ADM content name>
- * <track>:<filename>
+ * <ADM programme name>[:<ADM content name>]
+ *
+ * then for each track:
+ * <track>:<trackname>:<objectname>
  *
  * Where <track> is 1..number of tracks available within ADM
- *   and <filename> is the filename of the track file for that track
  */
 /*--------------------------------------------------------------------------------*/
-bool ADMData::CreateFromOpenTLFile(const char *filename)
+bool ADMData::CreateFromFile(const char *filename)
 {
-  std::vector<OpenTLEventList> tracks;
-  std::string programmename, contentname;
-  ulong_t admstart   = 0, admstop = ~(ulong_t)0;
-  ulong_t samplerate = 48000;
   FILE *fp;
   bool success = false;
 
   if ((fp = fopen(filename, "r")) != NULL)
   {
     static char line[1024];
-    std::string dir;
+    ADMAudioProgramme *programme = NULL;
+    ADMAudioContent   *content   = NULL;
     uint_t ln = 1;
 
     success = true;
@@ -938,205 +933,117 @@ bool ADMData::CreateFromOpenTLFile(const char *filename)
     {
       if (ln == 1)
       {
-        // line 1: directory of track files
-        dir = line;
-      }
-      else if (ln == 2)
-      {
-        double m, s;
+        // line 1: <programme-name>[:<content-name>]
+        std::string programmename, contentname;
+        const char *p;
 
-        if (sscanf(line, "%lu", &samplerate) > 0)
+        // find optionally different content name
+        if ((p = strchr(line, ':')) != NULL)
         {
-          // interpret start and length
-          if ((sscanf(line, "%*s %lf:%lf",     &m, &s) == 2) ||
-              (sscanf(line, "%*s %lf",             &s) == 1)) admstart = (ulong_t)((60.0 * m + s) * 1.0e9);
-          if ((sscanf(line, "%*s %*s %lf:%lf", &m, &s) == 2) ||
-              (sscanf(line, "%*s %*s %lf",         &s) == 1)) admstop  = (ulong_t)((60.0 * m + s) * 1.0e9) + admstart;
+          programmename.assign(line, p - line);
+          contentname.assign(p + 1);
+        }
+        else programmename = contentname = line;
+
+        if ((programme = CreateProgramme(programmename)) != NULL)
+        {
+          if ((content = CreateContent(contentname)) == NULL)
+          {
+            ERROR("Failed to create content '%s'", contentname.c_str());
+            success = false;
+          }
         }
         else
         {
-          ERROR("Unable to decode line 2 of '%s'", filename);
+          ERROR("Failed to create programme '%s'", programmename.c_str());
           success = false;
-          break;
         }
       }
-      else if (ln == 3)
+      else if (content)
       {
-        // ADM programme name
-        programmename = line;
-      }
-      else if (ln == 4)
-      {
-        // ADM content name
-        contentname = line;
-      }
-      else
-      {
-        // track number followed by track filename
-        const char *p = NULL;
+        const char *p1, *p2;
         uint_t tr;
 
-        // extract track number, ensure it's non-zero and find colons to find filename
-        if ((sscanf(line, "%u", &tr) == 1) && (tr > 0) && ((p = strstr(line, ":")) != NULL))
+        if (sscanf(line, "%u", &tr) == 1)
         {
-          std::string trackfile = dir + "/";
-          std::string filename;
-
-          tr--;
-
-          // ignore tracks for which there is not already a track in the tracklist
-          if (tr < tracklist.size())
+          if ((tr > 0) && (tr <= tracklist.size()))
           {
-            // create the necessary eventlist(s) to ensure there is one for the track
-            while (tr >= tracks.size()) tracks.push_back(OpenTLEventList());
-
-            // event list for this track
-            OpenTLEventList& evlist = tracks[tr];
-
-            // trackname starts just after colons
-            filename = std::string(p + 1);
-
-            // ignore empty files
-            if (filename != "")
+            if (((p1 = strchr(line, ':')) != NULL) && ((p2 = strchr(p1 + 1, ':')) != NULL))
             {
-              trackfile += filename;
+              std::string trackname, objectname;
 
-              DEBUG3(("Reading track %u events from '%s'", tr, trackfile.c_str()));
+              p1++;
+              
+              trackname.assign(p1, p2 - p1);
+              objectname.assign(p2 + 1);
+              
+              ADMAudioTrack         *audioTrack    = const_cast<ADMAudioTrack *>(tracklist[tr - 1]);
+              ADMAudioPackFormat    *packFormat    = dynamic_cast<ADMAudioPackFormat *>(const_cast<ADMObject *>(GetObjectByName(objectname, ADMAudioPackFormat::Type)));
+              ADMAudioChannelFormat *channelFormat = CreateChannelFormat(trackname);
+              ADMAudioStreamFormat  *streamFormat  = CreateStreamFormat("PCM_" + trackname);
+              ADMAudioTrackFormat   *trackFormat   = CreateTrackFormat("PCM_" + trackname);
+              ADMAudioObject        *object        = dynamic_cast<ADMAudioObject *>(const_cast<ADMObject *>(GetObjectByName(objectname, ADMAudioObject::Type)));
 
-              if (evlist.Readfile(trackfile.c_str(), samplerate))
+              // the same pack can cover a number of tracks
+              if (packFormat == NULL)
               {
-                DEBUG3(("Track %u '%s' has %u events", tr, evlist.GetName().c_str(), (uint_t)evlist.GetEventList().size()));
+                packFormat = CreatePackFormat(objectname);
+                // set pack type
+                packFormat->SetTypeLabel("0003");
+                packFormat->SetTypeDefinition("Objects");
               }
-              else
+
+              if (object == NULL)
               {
-                ERROR("Failed to read event list from '%s'", trackfile.c_str());
-                success = false;
+                // create object if it does not already exist
+                object = CreateObject(objectname, content);
               }
+
+              // set channel type
+              channelFormat->SetTypeLabel("0003");
+              channelFormat->SetTypeDefinition("Objects");
+
+              // set track type (PCM)
+              trackFormat->SetFormatLabel("0001");
+              trackFormat->SetFormatDefinition("PCM");
+
+              // set stream type (PCM)
+              streamFormat->SetFormatLabel("0001");
+              streamFormat->SetFormatDefinition("PCM");
+
+              // connect ADM objects
+              packFormat->Add(channelFormat);
+              trackFormat->Add(streamFormat);
+              streamFormat->Add(trackFormat);
+              streamFormat->Add(channelFormat);
+              audioTrack->Add(trackFormat);
+              audioTrack->Add(packFormat);
+
+              // add the pack to the object
+              object->Add(packFormat);
+              // add the track to the object
+              object->Add(audioTrack);
+            }
+            else
+            {
+              ERROR("Failed to decode <tr>:<trackname>:<objectname> line");
+              success = false;
             }
           }
-          else DEBUG3(("Ignoring out of range track %u", tr + 1));
+          else
+          {
+            ERROR("Track %u out of range 1-%u", tr, (uint_t)tracklist.size());
+            success = false;
+          }
         }
         else
         {
-          ERROR("Failed to read track number, it is zero or no separator found on line %u: %s", ln, line);
+          ERROR("Failed to extract track number from '%s'", line);
           success = false;
         }
       }
 
       ln++;
-    }
-
-    fclose(fp);
-  }
-  else ERROR("Failed to open file '%s'", filename);
-
-  if (success)
-  {
-    ADMAudioProgramme *programme;
-    ADMAudioContent   *content;
-
-    if (((programme = CreateProgramme(programmename)) != NULL) &&
-        ((content   = CreateContent(contentname, programme)) != NULL))
-    {
-      uint_t i;
-
-      // create audio objects, packs, channels and streams
-      for (i = 0; i < tracks.size(); i++)
-      {
-        const OpenTLEventList&            track          = tracks[i];
-        const OpenTLEventList::EVENTLIST& evlist         = track.GetEventList();
-        const std::string&                trackname      = track.GetName();
-        const std::string&                objectname     = track.GetObjectName();
-        ADMAudioTrack                     *audioTrack    = const_cast<ADMAudioTrack *>(tracklist[i]);
-        ADMAudioPackFormat                *packFormat    = dynamic_cast<ADMAudioPackFormat *>(const_cast<ADMObject *>(GetObjectByName(objectname, ADMAudioPackFormat::Type)));
-        ADMAudioChannelFormat             *channelFormat = CreateChannelFormat(trackname);
-        ADMAudioStreamFormat              *streamFormat  = CreateStreamFormat("PCM_" + trackname);
-        ADMAudioTrackFormat               *trackFormat   = CreateTrackFormat("PCM_" + trackname);
-        uint_t j;
-
-        // the same pack can cover a number of tracks
-        if (packFormat == NULL)
-        {
-          packFormat = CreatePackFormat(objectname);
-          // set pack type
-          packFormat->SetTypeLabel("0003");
-          packFormat->SetTypeDefinition("Objects");
-        }
-
-        // set channel type
-        channelFormat->SetTypeLabel("0003");
-        channelFormat->SetTypeDefinition("Objects");
-
-        // set track type (PCM)
-        trackFormat->SetFormatLabel("0001");
-        trackFormat->SetFormatDefinition("PCM");
-
-        // set stream type (PCM)
-        streamFormat->SetFormatLabel("0001");
-        streamFormat->SetFormatDefinition("PCM");
-
-        // connect ADM objects
-        packFormat->Add(channelFormat);
-        trackFormat->Add(streamFormat);
-        streamFormat->Add(trackFormat);
-        streamFormat->Add(channelFormat);
-        audioTrack->Add(trackFormat);
-        audioTrack->Add(packFormat);
-
-        // iterate through each event
-        for (j = 0; j < evlist.size(); j++)
-        {
-          const OpenTLEventList::EVENT& event      = evlist[j];
-          const std::string&            objectname = event.objectname;
-          ADMAudioObject *obj;
-          ulong_t start = event.start;
-          ulong_t stop  = start + event.length;
-
-          if ((stop >= admstart) && (start < admstop))
-          {
-            ulong_t length;
-
-            start  = MAX(start, admstart);
-            stop   = MIN(stop,  admstop);
-
-            length = stop - start;
-            start -= admstart;
-
-            // find existing audio object (audio objects can cover a number of tracks)
-            if ((obj = dynamic_cast<ADMAudioObject *>(const_cast<ADMObject *>(GetObjectByName(objectname, ADMAudioObject::Type)))) != NULL)
-            {
-              // modify times of object to include this event
-              uint64_t t1 = MIN(obj->GetStartTime(), (uint64_t)start);
-              uint64_t t2 = MAX(obj->GetStartTime() + obj->GetDuration(), (uint64_t)(start + length));
-
-              DEBUG3(("Updating audio object '%s' using track %u event %u (%lu for %lu)", objectname.c_str(), i + 1, j + 1, (ulong_t)t1, (ulong_t)(t2 - t1)));
-
-              obj->SetStartTime(t1);
-              obj->SetDuration(t2 - t1);
-            }
-            else
-            {
-              // no existing object -> create a new one
-              if ((obj = CreateObject(objectname, content)) != NULL)
-              {
-                DEBUG3(("New audio object '%s', first seen on track %u event %u (%lu for %lu)", objectname.c_str(), i + 1, j + 1, start, length));
-
-                // and set its times
-                obj->SetStartTime(start);
-                obj->SetDuration(length);
-              }
-            }
-
-            if (obj)
-            {
-              // add the pack to the object
-              obj->Add(packFormat);
-              // add the track to the object
-              obj->Add(audioTrack);
-            }
-          }
-        }
-      }
     }
   }
 

@@ -281,22 +281,20 @@ public:
   virtual void Serialize(uint8_t *dst, uint_t& len) const;
 
   /*--------------------------------------------------------------------------------*/
-  /** Create ADM from OpenTL based tracklist
+  /** Create ADM from a simple text file
    *
-   * @param filename file listing track files to use for each channel
+   * @param filename file describing the basic ADM layout
    *
    * The file MUST be of the following format with each entry on its own line:
-   * <directory where OpenTL track files are stored>
-   * <sample rate of original project> [<start> [<length>]]
-   * <ADM programme name>
-   * <ADM content name>
-   * <track>:<filename>
+   * <ADM programme name>[:<ADM content name>]
+   *
+   * then for each track:
+   * <track>:<trackname>:<objectname>
    *
    * Where <track> is 1..number of tracks available within ADM
-   *   and <filename> is the filename of the track file for that track
    */
   /*--------------------------------------------------------------------------------*/
-  bool CreateFromOpenTLFile(const char *filename);
+  bool CreateFromFile(const char *filename);
 
   static ADMData *Create();
 
