@@ -38,14 +38,6 @@ void ADMFileWriteRenderer::Close()
   }
 
   ADMRIFFFile::Close();
-
-#if DEBUG_LEVEL >= 2
-  {
-    std::string str;
-    adm->Dump(str);
-    DEBUG("ADM:\n%s", str.c_str());
-  }
-#endif
 }
 
 /*--------------------------------------------------------------------------------*/

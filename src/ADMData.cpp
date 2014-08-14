@@ -75,13 +75,13 @@ bool ADMData::SetChna(const uint8_t *data)
 
       value.name = ADMAudioTrackFormat::Reference;
       value.value.assign(chna.UIDs[i].TrackRef, sizeof(chna.UIDs[i].TrackRef));
-      // trim any zero bytes of the end of the strin
+      // trim any zero bytes off the end of the string
       value.value = value.value.substr(0, value.value.find(terminator));
       track->AddValue(value);
             
       value.name = ADMAudioPackFormat::Reference;
       value.value.assign(chna.UIDs[i].PackRef, sizeof(chna.UIDs[i].PackRef));
-      // trim any zero bytes of the end of the strin
+      // trim any zero bytes off the end of the string
       value.value = value.value.substr(0, value.value.find(terminator));
       track->AddValue(value);
 
@@ -688,7 +688,16 @@ ADMObject *ADMData::GetReference(const ADMVALUE& value)
   uuid += "/" + value.value;
 
   if ((it = admobjects.find(uuid)) != admobjects.end()) obj = it->second;
-  else DEBUG3(("Failed to find reference '%s', object list:", uuid.c_str()));
+  else
+  {
+#if DEBUG_LEVEL >= 4
+    DEBUG1(("Failed to find reference '%s', object list:", uuid.c_str()));
+    for (it = admobjects.begin(); it != admobjects.end(); ++it)
+    {
+      DEBUG1(("\t%s / %s (%u / %u)%s", it->first.c_str(), uuid.c_str(), (uint_t)it->first.size(), (uint_t)uuid.size(), (it->first == uuid) ? " *" : ""));
+    }
+#endif
+  }
 
   return obj;
 }
@@ -899,7 +908,7 @@ void ADMData::Serialize(uint8_t *dst, uint_t& len) const
  *
  * The file MUST be of the following format with each entry on its own line:
  * <directory where OpenTL track files are stored>
- * <sample rate of original project> [<start-s> [<stop-s>]]
+ * <sample rate of original project> [<start> [<length>]]
  * <ADM programme name>
  * <ADM content name>
  * <track>:<filename>
@@ -934,13 +943,15 @@ bool ADMData::CreateFromOpenTLFile(const char *filename)
       }
       else if (ln == 2)
       {
-        double s1 = 0.0, s2 = 0.0;
-        int n;
+        double m, s;
 
-        if ((n = sscanf(line, "%lu %lf %lf", &samplerate, &s1, &s2)) > 0)
+        if (sscanf(line, "%lu", &samplerate) > 0)
         {
-          if (n > 1) admstart = (ulong_t)(s1 * 1.0e9);
-          if (n > 2) admstop  = (ulong_t)(s2 * 1.0e9);
+          // interpret start and length
+          if ((sscanf(line, "%*s %lf:%lf",     &m, &s) == 2) ||
+              (sscanf(line, "%*s %lf",             &s) == 1)) admstart = (ulong_t)((60.0 * m + s) * 1.0e9);
+          if ((sscanf(line, "%*s %*s %lf:%lf", &m, &s) == 2) ||
+              (sscanf(line, "%*s %*s %lf",         &s) == 1)) admstop  = (ulong_t)((60.0 * m + s) * 1.0e9) + admstart;
         }
         else
         {

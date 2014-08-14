@@ -287,6 +287,7 @@ public:
    *
    * The file MUST be of the following format with each entry on its own line:
    * <directory where OpenTL track files are stored>
+   * <sample rate of original project> [<start> [<length>]]
    * <ADM programme name>
    * <ADM content name>
    * <track>:<filename>
