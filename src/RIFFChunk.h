@@ -107,6 +107,12 @@ public:
   virtual bool CreateWriteData() {return true;}
 
   /*--------------------------------------------------------------------------------*/
+  /** Return whether ANY providers have been registered (to allow automatic registration)
+   */
+  /*--------------------------------------------------------------------------------*/
+  static bool NoProvidersRegistered() {return (providermap.end() == providermap.begin());}
+
+  /*--------------------------------------------------------------------------------*/
   /** Register a chunk handler
    *
    * @param id 32-bit chunk ID (big-endian format)

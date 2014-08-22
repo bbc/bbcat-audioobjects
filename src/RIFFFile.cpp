@@ -17,6 +17,11 @@ RIFFFile::RIFFFile() : file(NULL),
                        filesamples(NULL),
                        writing(false)
 {
+  if (RIFFChunk::NoProvidersRegistered())
+  {
+    DEBUG2(("No RIFF chunk providers registered, registering some..."));
+    RegisterRIFFChunkProviders();
+  }
 }
 
 RIFFFile::~RIFFFile()
