@@ -74,7 +74,7 @@ void TinyXMLADMData::ParseHeader(ADMHEADER& header, const std::string& type, voi
   char dummyid[32];
 
   // set up dummy, unique ID
-  snprintf(dummyid, sizeof(dummyid) - 1, "%08lx", (ulong_t)GetTickCount());
+  snprintf(dummyid, sizeof(dummyid) - 1, "%08lx", GetTickCount());
 
   header.type = type;
   header.id   = dummyid;
