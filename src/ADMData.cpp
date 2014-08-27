@@ -6,6 +6,8 @@
 #include <algorithm>
 
 #define DEBUG_LEVEL 1
+#include <aplibs-dsp/EnhancedFile.h>
+
 #include "ADMData.h"
 #include "RIFFChunk_Definitions.h"
 #include "OpenTLEventList.h"
@@ -917,10 +919,10 @@ void ADMData::Serialize(uint8_t *dst, uint_t& len) const
 /*--------------------------------------------------------------------------------*/
 bool ADMData::CreateFromFile(const char *filename)
 {
-  FILE *fp;
+  EnhancedFile fp;
   bool success = false;
 
-  if ((fp = fopen(filename, "r")) != NULL)
+  if (fp.fopen(filename, "r"))
   {
     static char line[1024];
     ADMAudioProgramme *programme = NULL;
@@ -929,7 +931,7 @@ bool ADMData::CreateFromFile(const char *filename)
 
     success = true;
 
-    while (ReadLine(fp, line, sizeof(line) - 1) != EOF)
+    while (fp.readline(line, sizeof(line) - 1) != EOF)
     {
       if (ln == 1)
       {
@@ -1045,6 +1047,8 @@ bool ADMData::CreateFromFile(const char *filename)
 
       ln++;
     }
+
+    fp.fclose();
   }
 
   return success;
