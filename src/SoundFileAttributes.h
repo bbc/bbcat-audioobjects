@@ -4,48 +4,12 @@
 #include <string>
 
 #include <aplibs-dsp/misc.h>
+#include <aplibs-dsp/EnhancedFile.h>
 
 #include <aplibs-dsp/SoundFormatConversions.h>
 #include <aplibs-dsp/UniversalTime.h>
 
 BBC_AUDIOTOOLBOX_START
-
-/*--------------------------------------------------------------------------------*/
-/** Class mimicking FILE functions but which keeps the filename and open mode allowing duplication 
- */
-/*--------------------------------------------------------------------------------*/
-class SoundFile
-{
-public:
-  SoundFile();
-  SoundFile(const SoundFile& obj);
-  virtual ~SoundFile();
-
-  SoundFile& operator = (const SoundFile& obj);
-
-  virtual SoundFile *dup() const {return new SoundFile(*this);}
-
-  virtual bool     fopen(const char *filename, const char *mode = "rb");
-  bool             isopen() const {return (fp != NULL);}
-  virtual void     fclose();
-
-  operator FILE *() {return fp;}
-
-  virtual size_t   fread(void *ptr, size_t size, size_t count)  {return ::fread(ptr, size, count, fp);}
-  virtual size_t   fwrite(void *ptr, size_t size, size_t count) {return ::fwrite(ptr, size, count, fp);}
-  virtual long int ftell() const {return ::ftell(fp);}
-  virtual int      fseek(long int offset, int origin) {return ::fseek(fp, offset, origin);}
-  virtual int      ferror() const {return ::ferror(fp);}
-  virtual int      fflush() const {return ::fflush(fp);}
-  virtual void     rewind() {::rewind(fp);}
-
-  const std::string& getfilename() const {return filename;}
-
-protected:
-  std::string filename;
-  std::string mode;
-  FILE        *fp;
-};
 
 class SoundFormat
 {
@@ -89,7 +53,7 @@ public:
 
   virtual void SetFormat(const SoundFormat *format);
   const SoundFormat *GetFormat() const {return format;}
-  virtual void SetFile(const SoundFile *file, ulong_t pos, ulong_t bytes, bool readonly = true);
+  virtual void SetFile(const EnhancedFile *file, ulong_t pos, ulong_t bytes, bool readonly = true);
 
   uint_t  GetStartChannel()             const {return clip.channel;}
   uint_t  GetChannels()                 const {return clip.nchannels;}
@@ -141,7 +105,7 @@ protected:
 protected:
   const SoundFormat *format;
   UniversalTime     timebase;
-  SoundFile         *file;
+  EnhancedFile      *file;
   Clip_t            clip;
   ulong_t           filepos;
   ulong_t           samplepos;

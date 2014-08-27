@@ -21,7 +21,7 @@ BBC_AUDIOTOOLBOX_START
 /*--------------------------------------------------------------------------------*/
 
 // just return true - no data to write
-bool RIFFRIFFChunk::WriteChunkData(SoundFile *file)
+bool RIFFRIFFChunk::WriteChunkData(EnhancedFile *file)
 {
   UNUSED_PARAMETER(file);
   return true;
@@ -41,7 +41,7 @@ void RIFFRIFFChunk::Register()
  * a specific ReadChunk() function
  */
 /*--------------------------------------------------------------------------------*/
-bool RIFFWAVEChunk::ReadChunk(SoundFile *file)
+bool RIFFWAVEChunk::ReadChunk(EnhancedFile *file)
 {
   UNUSED_PARAMETER(file);
 
@@ -50,7 +50,7 @@ bool RIFFWAVEChunk::ReadChunk(SoundFile *file)
 }
 
 // special write chunk function (no length or data)
-bool RIFFWAVEChunk::WriteChunk(SoundFile *file)
+bool RIFFWAVEChunk::WriteChunk(EnhancedFile *file)
 {
   uint32_t data[] = {id};
   bool success = false;
@@ -303,7 +303,7 @@ bool RIFFdataChunk::InitialiseForWriting()
  *
  */
 /*--------------------------------------------------------------------------------*/
-bool RIFFdataChunk::ReadChunk(SoundFile *file)
+bool RIFFdataChunk::ReadChunk(EnhancedFile *file)
 {
   bool success = false;
 
@@ -327,10 +327,10 @@ bool RIFFdataChunk::CreateWriteData()
 }
 
 // copy sample data from temporary file
-bool RIFFdataChunk::WriteChunkData(SoundFile *file)
+bool RIFFdataChunk::WriteChunkData(EnhancedFile *file)
 {
   std::vector<uint8_t> buffer;
-  SoundFile *srcfile = this->file;
+  EnhancedFile *srcfile = this->file;
   bool success = false;
 
   // create temp buffer

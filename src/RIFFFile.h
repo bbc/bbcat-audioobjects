@@ -65,10 +65,10 @@ public:
   /*--------------------------------------------------------------------------------*/
   /** Return the underlying file object
    *
-   * @return SoundFile object (or NULL)
+   * @return EnhancedFile object (or NULL)
    */
   /*--------------------------------------------------------------------------------*/
-  SoundFile *GetFile() {return file;}
+  EnhancedFile *GetFile() {return file;}
 
   /// file type enumeration
   enum
@@ -279,7 +279,7 @@ protected:
   virtual void UpdateSamplePosition() {}
 
 protected:
-  SoundFile         *file;
+  EnhancedFile      *file;
   uint8_t           filetype;
   SoundFormat       *fileformat;
   SoundFileSamples  *filesamples;

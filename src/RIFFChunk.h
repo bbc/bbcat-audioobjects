@@ -84,7 +84,7 @@ public:
    * @return true if chunk successfully written
    */
   /*--------------------------------------------------------------------------------*/
-  virtual bool WriteChunk(SoundFile *file);
+  virtual bool WriteChunk(EnhancedFile *file);
 
   /*--------------------------------------------------------------------------------*/
   /** Supply chunk data for writing
@@ -153,7 +153,7 @@ public:
    * @note at return, the new file position will be at the start of the next chunk
    */
   /*--------------------------------------------------------------------------------*/
-  static RIFFChunk *Create(SoundFile *file);
+  static RIFFChunk *Create(EnhancedFile *file);
 
   /*--------------------------------------------------------------------------------*/
   /** The primary chunk creation function when writing files
@@ -191,14 +191,14 @@ protected:
    * @return true if chunk successfully read/handled
    */
   /*--------------------------------------------------------------------------------*/
-  virtual bool ReadChunk(SoundFile *file);
+  virtual bool ReadChunk(EnhancedFile *file);
   /*--------------------------------------------------------------------------------*/
   /** Read chunk data and byte swap it (derived object provided)
    *
    * @return true if chunk successfully read
    */
   /*--------------------------------------------------------------------------------*/
-  virtual bool ReadData(SoundFile *file);
+  virtual bool ReadData(EnhancedFile *file);
 
   /*--------------------------------------------------------------------------------*/
   /** placeholder for byte swapping function provided by derived objects
@@ -214,7 +214,7 @@ protected:
    * @note if data exists it will be written otherwise the chunk will be blanked 
    */
   /*--------------------------------------------------------------------------------*/
-  virtual bool WriteChunkData(SoundFile *file);
+  virtual bool WriteChunkData(EnhancedFile *file);
 
   typedef enum
   {

@@ -39,7 +39,7 @@ protected:
   // do NOT read OR skip over data
   virtual ChunkHandling_t GetChunkHandling() const {return ChunkHandling_RemainInChunkData;}
   // just return true - no data to write
-  virtual bool WriteChunkData(SoundFile *file);
+  virtual bool WriteChunkData(EnhancedFile *file);
 };
 
 /*--------------------------------------------------------------------------------*/
@@ -59,7 +59,7 @@ public:
   virtual uint32_t GetLengthOnFile() const {return 4;}
 
   // special write chunk function (no length or data)
-  virtual bool WriteChunk(SoundFile *file);
+  virtual bool WriteChunk(EnhancedFile *file);
 
   // provider function register for this object
   static void Register();
@@ -74,7 +74,7 @@ protected:
 
 protected:
   // dummy read function
-  virtual bool ReadChunk(SoundFile *file);
+  virtual bool ReadChunk(EnhancedFile *file);
 };
 
 /*--------------------------------------------------------------------------------*/
@@ -247,9 +247,9 @@ protected:
   // initialise chunk when writing a file
   virtual bool InitialiseForWriting();
   // perform additional initialisation after chunk read
-  virtual bool ReadChunk(SoundFile *file);
+  virtual bool ReadChunk(EnhancedFile *file);
   // copy sample data from temporary file
-  virtual bool WriteChunkData(SoundFile *file);
+  virtual bool WriteChunkData(EnhancedFile *file);
 };
 
 /*--------------------------------------------------------------------------------*/

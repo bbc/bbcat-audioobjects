@@ -41,7 +41,7 @@ RIFFChunk::~RIFFChunk()
  * @return true if chunk successfully read/handled
  */
 /*--------------------------------------------------------------------------------*/
-bool RIFFChunk::ReadChunk(SoundFile *file)
+bool RIFFChunk::ReadChunk(EnhancedFile *file)
 {
   bool success = false;
 
@@ -114,7 +114,7 @@ bool RIFFChunk::ReadChunk(SoundFile *file)
  * @return true if chunk successfully read
  */
 /*--------------------------------------------------------------------------------*/
-bool RIFFChunk::ReadData(SoundFile *file)
+bool RIFFChunk::ReadData(EnhancedFile *file)
 {
   bool success = false;
 
@@ -157,7 +157,7 @@ bool RIFFChunk::ReadData(SoundFile *file)
  * @note MUST be done when the file is closed!
  */
 /*--------------------------------------------------------------------------------*/
-bool RIFFChunk::WriteChunk(SoundFile *file)
+bool RIFFChunk::WriteChunk(EnhancedFile *file)
 {
   bool success = CreateWriteData();
 
@@ -249,7 +249,7 @@ bool RIFFChunk::CreateWriteData(uint_t _length)
  * @note if data exists it will be written otherwise this function will fail!
  */
 /*--------------------------------------------------------------------------------*/
-bool RIFFChunk::WriteChunkData(SoundFile *file)
+bool RIFFChunk::WriteChunkData(EnhancedFile *file)
 {
   bool success = false;
 
@@ -334,7 +334,7 @@ const char *RIFFChunk::GetChunkName(uint32_t id)
  * @note at return, the new file position will be at the start of the next chunk
  */
 /*--------------------------------------------------------------------------------*/
-RIFFChunk *RIFFChunk::Create(SoundFile *file)
+RIFFChunk *RIFFChunk::Create(EnhancedFile *file)
 {
   RIFFChunk *chunk = NULL;
   uint32_t id;

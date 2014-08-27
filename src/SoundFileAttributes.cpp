@@ -8,68 +8,6 @@
 
 BBC_AUDIOTOOLBOX_START
 
-SoundFile::SoundFile() : fp(NULL)
-{
-}
-
-SoundFile::SoundFile(const SoundFile& obj) : fp(NULL)
-{
-  operator = (obj);
-}
-
-SoundFile::~SoundFile()
-{
-  fclose();
-}
-
-SoundFile& SoundFile::operator = (const SoundFile& obj)
-{
-  fclose();
-
-  if (obj.isopen())
-  {
-    if (fopen(obj.filename.c_str(), obj.mode.c_str()))
-    {
-      fseek(obj.ftell(), SEEK_SET);
-    }
-  }
-
-  return *this;
-}
-
-bool SoundFile::fopen(const char *filename, const char *mode)
-{
-  bool success = false;
-
-  if (!isopen())
-  {
-    if ((fp = ::fopen(filename, mode)) != NULL)
-    {
-      DEBUG2(("Opened '%s' for '%s'", filename, mode));
-      this->filename = filename;
-      this->mode     = mode;
-      success        = true;
-    }
-    else DEBUG2(("Failed to open '%s' for '%s'", filename, mode));
-  }
-
-  return success;
-}
-
-void SoundFile::fclose()
-{
-  if (fp)
-  {
-    ::fclose(fp);
-    fp = NULL;
-
-    filename = "";
-    mode     = "";
-  }
-}
-
-/*----------------------------------------------------------------------------------------------------*/
-
 SoundFormat::SoundFormat() : samplerate(0),
                              channels(0),
                              bytespersample(0),
@@ -139,7 +77,7 @@ bool SoundFileSamples::CreateTempFile()
   std::string filename;
   bool success = false;
 
-  if (!file) file = new SoundFile;
+  if (!file) file = new EnhancedFile;
 
   if (file)
   {
@@ -160,7 +98,7 @@ void SoundFileSamples::SetFormat(const SoundFormat *format)
   UpdateData();
 }
 
-void SoundFileSamples::SetFile(const SoundFile *file, ulong_t pos, ulong_t bytes, bool readonly)
+void SoundFileSamples::SetFile(const EnhancedFile *file, ulong_t pos, ulong_t bytes, bool readonly)
 {
   if (this->file) delete this->file;
 

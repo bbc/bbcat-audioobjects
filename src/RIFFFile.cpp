@@ -82,7 +82,7 @@ bool RIFFFile::Open(const char *filename)
 
   if (!IsOpen())
   {
-    if (((file = new SoundFile) != NULL) && file->fopen(filename, "rb"))
+    if (((file = new EnhancedFile) != NULL) && file->fopen(filename, "rb"))
     {
       RIFFChunk *chunk;
 
@@ -124,7 +124,7 @@ bool RIFFFile::Create(const char *filename, uint32_t samplerate, uint_t nchannel
   if (!IsOpen())
   {
     if (samplerate && nchannels &&
-        ((file = new SoundFile) != NULL) && file->fopen(filename, "wb+"))
+        ((file = new EnhancedFile) != NULL) && file->fopen(filename, "wb+"))
     {
       const uint32_t ids[] = {RIFF_ID, WAVE_ID, fmt_ID, data_ID};
       uint_t i;
