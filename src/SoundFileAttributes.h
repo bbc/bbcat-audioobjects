@@ -53,18 +53,18 @@ public:
 
   virtual void SetFormat(const SoundFormat *format);
   const SoundFormat *GetFormat() const {return format;}
-  virtual void SetFile(const EnhancedFile *file, ulong_t pos, ulong_t bytes, bool readonly = true);
+  virtual void SetFile(const EnhancedFile *file, uint64_t pos, uint64_t bytes, bool readonly = true);
 
-  uint_t  GetStartChannel()             const {return clip.channel;}
-  uint_t  GetChannels()                 const {return clip.nchannels;}
+  uint_t   GetStartChannel()             const {return clip.channel;}
+  uint_t   GetChannels()                 const {return clip.nchannels;}
 
-  ulong_t GetSamplePosition()           const {return samplepos;}
-  ulong_t GetSampleLength()             const {return clip.nsamples;}
-  ulong_t GetAbsoluteSamplePosition()   const {return clip.start + samplepos;}
-  ulong_t GetAbsoluteSampleLength()     const {return clip.start + clip.nsamples;}
+  uint64_t GetSamplePosition()           const {return samplepos;}
+  uint64_t GetSampleLength()             const {return clip.nsamples;}
+  uint64_t GetAbsoluteSamplePosition()   const {return clip.start + samplepos;}
+  uint64_t GetAbsoluteSampleLength()     const {return clip.start + clip.nsamples;}
 
-  void    SetSamplePosition(ulong_t pos)         {samplepos = MIN(pos, clip.nsamples); UpdatePosition();}
-  void    SetAbsoluteSamplePosition(ulong_t pos) {samplepos = LIMIT(pos, clip.start, clip.start + clip.nsamples) - clip.start; UpdatePosition();}
+  void     SetSamplePosition(uint64_t pos)         {samplepos = MIN(pos, clip.nsamples); UpdatePosition();}
+  void     SetAbsoluteSamplePosition(uint64_t pos) {samplepos = LIMIT(pos, clip.start, clip.start + clip.nsamples) - clip.start; UpdatePosition();}
 
   uint64_t GetPositionNS()              const {return timebase.Calc(GetSamplePosition());}
   double   GetPositionSeconds()         const {return timebase.CalcSeconds(GetSamplePosition());}
@@ -76,10 +76,10 @@ public:
 
   typedef struct
   {
-    ulong_t start;
-    ulong_t nsamples;
-    uint_t  channel;
-    uint_t  nchannels;
+    uint64_t start;
+    uint64_t nsamples;
+    uint_t   channel;
+    uint_t   nchannels;
   } Clip_t;
   const Clip_t& GetClip() const {return clip;}
   void SetClip(const Clip_t& newclip);
@@ -107,10 +107,10 @@ protected:
   UniversalTime     timebase;
   EnhancedFile      *file;
   Clip_t            clip;
-  ulong_t           filepos;
-  ulong_t           samplepos;
-  ulong_t           totalsamples;
-  ulong_t           totalbytes;
+  uint64_t          filepos;
+  uint64_t          samplepos;
+  uint64_t          totalsamples;
+  uint64_t          totalbytes;
   uint8_t           *samplebuffer;
   uint_t            samplebufferframes;
   bool              readonly;

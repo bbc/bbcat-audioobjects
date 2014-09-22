@@ -124,7 +124,7 @@ public:
    * @return SampleFormat_xxx enumeration
    */
   /*--------------------------------------------------------------------------------*/
-  ulong_t GetSamplePosition() const {return filesamples ? filesamples->GetSamplePosition() : 0;}
+  uint64_t GetSamplePosition() const {return filesamples ? filesamples->GetSamplePosition() : 0;}
 
   /*--------------------------------------------------------------------------------*/
   /** Return sample format of samples in the file
@@ -132,7 +132,7 @@ public:
    * @return SampleFormat_xxx enumeration
    */
   /*--------------------------------------------------------------------------------*/
-  ulong_t GetSampleLength() const {return filesamples ? filesamples->GetSampleLength() : 0;}
+  uint64_t GetSampleLength() const {return filesamples ? filesamples->GetSampleLength() : 0;}
 
   /*--------------------------------------------------------------------------------*/
   /** Set position within sample data of file
@@ -141,7 +141,7 @@ public:
    *
    */
   /*--------------------------------------------------------------------------------*/
-  virtual void SetSamplePosition(ulong_t pos) {if (filesamples) {filesamples->SetSamplePosition(pos); UpdateSamplePosition();}}
+  virtual void SetSamplePosition(uint64_t pos) {if (filesamples) {filesamples->SetSamplePosition(pos); UpdateSamplePosition();}}
 
   /*--------------------------------------------------------------------------------*/
   /** Return number of chunks found in file
@@ -246,7 +246,7 @@ protected:
    * @return true if read chunks processed correctly
    */
   /*--------------------------------------------------------------------------------*/
-  virtual bool ReadChunks(ulong_t maxlength);
+  virtual bool ReadChunks(uint64_t maxlength);
 
   /*--------------------------------------------------------------------------------*/
   /** Process a chunk (overridable)

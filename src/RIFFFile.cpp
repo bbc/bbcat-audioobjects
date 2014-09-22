@@ -17,6 +17,11 @@ RIFFFile::RIFFFile() : file(NULL),
                        filesamples(NULL),
                        writing(false)
 {
+  if (sizeof(off_t) < sizeof(uint64_t))
+  {
+    ERROR("System does *NOT* support 64-bit files!");
+  }
+
   if (RIFFChunk::NoProvidersRegistered())
   {
     DEBUG2(("No RIFF chunk providers registered, registering some..."));
@@ -29,19 +34,19 @@ RIFFFile::~RIFFFile()
   Close();
 }
 
-bool RIFFFile::ReadChunks(ulong_t maxlength)
+bool RIFFFile::ReadChunks(uint64_t maxlength)
 {
   bool success = false;
 
   if (IsOpen())
   {
     RIFFChunk *chunk;
-    uint32_t  startpos = file->ftell();
+    uint64_t  startpos = file->ftell();
 
     success = true;
 
     while (success &&
-           ((ulong_t)(file->ftell() - startpos) < maxlength) &&
+           ((file->ftell() - startpos) < maxlength) &&
            ((chunk = RIFFChunk::Create(file)) != NULL))
     {
       chunklist.push_back(chunk);
@@ -175,10 +180,10 @@ void RIFFFile::Close()
       }      
 
       // now total up all the bytes for each chunk
-      uint32_t totalbytes = 0;
+      uint64_t totalbytes = 0;
       for (i = 0; i < chunklist.size(); i++)
       {
-        uint32_t bytes = chunklist[i]->GetLengthOnFile();
+        uint64_t bytes = chunklist[i]->GetLengthOnFile();
 
         DEBUG3(("Chunk '%s' has length %lu bytes", chunklist[i]->GetName(), (ulong_t)bytes));
         

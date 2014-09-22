@@ -98,7 +98,7 @@ void SoundFileSamples::SetFormat(const SoundFormat *format)
   UpdateData();
 }
 
-void SoundFileSamples::SetFile(const EnhancedFile *file, ulong_t pos, ulong_t bytes, bool readonly)
+void SoundFileSamples::SetFile(const EnhancedFile *file, uint64_t pos, uint64_t bytes, bool readonly)
 {
   if (this->file) delete this->file;
 
@@ -271,7 +271,7 @@ void SoundFileSamples::UpdateData()
 
     Clip_t newclip =
     {
-      0, ~(ulong_t)0,
+      0, ~(uint64_t)0,
       0, ~(uint_t)0,
     };
     SetClip(newclip);

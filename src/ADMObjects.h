@@ -229,16 +229,16 @@ public:
   /** Convert ns time to samples
    */
   /*--------------------------------------------------------------------------------*/
-  static ulong_t TimeToSamples(uint64_t t, ulong_t sr)
+  static uint64_t TimeToSamples(uint64_t t, uint32_t sr)
   {
-    return (ulong_t)(((ullong_t)t * (ullong_t)sr) / 1000000000ull);
+    return (uint64_t)(((ullong_t)t * (ullong_t)sr) / 1000000000ull);
   }
 
   /*--------------------------------------------------------------------------------*/
   /** Convert samples to ns time
    */
   /*--------------------------------------------------------------------------------*/
-  static uint64_t SamplesToTime(ulong_t s, ulong_t sr)
+  static uint64_t SamplesToTime(uint64_t s, uint32_t sr)
   {
     return (uint64_t)(((ullong_t)s * 1000000000ull) / sr);
   }
@@ -1056,16 +1056,16 @@ public:
   /** Convert ns time to samples
    */
   /*--------------------------------------------------------------------------------*/
-  ulong_t TimeToSamples(uint64_t t) const
+  uint64_t TimeToSamples(uint64_t t) const
   {
-    return (ulong_t)(((ullong_t)t * (ullong_t)sampleRate) / 1000000000ull);
+    return (uint64_t)(((ullong_t)t * (ullong_t)sampleRate) / 1000000000ull);
   }
 
   /*--------------------------------------------------------------------------------*/
   /** Convert samples to ns time
    */
   /*--------------------------------------------------------------------------------*/
-  uint64_t SamplesToTime(ulong_t s) const
+  uint64_t SamplesToTime(uint64_t s) const
   {
     return (uint64_t)(((ullong_t)s * 1000000000ull) / sampleRate);
   }

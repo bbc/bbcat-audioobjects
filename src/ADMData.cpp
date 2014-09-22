@@ -10,7 +10,6 @@
 
 #include "ADMData.h"
 #include "RIFFChunk_Definitions.h"
-#include "OpenTLEventList.h"
 
 BBC_AUDIOTOOLBOX_START
 

@@ -65,7 +65,7 @@ bool RIFFChunk::ReadChunk(EnhancedFile *file)
         if (file->fseek(datapos + length + (length & align), SEEK_SET) == 0) success = true;
         else
         {
-          ERROR("Failed to seek to end of chunk '%s' (position %lu), error %s", GetName(), datapos + length, strerror(file->ferror()));
+          ERROR("Failed to seek to end of chunk '%s' (position %lu), error %s", GetName(), (ulong_t)(datapos + length), strerror(file->ferror()));
         }
                 
         break;
@@ -97,7 +97,7 @@ bool RIFFChunk::ReadChunk(EnhancedFile *file)
 
           if (file->fseek(datapos + length + (length & align), SEEK_SET) != 0)
           {
-            ERROR("Failed to seek to end of chunk '%s' (position %lu) (after chunk read failure), error %s", GetName(), datapos + length, strerror(file->ferror()));
+            ERROR("Failed to seek to end of chunk '%s' (position %lu) (after chunk read failure), error %s", GetName(), (ulong_t)(datapos + length), strerror(file->ferror()));
           }
         }
         break;
@@ -140,7 +140,7 @@ bool RIFFChunk::ReadData(EnhancedFile *file)
         }
         else ERROR("Failed to read %lu bytes for chunk '%s' data, error %s", (ulong_t)length, GetName(), strerror(file->ferror()));
       }
-      else ERROR("Failed to seek to position %lu to read %lu bytes for chunk '%s' data, error %s", datapos, (ulong_t)length, GetName(), strerror(file->ferror()));
+      else ERROR("Failed to seek to position %lu to read %lu bytes for chunk '%s' data, error %s", (ulong_t)datapos, (ulong_t)length, GetName(), strerror(file->ferror()));
     }
     else ERROR("Failed to allocate %lu bytes for chunk '%s' data", (ulong_t)length, GetName());
   }

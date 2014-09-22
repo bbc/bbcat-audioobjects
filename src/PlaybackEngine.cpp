@@ -64,7 +64,7 @@ bool PlaybackEngine::AddObject(const ADMRIFFFile& file, const char *name)
       // play entire file
       if ((afile = new ADMAudioFileSamples(adm, file.GetSamples())) != NULL)
       {
-        DEBUG2(("Adding entire audio file (%u channels, %lu samples) to list", afile->GetChannels(), afile->GetSampleLength()));
+        DEBUG2(("Adding entire audio file (%u channels, %lu samples) to list", afile->GetChannels(), (ulong_t)afile->GetSampleLength()));
         AddFile(afile);
         success = true;
       }
@@ -81,7 +81,7 @@ bool PlaybackEngine::AddObject(const ADMRIFFFile& file, const char *name)
       {
         if ((afile = new ADMAudioFileSamples(adm, file.GetSamples(), obj)) != NULL)
         {
-          DEBUG2(("Adding audio object %s (%u channels, %lu samples) to list", obj->ToString().c_str(), afile->GetChannels(), afile->GetSampleLength()));
+          DEBUG2(("Adding audio object %s (%u channels, %lu samples) to list", obj->ToString().c_str(), afile->GetChannels(), (ulong_t)afile->GetSampleLength()));
           AddFile(afile);
           success = true;
         }

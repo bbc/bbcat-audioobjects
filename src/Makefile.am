@@ -25,7 +25,6 @@ libap_audioobjects_@APLIBS_AUDIOOBJECTS_MAJORMINOR@_la_SOURCES =	\
 	ADMObjects.cpp													\
 	ADMRIFFFile.cpp													\
 	FilePositionGenerator.cpp										\
-	OpenTLEventList.cpp												\
 	PlaybackEngine.cpp												\
 	Playlist.cpp													\
 	RIFFChunk.cpp													\
@@ -43,7 +42,6 @@ pkginclude_HEADERS =							\
 	ADMObjects.h								\
 	ADMRIFFFile.h								\
 	FilePositionGenerator.h						\
-	OpenTLEventList.h							\
 	PlaybackEngine.h							\
 	Playlist.h									\
 	RIFFChunk.h									\

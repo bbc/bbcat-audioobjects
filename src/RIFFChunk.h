@@ -274,7 +274,7 @@ protected:
   uint32_t    id;             ///< chunk ID
   std::string name;           ///< chunk ID as string
   uint32_t    length;         ///< chunk data length
-  ulong_t     datapos;        ///< chunk data file position
+  uint64_t    datapos;        ///< chunk data file position
   uint8_t     *data;          ///< chunk data (if read)
   uint8_t     align;          ///< file alignment: 0 for no alignment, 1 for even byte alignment
 

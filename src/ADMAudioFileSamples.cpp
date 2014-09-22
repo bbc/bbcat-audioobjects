@@ -18,7 +18,7 @@ ADMAudioFileSamples::ADMAudioFileSamples(const ADMData *iadm, const SoundFileSam
     newclip.start = ADMObject::TimeToSamples(obj->GetChildrenStartTime(), format->GetSampleRate());
     if (obj->GetChildrenEndTime() == obj->GetChildrenStartTime())
     {
-      newclip.nsamples = ~(ulong_t)0;
+      newclip.nsamples = ~(uint64_t)0;
     }
     else
     {
