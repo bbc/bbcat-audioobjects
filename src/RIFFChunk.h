@@ -58,13 +58,13 @@ public:
   /** Return chunk data length
    */
   /*--------------------------------------------------------------------------------*/
-  uint32_t       GetLength() const {return length;}
+  uint64_t       GetLength() const {return length;}
 
   /*--------------------------------------------------------------------------------*/
   /** Return chunk data length as stored on file (header plus length plus padding if necessary)
    */
   /*--------------------------------------------------------------------------------*/
-  virtual uint32_t GetLengthOnFile() const {return 8 + length + (length & align);}
+  virtual uint64_t GetLengthOnFile() const {return 8 + length + (length & align);}
 
   /*--------------------------------------------------------------------------------*/
   /** Return chunk data (or NULL if data has not yet been read)
@@ -90,13 +90,13 @@ public:
   /** Supply chunk data for writing
   */
   /*--------------------------------------------------------------------------------*/
-  virtual bool CreateWriteData(const void *_data, uint_t _length);
+  virtual bool CreateWriteData(const void *_data, uint64_t _length);
 
   /*--------------------------------------------------------------------------------*/
   /** Create blank data of the right size
   */
   /*--------------------------------------------------------------------------------*/
-  virtual bool CreateWriteData(uint_t _length);
+  virtual bool CreateWriteData(uint64_t _length);
 
   /*--------------------------------------------------------------------------------*/
   /** Create data for writing to chunk
@@ -273,7 +273,7 @@ protected:
 protected:
   uint32_t    id;             ///< chunk ID
   std::string name;           ///< chunk ID as string
-  uint32_t    length;         ///< chunk data length
+  uint64_t    length;         ///< chunk data length
   uint64_t    datapos;        ///< chunk data file position
   uint8_t     *data;          ///< chunk data (if read)
   uint8_t     align;          ///< file alignment: 0 for no alignment, 1 for even byte alignment

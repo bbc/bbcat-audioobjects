@@ -96,7 +96,7 @@ bool RIFFFile::Open(const char *filename)
         chunklist.push_back(chunk);
         chunkmap[chunk->GetID()] = chunk;
 
-        if (chunk->GetID() == IFFID("RIFF"))
+        if ((chunk->GetID() == RIFF_ID) || (chunk->GetID() == RF64_ID))
         {
           filetype = FileType_WAV;
           success  = ReadChunks(chunk->GetLength());

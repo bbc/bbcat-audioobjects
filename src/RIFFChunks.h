@@ -24,6 +24,12 @@ public:
   RIFFRIFFChunk(uint32_t chunk_id) : RIFFChunk(chunk_id) {}
   virtual ~RIFFRIFFChunk() {}
 
+  /*--------------------------------------------------------------------------------*/
+  /** Supply chunk data for writing
+  */
+  /*--------------------------------------------------------------------------------*/
+  virtual bool CreateWriteData(const void *_data, uint64_t _length);
+
   // provider function register for this object
   static void Register();
 
@@ -56,7 +62,7 @@ public:
   virtual ~RIFFWAVEChunk() {}
 
   // WAVE chunk ONLY takes up 4 bytes
-  virtual uint32_t GetLengthOnFile() const {return 4;}
+  virtual uint64_t GetLengthOnFile() const {return 4;}
 
   // special write chunk function (no length or data)
   virtual bool WriteChunk(EnhancedFile *file);

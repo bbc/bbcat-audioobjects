@@ -12,7 +12,21 @@ typedef PACKEDSTRUCT
 } PSTRING;
 
 #define RIFF_ID IFFID("RIFF")
+#define RF64_ID IFFID("RF64")
 #define WAVE_ID IFFID("WAVE")
+
+#define ds64_ID IFFID("ds64")
+
+typedef PACKEDSTRUCT
+{
+  uint32_t     RIFFSizeLow;
+  uint32_t     RIFFSizeHigh;
+  uint32_t     dataSizeLow;
+  uint32_t     dataSizeHigh;
+  uint32_t     sampleCountLow;
+  uint32_t     sampleCountHigh;
+  uint32_t     tableEntryCount;
+} ds64_CHUNK;
 
 typedef PACKEDSTRUCT
 {

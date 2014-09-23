@@ -20,6 +20,23 @@ BBC_AUDIOTOOLBOX_START
  */
 /*--------------------------------------------------------------------------------*/
 
+/*--------------------------------------------------------------------------------*/
+/** Supply chunk data for writing
+ */
+/*--------------------------------------------------------------------------------*/
+bool RIFFRIFFChunk::CreateWriteData(const void *_data, uint64_t _length)
+{
+  if (_length >= 0xffffffffull)
+  {
+    // convert to RF64 chunk
+    id   = RF64_ID;
+    name = "RF64";
+    DEBUG1(("Converting file to RIFF64"));
+  }
+
+  return RIFFChunk::CreateWriteData(_data, _length);
+}
+
 // just return true - no data to write
 bool RIFFRIFFChunk::WriteChunkData(EnhancedFile *file)
 {
@@ -30,6 +47,7 @@ bool RIFFRIFFChunk::WriteChunkData(EnhancedFile *file)
 void RIFFRIFFChunk::Register()
 {
   RIFFChunk::RegisterProvider("RIFF", &Create);
+  RIFFChunk::RegisterProvider("RF64", &Create);
 }
 
 /*----------------------------------------------------------------------------------------------------*/
@@ -338,7 +356,7 @@ bool RIFFdataChunk::WriteChunkData(EnhancedFile *file)
 
   uint8_t  *buf    = &buffer[0];
   uint_t   buflen  = buffer.size();
-  uint32_t length1 = length;
+  uint64_t length1 = length;
   size_t   bytes;
 
   DEBUG1(("Copying data from '%s' to '%s'", srcfile->getfilename().c_str(), file->getfilename().c_str()));

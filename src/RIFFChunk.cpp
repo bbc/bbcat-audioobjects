@@ -43,13 +43,16 @@ RIFFChunk::~RIFFChunk()
 /*--------------------------------------------------------------------------------*/
 bool RIFFChunk::ReadChunk(EnhancedFile *file)
 {
+  uint32_t length32;    // internal length is 64-bit so need 32-bit variable temporarily
   bool success = false;
 
   // chunk ID has already been read, next is chunk length
-  if (file && (file->fread(&length, sizeof(length), 1) == 1))
+  if (file && (file->fread(&length32, sizeof(length32), 1) == 1))
   {
     // length is stored little-endian
-    ByteSwap(length, SWAP_FOR_LE);
+    ByteSwap(length32, SWAP_FOR_LE);
+
+    length = length32;
 
     // save file position
     datapos = file->ftell();
@@ -163,7 +166,7 @@ bool RIFFChunk::WriteChunk(EnhancedFile *file)
 
   if (success)
   {
-    uint32_t data[] = {id, length};
+    uint32_t data[] = {id, (uint32_t)MIN(length, 0xfffffffful)};
 
     // treat ID as big-endian, length is little-endian
     ByteSwap(data[0], SWAP_FOR_BE);
@@ -197,7 +200,7 @@ bool RIFFChunk::WriteChunk(EnhancedFile *file)
 /** Supply chunk data for writing
  */
 /*--------------------------------------------------------------------------------*/
-bool RIFFChunk::CreateWriteData(const void *_data, uint_t _length)
+bool RIFFChunk::CreateWriteData(const void *_data, uint64_t _length)
 {
   bool success = false;
 
@@ -221,7 +224,7 @@ bool RIFFChunk::CreateWriteData(const void *_data, uint_t _length)
 /** Create blank data of the right size
  */
 /*--------------------------------------------------------------------------------*/
-bool RIFFChunk::CreateWriteData(uint_t _length)
+bool RIFFChunk::CreateWriteData(uint64_t _length)
 {
   bool success = false;
 
