@@ -19,13 +19,21 @@ typedef PACKEDSTRUCT
 
 typedef PACKEDSTRUCT
 {
+  char         ChunkId[4];
+  uint32_t     ChunkSizeLow;
+  uint32_t     ChunkSizeHigh;
+} CHUNKSIZE64;
+
+typedef PACKEDSTRUCT
+{
   uint32_t     RIFFSizeLow;
   uint32_t     RIFFSizeHigh;
   uint32_t     dataSizeLow;
   uint32_t     dataSizeHigh;
-  uint32_t     sampleCountLow;
-  uint32_t     sampleCountHigh;
-  uint32_t     tableEntryCount;
+  uint32_t     SampleCountLow;
+  uint32_t     SampleCountHigh;
+  uint32_t     TableEntryCount;
+  CHUNKSIZE64  Table[0];
 } ds64_CHUNK;
 
 typedef PACKEDSTRUCT

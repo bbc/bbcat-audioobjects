@@ -112,6 +112,13 @@ void SoundFileSamples::SetFile(const EnhancedFile *file, uint64_t pos, uint64_t 
   UpdateData();
 }
 
+void SoundFileSamples::Set64bitLength(uint64_t bytes)
+{
+  totalbytes = bytes;
+
+  UpdateData();
+}
+
 void SoundFileSamples::SetClip(const Clip_t& newclip)
 {
   clip = newclip;

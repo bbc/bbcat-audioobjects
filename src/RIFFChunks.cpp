@@ -20,21 +20,13 @@ BBC_AUDIOTOOLBOX_START
  */
 /*--------------------------------------------------------------------------------*/
 
-/*--------------------------------------------------------------------------------*/
-/** Supply chunk data for writing
- */
-/*--------------------------------------------------------------------------------*/
-bool RIFFRIFFChunk::CreateWriteData(const void *_data, uint64_t _length)
+// set chunk to RF64
+void RIFFRIFFChunk::EnableRIFF64()
 {
-  if (_length >= 0xffffffffull)
-  {
-    // convert to RF64 chunk
-    id   = RF64_ID;
-    name = "RF64";
-    DEBUG1(("Converting file to RIFF64"));
-  }
+  RIFFChunk::EnableRIFF64();
 
-  return RIFFChunk::CreateWriteData(_data, _length);
+  id   = RF64_ID;
+  name = "RF64";
 }
 
 // just return true - no data to write
@@ -88,6 +80,146 @@ bool RIFFWAVEChunk::WriteChunk(EnhancedFile *file)
 void RIFFWAVEChunk::Register()
 {
   RIFFChunk::RegisterProvider("WAVE", &Create);
+}
+
+/*----------------------------------------------------------------------------------------------------*/
+
+/*--------------------------------------------------------------------------------*/
+/** ds64 chunk - specifies chunk sizes for RIFF64 files
+ *
+ * The chunk data is read, byte swapped and then processed
+ *
+ */
+/*--------------------------------------------------------------------------------*/
+void RIFFds64Chunk::Register()
+{
+  RIFFChunk::RegisterProvider("ds64", &Create);
+}
+
+void RIFFds64Chunk::ByteSwapData()
+{
+  ds64_CHUNK& chunk = *(ds64_CHUNK *)data;
+
+  if (SwapLittleEndian())
+  {
+    BYTESWAP_VAR(chunk.RIFFSizeLow);
+    BYTESWAP_VAR(chunk.RIFFSizeHigh);
+    BYTESWAP_VAR(chunk.dataSizeLow);
+    BYTESWAP_VAR(chunk.dataSizeHigh);
+    BYTESWAP_VAR(chunk.SampleCountLow);
+    BYTESWAP_VAR(chunk.SampleCountHigh);
+    BYTESWAP_VAR(chunk.TableEntryCount);
+
+    uint32_t i;
+    for (i = 0; i < chunk.TableEntryCount; i++)
+    {
+      BYTESWAP_VAR(chunk.Table[i].ChunkSizeLow);
+      BYTESWAP_VAR(chunk.Table[i].ChunkSizeHigh);
+    }
+  }
+}
+
+// create write data
+bool RIFFds64Chunk::CreateWriteData()
+{
+  bool success = (length && data);
+
+  if (!success)
+  {
+    length = sizeof(ds64_CHUNK);
+    if ((data = new uint8_t[length]) != NULL)
+    {
+      memset(data, 0, length);
+
+      success = true;
+    }
+  }
+
+  return success;
+}
+
+uint64_t RIFFds64Chunk::GetRIFFSize() const
+{
+  const ds64_CHUNK *ds64;
+  uint64_t size = 0;
+
+  if ((ds64 = (const ds64_CHUNK *)GetData()) != NULL) size = Convert32bitSizes(ds64->RIFFSizeLow, ds64->RIFFSizeHigh);
+
+  return size;
+}
+
+uint64_t RIFFds64Chunk::GetdataSize() const
+{
+  const ds64_CHUNK *ds64;
+  uint64_t size = 0;
+
+  if ((ds64 = (const ds64_CHUNK *)GetData()) != NULL) size = Convert32bitSizes(ds64->dataSizeLow, ds64->dataSizeHigh);
+
+  return size;
+}
+
+uint64_t RIFFds64Chunk::GetSampleCount() const
+{
+  const ds64_CHUNK *ds64;
+  uint64_t count = 0;
+
+  if ((ds64 = (const ds64_CHUNK *)GetData()) != NULL) count = Convert32bitSizes(ds64->SampleCountLow, ds64->SampleCountHigh);
+
+  return count;
+}
+
+uint_t RIFFds64Chunk::GetTableCount() const
+{
+  const ds64_CHUNK *ds64;
+  uint_t count = 0;
+
+  if ((ds64 = (const ds64_CHUNK *)GetData()) != NULL) count = ds64->TableEntryCount;
+
+  return count;
+}
+
+uint64_t RIFFds64Chunk::GetTableEntrySize(uint_t entry, char *id) const
+{
+  const ds64_CHUNK *ds64;
+  uint64_t size = 0;
+
+  if (((ds64 = (const ds64_CHUNK *)GetData()) != NULL) && (entry < ds64->TableEntryCount))
+  {
+    size = Convert32bitSizes(ds64->Table[entry].ChunkSizeLow, ds64->Table[entry].ChunkSizeHigh);
+    if (id) memcpy(id, ds64->Table[entry].ChunkId, sizeof(ds64->Table[entry].ChunkId));
+  }
+
+  return size;
+}
+
+void RIFFds64Chunk::SetRIFFSize(uint64_t size)
+{
+  ds64_CHUNK *ds64;
+
+  if ((ds64 = (ds64_CHUNK *)GetData()) != NULL) {
+    ds64->RIFFSizeLow  = (uint32_t)size;
+    ds64->RIFFSizeHigh = (uint32_t)(size >> 32);
+  }
+}
+
+void RIFFds64Chunk::SetdataSize(uint64_t size)
+{
+  ds64_CHUNK *ds64;
+
+  if ((ds64 = (ds64_CHUNK *)GetData()) != NULL) {
+    ds64->dataSizeLow  = (uint32_t)size;
+    ds64->dataSizeHigh = (uint32_t)(size >> 32);
+  }
+}
+
+void RIFFds64Chunk::SetSampleCount(uint64_t count)
+{
+  ds64_CHUNK *ds64;
+
+  if ((ds64 = (ds64_CHUNK *)GetData()) != NULL) {
+    ds64->SampleCountLow  = (uint32_t)count;
+    ds64->SampleCountHigh = (uint32_t)(count >> 32);
+  }
 }
 
 /*----------------------------------------------------------------------------------------------------*/
@@ -398,6 +530,7 @@ void RegisterRIFFChunkProviders()
 {
   RIFFRIFFChunk::Register();
   RIFFWAVEChunk::Register();
+  RIFFds64Chunk::Register();
   RIFFfmtChunk::Register();
   RIFFbextChunk::Register();
   RIFFchnaChunk::Register();

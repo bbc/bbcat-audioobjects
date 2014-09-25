@@ -13,7 +13,7 @@ BBC_AUDIOTOOLBOX_START
 /*--------------------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------------------*/
-/** RIFF chunk - the first chunk of any WAVE file
+/** RIFF/RIFF64 chunk - the first chunk of any WAVE file
  *
  * Don't read the data, no specific handling
  */
@@ -24,11 +24,8 @@ public:
   RIFFRIFFChunk(uint32_t chunk_id) : RIFFChunk(chunk_id) {}
   virtual ~RIFFRIFFChunk() {}
 
-  /*--------------------------------------------------------------------------------*/
-  /** Supply chunk data for writing
-  */
-  /*--------------------------------------------------------------------------------*/
-  virtual bool CreateWriteData(const void *_data, uint64_t _length);
+  // set chunk to RF64
+  virtual void EnableRIFF64();
 
   // provider function register for this object
   static void Register();
@@ -42,10 +39,12 @@ protected:
   }
 
 protected:
-  // do NOT read OR skip over data
+  // read limited data of chunk
   virtual ChunkHandling_t GetChunkHandling() const {return ChunkHandling_RemainInChunkData;}
   // just return true - no data to write
   virtual bool WriteChunkData(EnhancedFile *file);
+  // return that this chunk changes its behaviour for RIFF64 files
+  virtual bool RIFF64Capable() {return true;}
 };
 
 /*--------------------------------------------------------------------------------*/
@@ -81,6 +80,52 @@ protected:
 protected:
   // dummy read function
   virtual bool ReadChunk(EnhancedFile *file);
+};
+
+/*--------------------------------------------------------------------------------*/
+/** ds64 chunk - specifies chunk sizes for RIFF64 files
+ *
+ * The chunk data is read, byte swapped and then processed
+ *
+ */
+/*--------------------------------------------------------------------------------*/
+class RIFFds64Chunk : public RIFFChunk
+{
+public:
+  RIFFds64Chunk(uint32_t chunk_id) : RIFFChunk(chunk_id) {}
+  virtual ~RIFFds64Chunk() {}
+
+  // create write data
+  virtual bool CreateWriteData();
+
+  uint64_t GetRIFFSize() const;
+  uint64_t GetdataSize() const;
+  uint64_t GetSampleCount() const;
+  uint_t   GetTableCount() const;
+  uint64_t GetTableEntrySize(uint_t entry, char *id = NULL) const;
+
+  void     SetRIFFSize(uint64_t size);
+  void     SetdataSize(uint64_t size);
+  void     SetSampleCount(uint64_t count);
+
+  // provider function register for this object
+  static void Register();
+
+protected:
+  // provider function for this object
+  static RIFFChunk *Create(uint32_t id, void *context)
+  {
+    (void)context;
+    return new RIFFds64Chunk(id);
+  }
+
+  static uint64_t Convert32bitSizes(uint32_t low, uint32_t high) {return ((uint64_t)low + ((uint64_t)high << 32));}
+
+protected:
+  // data will need byte swapping on certain machines
+  virtual void ByteSwapData();
+  // always read and process his kind of chunk
+  virtual ChunkHandling_t GetChunkHandling() const {return ChunkHandling_ReadChunk;}
 };
 
 /*--------------------------------------------------------------------------------*/
@@ -256,6 +301,8 @@ protected:
   virtual bool ReadChunk(EnhancedFile *file);
   // copy sample data from temporary file
   virtual bool WriteChunkData(EnhancedFile *file);
+  // return that this chunk changes its behaviour for RIFF64 files
+  virtual bool RIFF64Capable() {return true;}
 };
 
 /*--------------------------------------------------------------------------------*/

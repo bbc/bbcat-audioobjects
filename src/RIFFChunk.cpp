@@ -22,7 +22,8 @@ RIFFChunk::RIFFChunk(uint32_t chunk_id) : id(chunk_id),
                                           length(0),
                                           datapos(0),
                                           data(NULL),
-                                          align(1)
+                                          align(1),
+                                          riff64(false)
 {
   // create ASCII name from ID
   char _name[] = {(char)(id >> 24), (char)(id >> 16), (char)(id >> 8), (char)id};
@@ -166,7 +167,8 @@ bool RIFFChunk::WriteChunk(EnhancedFile *file)
 
   if (success)
   {
-    uint32_t data[] = {id, (uint32_t)MIN(length, 0xfffffffful)};
+    // if chunk is marked as RIFF64, explicit store 0xffffffff as the length
+    uint32_t data[] = {id, (uint32_t)(riff64 ? RIFF_MaxSize : MIN(length, RIFF_MaxSize))};
 
     // treat ID as big-endian, length is little-endian
     ByteSwap(data[0], SWAP_FOR_BE);

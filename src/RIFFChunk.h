@@ -60,6 +60,19 @@ public:
   /*--------------------------------------------------------------------------------*/
   uint64_t       GetLength() const {return length;}
 
+  enum
+  {
+    RIFF_MaxSize = 0xffffffffull,
+  };
+
+  /*--------------------------------------------------------------------------------*/
+  /** Tell this chunk that the file is a RIFF64 file
+   *
+   * @note the riff64 boolean is only set if RIFF64Capable() returns true
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void EnableRIFF64() {riff64 = RIFF64Capable();}
+
   /*--------------------------------------------------------------------------------*/
   /** Return chunk data length as stored on file (header plus length plus padding if necessary)
    */
@@ -70,7 +83,7 @@ public:
   /** Return chunk data (or NULL if data has not yet been read)
    */
   /*--------------------------------------------------------------------------------*/
-  const uint8_t *GetData()   const {return data;}
+  const uint8_t *GetData() const {return data;}
 
   /*--------------------------------------------------------------------------------*/
   /** Delete read data
@@ -245,6 +258,12 @@ protected:
    */
   /*--------------------------------------------------------------------------------*/
   virtual bool DeleteDataAfterProcessing() const {return false;}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Return whether this chunk changes its behaviour for RIFF64 files
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual bool RIFF64Capable() {return false;}
  
   /*--------------------------------------------------------------------------------*/
   /** Return whether it is necessary to byte swap data
@@ -277,6 +296,7 @@ protected:
   uint64_t    datapos;        ///< chunk data file position
   uint8_t     *data;          ///< chunk data (if read)
   uint8_t     align;          ///< file alignment: 0 for no alignment, 1 for even byte alignment
+  bool        riff64;         ///< true if file is RIFF64
 
   static std::map<uint32_t,PROVIDER> providermap;
 };

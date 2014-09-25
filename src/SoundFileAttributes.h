@@ -55,6 +55,8 @@ public:
   const SoundFormat *GetFormat() const {return format;}
   virtual void SetFile(const EnhancedFile *file, uint64_t pos, uint64_t bytes, bool readonly = true);
 
+  virtual void Set64bitLength(uint64_t bytes);
+
   uint_t   GetStartChannel()             const {return clip.channel;}
   uint_t   GetChannels()                 const {return clip.nchannels;}
 

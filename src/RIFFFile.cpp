@@ -49,6 +49,8 @@ bool RIFFFile::ReadChunks(uint64_t maxlength)
            ((file->ftell() - startpos) < maxlength) &&
            ((chunk = RIFFChunk::Create(file)) != NULL))
     {
+      const RIFFds64Chunk *ds64;
+
       chunklist.push_back(chunk);
       chunkmap[chunk->GetID()] = chunk;
 
@@ -66,6 +68,22 @@ bool RIFFFile::ReadChunks(uint64_t maxlength)
         if (fileformat) filesamples->SetFormat(fileformat);
 
         DEBUG3(("Found data chunk (%s)", chunk->GetName()));
+
+        if ((ds64 = dynamic_cast<const RIFFds64Chunk *>(GetChunk("ds64"))) != NULL)
+        {
+          uint64_t datalength = ds64->GetdataSize();
+
+          DEBUG1(("Using ds64 chunk to update data chunk size to %lu bytes", (ulong_t)datalength));
+
+          filesamples->Set64bitLength(datalength);
+        }
+      }
+
+      if ((ds64 = dynamic_cast<const RIFFds64Chunk *>(chunk)) != NULL)
+      {
+        maxlength = ds64->GetdataSize();
+
+        DEBUG1(("Found ds64 chunk, updating max length to %lu bytes", (ulong_t)maxlength));
       }
             
       success = ProcessChunk(chunk);
@@ -183,11 +201,60 @@ void RIFFFile::Close()
       uint64_t totalbytes = 0;
       for (i = 0; i < chunklist.size(); i++)
       {
-        uint64_t bytes = chunklist[i]->GetLengthOnFile();
+        // ignore RIFF ID since the RIFF size refers to the rest of the content
+        if (chunklist[i]->GetID() != RIFF_ID)
+        {
+          uint64_t bytes = chunklist[i]->GetLengthOnFile();
 
-        DEBUG3(("Chunk '%s' has length %lu bytes", chunklist[i]->GetName(), (ulong_t)bytes));
+          DEBUG3(("Chunk '%s' has length %lu bytes", chunklist[i]->GetName(), (ulong_t)bytes));
         
-        totalbytes += bytes;
+          totalbytes += bytes;
+        }
+      }
+
+      // test whether RIFF64 file is needed
+      if (totalbytes >= RIFFChunk::RIFF_MaxSize)
+      {
+        const RIFFChunk *waveChunk = GetChunk(WAVE_ID);
+        const RIFFChunk *dataChunk = GetChunk(data_ID);
+        RIFFds64Chunk   *ds64Chunk;
+
+        DEBUG1(("Switching file to RF64 type"));
+
+        // tell each chunk (that's interested) that the file is going to be a RIFF64
+        for (i = 0; i < chunklist.size(); i++)
+        {
+          chunklist[i]->EnableRIFF64();
+        }      
+
+        if (waveChunk && dataChunk)
+        {
+          // create a ds64 chunk and insert it after the WAVE chunk
+          if ((ds64Chunk = new RIFFds64Chunk(ds64_ID)) != NULL)
+          {
+            ds64Chunk->CreateWriteData();
+
+            // TODO: check other chunks for any over 4GB
+
+            // set sizes expicitly in ds64 chunk
+            ds64Chunk->SetRIFFSize(totalbytes);
+            ds64Chunk->SetdataSize(dataChunk->GetLength());
+            ds64Chunk->SetSampleCount(dataChunk->GetLength() / fileformat->GetBytesPerFrame());
+
+            // add length of ds64 chunk to total RIFF size
+            totalbytes += ds64Chunk->GetLengthOnFile();
+
+            // find WAVE chunk and add ds64 chunk AFTER it
+            std::vector<RIFFChunk *>::iterator it;
+            if ((it = std::find(chunklist.begin(), chunklist.end(), waveChunk)) != chunklist.end()) ++it;
+
+            // insert chunk directly after WAVE chunk
+            chunklist.insert(it, ds64Chunk);
+            chunkmap[ds64_ID] = ds64Chunk;
+          }
+          else ERROR("Failed to create ds64 chunk");
+        }
+        else ERROR("Not all RIFF chunks are present, cannot create ds64 chunk");
       }
 
       DEBUG3(("Total size %lu bytes", (ulong_t)totalbytes));
