@@ -168,7 +168,8 @@ bool RIFFChunk::WriteChunk(EnhancedFile *file)
   if (success)
   {
     // if chunk is marked as RIFF64, explicit store 0xffffffff as the length
-    uint32_t data[] = {id, (uint32_t)(riff64 ? RIFF_MaxSize : MIN(length, RIFF_MaxSize))};
+    const uint32_t maxsize = RIFF_MaxSize;
+    uint32_t data[] = {id, (uint32_t)(riff64 ? maxsize : MIN(length, maxsize))};
 
     // treat ID as big-endian, length is little-endian
     ByteSwap(data[0], SWAP_FOR_BE);
