@@ -245,8 +245,18 @@ void RIFFFile::Close()
             totalbytes += ds64Chunk->GetLengthOnFile();
 
             // find WAVE chunk and add ds64 chunk AFTER it
+            // there's no std::find in Linux
             std::vector<RIFFChunk *>::iterator it;
-            if ((it = std::find(chunklist.begin(), chunklist.end(), waveChunk)) != chunklist.end()) ++it;
+            for (it = chunklist.begin(); it != chunklist.end(); ++it)
+            {
+              if ((*it)->GetID() == WAVE_ID)
+              {
+                // move to next slot for insert
+                ++it;
+                // and break out of loop
+                break;
+              }
+            }
 
             // insert chunk directly after WAVE chunk
             chunklist.insert(it, ds64Chunk);
