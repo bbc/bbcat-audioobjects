@@ -278,8 +278,6 @@ public:
 
   virtual void CreateCursors(std::vector<PositionCursor *>& list, uint_t channel = 0, uint_t nchannels = ~0) const;
 
-  virtual void Serialize(uint8_t *dst, uint_t& len) const;
-
   /*--------------------------------------------------------------------------------*/
   /** Create ADM from a simple text file
    *

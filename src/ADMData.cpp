@@ -882,26 +882,6 @@ void ADMData::CreateCursors(std::vector<PositionCursor *>& list, uint_t channel,
   }
 }
 
-void ADMData::Serialize(uint8_t *dst, uint_t& len) const
-{
-  ADMOBJECTS_CIT it;
-  uint_t len0   = len;
-  uint_t sublen = 0;
-
-  if (dst) Serialize(NULL, sublen);
-
-  ADMObject::SerializeData(dst, len, ADMObject::SerialDataType_ADMHeader, sublen);
-  ADMObject::SerializeData(dst, len, (uint32_t)admobjects.size());
-  ADMObject::SerializeSync(dst, len, len0);
-
-  for (it = admobjects.begin(); it != admobjects.end(); ++it)
-  {
-    it->second->Serialize(dst, len);
-  }
-
-  ADMObject::SerializeObjectCRC(dst, len, len0);
-}
-
 /*--------------------------------------------------------------------------------*/
 /** Create ADM from a simple text file
  *

@@ -196,15 +196,6 @@ public:
   virtual void GenerateReferenceList(std::string& str) const {UNUSED_PARAMETER(str);}
 
   /*--------------------------------------------------------------------------------*/
-  /** Serialize (or prepare to serialize) this object
-   *
-   * @param dst destination buffer or NULL to calculate required buffer size
-   * @param len offset into data to store data, modified by function
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void Serialize(uint8_t *dst, uint_t& len) const;
-
-  /*--------------------------------------------------------------------------------*/
   /** Convert text time to ns time
    *
    * @param t ns time variable to be modified
@@ -242,39 +233,6 @@ public:
   {
     return (uint64_t)(((ullong_t)s * 1000000000ull) / sr);
   }
-
-  typedef enum
-  {
-    SerialDataType_32bit = 0x0,
-    SerialDataType_64bit,
-    SerialDataType_double,
-
-    SerialDataType_Time_ns,
-    SerialDataType_String,
-    SerialDataType_Position,
-    SerialDataType_Position_Supplement,
-    SerialDataType_Reference,
-
-    SerialDataType_Values_And_Attributes = 0x70,
-    SerialDataType_Attribute,
-    SerialDataType_Value,
-    SerialDataType_Value_Attributes,
-    SerialDataType_Value_Attribute,
-
-    SerialDataType_ADMHeader = 0x80,
-    SerialDataType_ObjectCRC,
-    SerialDataType_Programme,
-    SerialDataType_Content,
-    SerialDataType_Object,
-    SerialDataType_TrackUID,
-    SerialDataType_PackFormat,
-    SerialDataType_StreamFormat,
-    SerialDataType_ChannelFormat,
-    SerialDataType_BlockFormat,
-    SerialDataType_TrackFormat,
-  } SerialDataType_t;
-
-  virtual SerialDataType_t GetSerialDataType() const = 0;
 
 protected:
   /*--------------------------------------------------------------------------------*/
@@ -411,69 +369,6 @@ protected:
   /*--------------------------------------------------------------------------------*/
   void GenerateReference(std::string& str, const ADMObject *obj) const {GenerateObjectReference(str); str += "->"; obj->GenerateObjectReference(str); str += "\n";}
 
-  /*--------------------------------------------------------------------------------*/
-  /** Serialize (or prepare to serialize) additional parts of this object
-   *
-   * @param dst destination buffer or NULL to calculate required buffer size
-   * @param len offset into data to store data, modified by function
-   *
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void SerializeEx(uint8_t *dst, uint_t& len) const
-  {
-    UNUSED_PARAMETER(dst);
-    UNUSED_PARAMETER(len);
-  }
-
-  friend class ADMData;
-
-  /*--------------------------------------------------------------------------------*/
-  /** Serialize a sync block to aid syncing (random 32-bit number followed by 32-bit CRC)
-   *
-   * @param dst destination buffer or NULL to calculate required buffer size
-   * @param len offset into data to store data, modified by function
-   * @param len0 offset into data of the beginning of this data block (to sync against)
-   *
-   */
-  /*--------------------------------------------------------------------------------*/
-  static void SerializeSync(uint8_t *dst, uint_t& len, uint_t len0);
-
-  /*--------------------------------------------------------------------------------*/
-  /** Add data to a serilization buffer (or calculate size of data)
-   *
-   * @param dst buffer to receive data (or NULL to just calculate size)
-   * @param len offset into buffer, modified by this function
-   * @param obj object to store
-   * @param objlen length of data 
-   * @param byteswap true to require the bytes to be swapped prior to storage (assumes the data is a single object)
-   *
-   */
-  /*--------------------------------------------------------------------------------*/
-  static void SerializeData(uint8_t *dst, uint_t& len, const void *obj, uint_t objlen, bool byteswap = false);
-  static void SerializeData(uint8_t *dst, uint_t& len, bool obj) {SerializeData(dst, len, (uint8_t)obj);}
-  static void SerializeData(uint8_t *dst, uint_t& len, uint8_t obj);
-  static void SerializeData(uint8_t *dst, uint_t& len, uint16_t obj);
-  static void SerializeData(uint8_t *dst, uint_t& len, uint32_t obj, uint_t bytes = sizeof(uint32_t));
-  static void SerializeData(uint8_t *dst, uint_t& len, uint64_t obj, uint_t bytes = sizeof(uint64_t));
-  static void SerializeData(uint8_t *dst, uint_t& len, double obj);
-  static void SerializeData(uint8_t *dst, uint_t& len, SerialDataType_t type);
-  static void SerializeData(uint8_t *dst, uint_t& len, SerialDataType_t type, uint_t sublen);
-  static void SerializeData(uint8_t *dst, uint_t& len, const std::string& obj);
-  static void SerializeData(uint8_t *dst, uint_t& len, const ADMATTRS& obj);
-  static void SerializeData(uint8_t *dst, uint_t& len, const ADMVALUE& obj);
-  static void SerializeData(uint8_t *dst, uint_t& len, const ADMVALUES& obj);
-  static void SerializeData(uint8_t *dst, uint_t& len, const ADMObject *obj);
-  static void SerializeData(uint8_t *dst, uint_t& len, const Position& obj);
-  static void SerializeData(uint8_t *dst, uint_t& len, const ParameterSet& obj);
-  static void SerializeObjectCRC(uint8_t *dst, uint_t& len, uint_t len0);
-
-  static void SerializeItem(uint8_t *dst, uint_t& len, const std::string& name, uint32_t obj);
-  static void SerializeItem(uint8_t *dst, uint_t& len, const std::string& name, uint64_t obj);
-  static void SerializeItem(uint8_t *dst, uint_t& len, const std::string& name, double obj);
-  static void SerializeTime(uint8_t *dst, uint_t& len, const std::string& name, uint64_t obj);
-  static void SerializeItem(uint8_t *dst, uint_t& len, const std::string& name, const std::string& obj);
-  static void SerializeItem(uint8_t *dst, uint_t& len, const std::string& name, const Position& obj, const ParameterSet& obj2);
-
 protected:
   ADMData&    owner;
   std::string id;
@@ -590,12 +485,6 @@ public:
   virtual const std::string& GetReference() const {return Reference;}
 
   /*--------------------------------------------------------------------------------*/
-  /** Return serial data type of this object
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual SerialDataType_t GetSerialDataType() const {return SerialDataType_Programme;}
-
-  /*--------------------------------------------------------------------------------*/
   /** Set internal variables from values added to internal list (e.g. from XML)
    */
   /*--------------------------------------------------------------------------------*/
@@ -659,16 +548,6 @@ protected:
   /*--------------------------------------------------------------------------------*/
   virtual bool XMLEmpty() const {return (ADMObject::XMLEmpty() && (contentrefs.size() == 0));}
 
-  /*--------------------------------------------------------------------------------*/
-  /** Serialize (or prepare to serialize) additional parts of this object
-   *
-   * @param dst destination buffer or NULL to calculate required buffer size
-   * @param len offset into data to store data, modified by function
-   *
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void SerializeEx(uint8_t *dst, uint_t& len) const;
-
 protected:
   std::vector<ADMAudioContent *> contentrefs;
   std::string                    language;
@@ -703,12 +582,6 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   virtual const std::string& GetReference() const {return Reference;}
-
-  /*--------------------------------------------------------------------------------*/
-  /** Return serial data type of this object
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual SerialDataType_t GetSerialDataType() const {return SerialDataType_Content;}
 
   /*--------------------------------------------------------------------------------*/
   /** Set internal variables from values added to internal list (e.g. from XML)
@@ -774,16 +647,6 @@ protected:
   /*--------------------------------------------------------------------------------*/
   virtual bool XMLEmpty() const {return (ADMObject::XMLEmpty() && (objectrefs.size() == 0));}
 
-  /*--------------------------------------------------------------------------------*/
-  /** Serialize (or prepare to serialize) additional parts of this object
-   *
-   * @param dst destination buffer or NULL to calculate required buffer size
-   * @param len offset into data to store data, modified by function
-   *
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void SerializeEx(uint8_t *dst, uint_t& len) const;
-
 protected:
   std::string                   language;
   std::vector<ADMAudioObject *> objectrefs;
@@ -817,12 +680,6 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   virtual const std::string& GetReference() const {return Reference;}
-
-  /*--------------------------------------------------------------------------------*/
-  /** Return serial data type of this object
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual SerialDataType_t GetSerialDataType() const {return SerialDataType_Object;}
 
   /*--------------------------------------------------------------------------------*/
   /** Set internal variables from values added to internal list (e.g. from XML)
@@ -931,16 +788,6 @@ protected:
   /*--------------------------------------------------------------------------------*/
   virtual bool XMLEmpty() const {return (ADMObject::XMLEmpty() && (objectrefs.size() == 0) && (packformatrefs.size() == 0) && (trackrefs.size() == 0));}
 
-  /*--------------------------------------------------------------------------------*/
-  /** Serialize (or prepare to serialize) additional parts of this object
-   *
-   * @param dst destination buffer or NULL to calculate required buffer size
-   * @param len offset into data to store data, modified by function
-   *
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void SerializeEx(uint8_t *dst, uint_t& len) const;
-
 protected:
   std::vector<ADMAudioObject     *> objectrefs;
   std::vector<ADMAudioPackFormat *> packformatrefs;
@@ -985,12 +832,6 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   virtual const std::string& GetReference() const {return Reference;}
-
-  /*--------------------------------------------------------------------------------*/
-  /** Return serial data type of this object
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual SerialDataType_t GetSerialDataType() const {return SerialDataType_TrackUID;}
 
   /*--------------------------------------------------------------------------------*/
   /** Set internal variables from values added to internal list (e.g. from XML)
@@ -1118,16 +959,6 @@ protected:
   /*--------------------------------------------------------------------------------*/
   virtual void GenerateObjectReference(std::string& str) const {Printf(str, "%s:%u", GetType().c_str(), trackNum);}
 
-  /*--------------------------------------------------------------------------------*/
-  /** Serialize (or prepare to serialize) additional parts of this object
-   *
-   * @param dst destination buffer or NULL to calculate required buffer size
-   * @param len offset into data to store data, modified by function
-   *
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void SerializeEx(uint8_t *dst, uint_t& len) const;
-
 protected:
   uint_t                             trackNum;
   uint32_t                           sampleRate;
@@ -1165,12 +996,6 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   virtual const std::string& GetReference() const {return Reference;}
-
-  /*--------------------------------------------------------------------------------*/
-  /** Return serial data type of this object
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual SerialDataType_t GetSerialDataType() const {return SerialDataType_PackFormat;}
 
   /*--------------------------------------------------------------------------------*/
   /** Set internal variables from values added to internal list (e.g. from XML)
@@ -1248,16 +1073,6 @@ protected:
   /*--------------------------------------------------------------------------------*/
   virtual bool XMLEmpty() const {return (ADMObject::XMLEmpty() && (channelformatrefs.size() == 0) && (packformatrefs.size() == 0));}
 
-  /*--------------------------------------------------------------------------------*/
-  /** Serialize (or prepare to serialize) additional parts of this object
-   *
-   * @param dst destination buffer or NULL to calculate required buffer size
-   * @param len offset into data to store data, modified by function
-   *
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void SerializeEx(uint8_t *dst, uint_t& len) const;
-
 protected:
   std::vector<ADMAudioChannelFormat *> channelformatrefs;
   std::vector<ADMAudioPackFormat    *> packformatrefs;
@@ -1293,12 +1108,6 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   virtual const std::string& GetReference() const {return Reference;}
-
-  /*--------------------------------------------------------------------------------*/
-  /** Return serial data type of this object
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual SerialDataType_t GetSerialDataType() const {return SerialDataType_StreamFormat;}
 
   /*--------------------------------------------------------------------------------*/
   /** Set and Get formatLabel
@@ -1399,16 +1208,6 @@ protected:
   /*--------------------------------------------------------------------------------*/
   virtual bool XMLEmpty() const {return (ADMObject::XMLEmpty() && (channelformatrefs.size() == 0) && (trackformatrefs.size() == 0) && (packformatrefs.size() == 0));}
 
-  /*--------------------------------------------------------------------------------*/
-  /** Serialize (or prepare to serialize) additional parts of this object
-   *
-   * @param dst destination buffer or NULL to calculate required buffer size
-   * @param len offset into data to store data, modified by function
-   *
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void SerializeEx(uint8_t *dst, uint_t& len) const;
-
 protected:
   std::string                          formatLabel;
   std::string                          formatDefinition;
@@ -1444,12 +1243,6 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   virtual const std::string& GetReference() const {return Reference;}
-
-  /*--------------------------------------------------------------------------------*/
-  /** Return serial data type of this object
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual SerialDataType_t GetSerialDataType() const {return SerialDataType_ChannelFormat;}
 
   /*--------------------------------------------------------------------------------*/
   /** Set internal variables from values added to internal list (e.g. from XML)
@@ -1520,16 +1313,6 @@ protected:
   /*--------------------------------------------------------------------------------*/
   virtual bool XMLEmpty() const {return false;}
 
-  /*--------------------------------------------------------------------------------*/
-  /** Serialize (or prepare to serialize) additional parts of this object
-   *
-   * @param dst destination buffer or NULL to calculate required buffer size
-   * @param len offset into data to store data, modified by function
-   *
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void SerializeEx(uint8_t *dst, uint_t& len) const;
-
 protected:
   std::vector<ADMAudioBlockFormat *> blockformatrefs;
 };
@@ -1564,12 +1347,6 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   virtual const std::string& GetReference() const {return Reference;}
-
-  /*--------------------------------------------------------------------------------*/
-  /** Return serial data type of this object
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual SerialDataType_t GetSerialDataType() const {return SerialDataType_TrackFormat;}
 
   /*--------------------------------------------------------------------------------*/
   /** Set internal variables from values added to internal list (e.g. from XML)
@@ -1648,16 +1425,6 @@ protected:
   /*--------------------------------------------------------------------------------*/
   virtual bool XMLEmpty() const {return (ADMObject::XMLEmpty() && (streamformatrefs.size() == 0));}
 
-  /*--------------------------------------------------------------------------------*/
-  /** Serialize (or prepare to serialize) additional parts of this object
-   *
-   * @param dst destination buffer or NULL to calculate required buffer size
-   * @param len offset into data to store data, modified by function
-   *
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void SerializeEx(uint8_t *dst, uint_t& len) const;
-
 protected:
   std::string formatLabel;
   std::string formatDefinition;
@@ -1698,12 +1465,6 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   virtual const std::string& GetReference() const {return Reference;}
-
-  /*--------------------------------------------------------------------------------*/
-  /** Return serial data type of this object
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual SerialDataType_t GetSerialDataType() const {return SerialDataType_BlockFormat;}
 
   /*--------------------------------------------------------------------------------*/
   /** Set internal variables from values added to internal list (e.g. from XML)
@@ -1809,16 +1570,6 @@ protected:
    */
   /*--------------------------------------------------------------------------------*/
   virtual bool XMLEmpty() const {return false;}
-
-  /*--------------------------------------------------------------------------------*/
-  /** Serialize (or prepare to serialize) additional parts of this object
-   *
-   * @param dst destination buffer or NULL to calculate required buffer size
-   * @param len offset into data to store data, modified by function
-   *
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void SerializeEx(uint8_t *dst, uint_t& len) const;
 
 protected:
   uint64_t     rtime;

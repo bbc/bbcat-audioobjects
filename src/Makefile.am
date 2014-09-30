@@ -31,9 +31,7 @@ libap_audioobjects_@APLIBS_AUDIOOBJECTS_MAJORMINOR@_la_SOURCES =	\
 	RIFFChunks.cpp													\
 	RIFFFile.cpp													\
 	SoundFileAttributes.cpp											\
-	TinyXMLADMData.cpp												\
-	crc32.cpp														\
-	mt19937ar.c
+	TinyXMLADMData.cpp
 
 pkginclude_HEADERS =							\
 	ADMAudioFileSamples.h						\
@@ -50,9 +48,7 @@ pkginclude_HEADERS =							\
 	RIFFFile.h									\
 	SoundFileAttributes.h						\
 	SoundFileWithPosition.h						\
-	TinyXMLADMData.h							\
-	crc32.h										\
-	mt19937ar.h
+	TinyXMLADMData.h
 
 noinst_HEADERS =
 

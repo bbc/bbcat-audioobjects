@@ -13,54 +13,8 @@
 
 #include "ADMObjects.h"
 #include "ADMData.h"
-#include "mt19937ar.h"
-#include "crc32.h"
-
-#define SERIALIZE_AS_TEXT 0
 
 BBC_AUDIOTOOLBOX_START
-
-/*----------------------------------------------------------------------------------------------------*/
-
-#if SERIALIZE_AS_TEXT
-static struct
-{
-  ADMObject::SerialDataType_t type;
-  const char *name;
-} _SerialDataTypes[] =
-{
-  {ADMObject::SerialDataType_32bit, "32bit"},
-  {ADMObject::SerialDataType_64bit, "64bit"},
-  {ADMObject::SerialDataType_double, "double"},
-
-  {ADMObject::SerialDataType_Time_ns, "Time_ns"},
-  {ADMObject::SerialDataType_String, "String"},
-  {ADMObject::SerialDataType_Position, "Position"},
-  {ADMObject::SerialDataType_Position_Supplement, "Position_Supplement"},
-  {ADMObject::SerialDataType_Reference, "Reference"},
-
-  {ADMObject::SerialDataType_Values_And_Attributes, "Values_And_Attributes"},
-  {ADMObject::SerialDataType_Attribute, "Attribute"},
-  {ADMObject::SerialDataType_Value, "Value"},
-  {ADMObject::SerialDataType_Value_Attributes, "Value_Attributes"},
-  {ADMObject::SerialDataType_Value_Attribute, "Value_Attribute"},
-
-  {ADMObject::SerialDataType_ADMHeader, "ADMHeader"},
-  {ADMObject::SerialDataType_ObjectCRC, "ObjectCRC"},
-  {ADMObject::SerialDataType_Programme, "Programme"},
-  {ADMObject::SerialDataType_Content, "Content"},
-  {ADMObject::SerialDataType_Object, "Object"},
-  {ADMObject::SerialDataType_TrackUID, "TrackUID"},
-  {ADMObject::SerialDataType_PackFormat, "PackFormat"},
-  {ADMObject::SerialDataType_StreamFormat, "StreamFormat"},
-  {ADMObject::SerialDataType_ChannelFormat, "ChannelFormat"},
-  {ADMObject::SerialDataType_BlockFormat, "BlockFormat"},
-  {ADMObject::SerialDataType_TrackFormat, "TrackFormat"},
-};
-
-std::map<ADMObject::SerialDataType_t,const char *> SerialDataType_Names;
-
-#endif
 
 /*--------------------------------------------------------------------------------*/
 /** Base constructor for all objects
@@ -75,17 +29,6 @@ ADMObject::ADMObject(ADMData& _owner, const std::string& _id, const std::string&
                                                                                           id(_id),
                                                                                           name(_name)
 {
-#if SERIALIZE_AS_TEXT
-  if (SerialDataType_Names.size() == 0)
-  {
-    uint_t i;
-
-    for (i = 0; i < NUMBEROF(_SerialDataTypes); i++)
-    {
-      SerialDataType_Names[_SerialDataTypes[i].type] = _SerialDataTypes[i].name;
-    }
-  }
-#endif
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -912,328 +855,6 @@ void ADMObject::XMLRef(std::string& str, const std::string& indent, const std::s
          eol.c_str());
 }
 
-/*--------------------------------------------------------------------------------*/
-/** Serialize (or prepare to serialize) this object
- *
- * @param dst destination buffer or NULL to calculate required buffer size
- * @param len offset into data to store data, modified by function
- */
-/*--------------------------------------------------------------------------------*/
-void ADMObject::Serialize(uint8_t *dst, uint_t& len) const
-{
-  uint_t len0   = len;
-  uint_t sublen = 0;
-
-  if (dst) Serialize(NULL, sublen);
-    
-  SerializeData(dst, len, GetSerialDataType(), sublen);
-  SerializeSync(dst, len, len0);
-
-  SerializeItem(dst, len, "id", id);
-  SerializeItem(dst, len, "name", name);
-  SerializeItem(dst, len, "typeLabel", typeLabel);
-  SerializeItem(dst, len, "typeDefinition", typeDefinition);
-  SerializeData(dst, len, values);
-  SerializeEx(dst, len);
-  SerializeObjectCRC(dst, len, len0);
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Serialize a sync block to aid syncing (random 32-bit number followed by 32-bit CRC)
- *
- * @param dst destination buffer or NULL to calculate required buffer size
- * @param len offset into data to store data, modified by function
- * @param len0 offset into data of the beginning of this data block (to sync against)
- *
- */
-/*--------------------------------------------------------------------------------*/
-void ADMObject::SerializeSync(uint8_t *dst, uint_t& len, uint_t len0)
-{
-  uint32_t rval = 0, crc = 0;
-  if (dst) rval = genrand_int32();
-    
-  SerializeData(dst, len, rval);
-  if (dst) crc  = CRC32(dst + len0, len - len0);
-  SerializeData(dst, len, crc);
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Add data to a serilization buffer (or calculate size of data)
- *
- * @param dst buffer to receive data (or NULL to just calculate size)
- * @param len offset into buffer, modified by this function
- * @param obj object to store
- * @param objlen length of data 
- * @param byteswap true to require the bytes to be swapped prior to storage (assumes the data is a single object)
- *
- */
-/*--------------------------------------------------------------------------------*/
-void ADMObject::SerializeData(uint8_t *dst, uint_t& len, const void *obj, uint_t objlen, bool byteswap)
-{
-  if (dst)
-  {
-    memcpy(dst + len, obj, objlen);
-    if (byteswap) ByteSwap(dst + len, objlen);
-  }
-  len += objlen;
-}
-
-void ADMObject::SerializeData(uint8_t *dst, uint_t& len, uint8_t obj)
-{
-#if SERIALIZE_AS_TEXT
-  std::string str;
-  Printf(str, "8-bit %02lx\n", (ulong_t)obj);
-  SerializeData(dst, len, str.c_str(), str.length());
-#else
-  SerializeData(dst, len, &obj, sizeof(obj));
-#endif
-}
-
-void ADMObject::SerializeData(uint8_t *dst, uint_t& len, uint16_t obj)
-{
-#if SERIALIZE_AS_TEXT
-  std::string str;
-  Printf(str, "16-bit %04lx\n", (ulong_t)obj);
-  SerializeData(dst, len, str.c_str(), str.length());
-#else
-  SerializeData(dst, len, &obj, sizeof(obj), MACHINE_IS_BIG_ENDIAN);
-#endif
-}
-
-void ADMObject::SerializeData(uint8_t *dst, uint_t& len, uint32_t obj, uint_t bytes)
-{
-#if SERIALIZE_AS_TEXT
-  std::string str;
-  Printf(str, "32-bit %08lx (%u bytes)\n", (ulong_t)obj, bytes);
-  SerializeData(dst, len, str.c_str(), str.length());
-#else
-  SerializeData(dst, len, (const uint8_t *)&obj + (MACHINE_IS_BIG_ENDIAN ? sizeof(obj) - bytes : 0), bytes, MACHINE_IS_BIG_ENDIAN);
-#endif
-}
-
-void ADMObject::SerializeData(uint8_t *dst, uint_t& len, uint64_t obj, uint_t bytes)
-{
-#if SERIALIZE_AS_TEXT
-  std::string str;
-  Printf(str, "64-bit %016lx (%u bytes)\n", (ulong_t)obj, bytes);
-  SerializeData(dst, len, str.c_str(), str.length());
-#else
-  SerializeData(dst, len, (const uint8_t *)&obj + (MACHINE_IS_BIG_ENDIAN ? sizeof(obj) - bytes : 0), bytes, MACHINE_IS_BIG_ENDIAN);
-#endif
-}
-
-void ADMObject::SerializeData(uint8_t *dst, uint_t& len, double obj)
-{
-#if SERIALIZE_AS_TEXT
-  std::string str;
-  Printf(str, "double %24.16le\n", obj);
-  SerializeData(dst, len, str.c_str(), str.length());
-#else
-  SerializeData(dst, len, &obj, sizeof(obj), MACHINE_IS_BIG_ENDIAN);
-#endif
-}
-
-void ADMObject::SerializeData(uint8_t *dst, uint_t& len, const std::string& obj)
-{
-#if SERIALIZE_AS_TEXT
-  std::string str;
-  Printf(str, "String '%s'\n", obj.c_str());
-  SerializeData(dst, len, str.c_str(), str.length());
-#else
-  uint16_t objlen = obj.length();
-  SerializeData(dst, len, objlen);
-  SerializeData(dst, len, obj.c_str(), objlen);
-#endif
-}
-
-void ADMObject::SerializeData(uint8_t *dst, uint_t& len, SerialDataType_t type, uint_t sublen)
-{
-#if SERIALIZE_AS_TEXT
-  std::string str;
-  Printf(str, "Type %u (%s), length %-10u\n", (uint_t)type, SerialDataType_Names[type], (uint_t)(sublen - sizeof(uint32_t)));
-  SerializeData(dst, len, str.c_str(), str.length());
-#else
-  SerializeData(dst, len, (uint8_t)type);
-  SerializeData(dst, len, (uint32_t)(sublen - sizeof(uint32_t)), 3);
-#endif
-}
-
-void ADMObject::SerializeData(uint8_t *dst, uint_t& len, SerialDataType_t type)
-{
-#if SERIALIZE_AS_TEXT
-  std::string str;
-  Printf(str, "Type %u (%s)\n", (uint_t)type, SerialDataType_Names[type]);
-  SerializeData(dst, len, str.c_str(), str.length());
-#else
-  SerializeData(dst, len, (uint8_t)type);
-#endif
-}
-
-void ADMObject::SerializeData(uint8_t *dst, uint_t& len, const ADMATTRS& obj)
-{
-  ADMATTRS::const_iterator it;
-  uint_t sublen = 0;
-
-  if (dst) SerializeData(NULL, sublen, obj);
-
-  SerializeData(dst, len, SerialDataType_Value_Attributes, sublen);
-  for (it = obj.begin(); it != obj.end(); ++it)
-  {
-    SerializeItem(dst, len, it->first, it->second);
-  }
-}
-
-void ADMObject::SerializeData(uint8_t *dst, uint_t& len, const ADMVALUE& obj)
-{
-  SerializeItem(dst, len, obj.name, obj.value);
-  if (!obj.attr) SerializeData(dst, len, obj.attrs);
-}
-
-void ADMObject::SerializeData(uint8_t *dst, uint_t& len, const ADMVALUES& obj)
-{
-  ADMVALUES::const_iterator it;
-  uint_t sublen = 0;
-
-  if (dst) SerializeData(NULL, sublen, obj);
-
-  SerializeData(dst, len, SerialDataType_Values_And_Attributes, sublen);
-
-  // cycle through values serializing each item
-  for (it = obj.begin(); it != obj.end(); ++it)
-  {
-    SerializeData(dst, len, *it);
-  }
-}
-
-void ADMObject::SerializeData(uint8_t *dst, uint_t& len, const ADMObject *obj)
-{
-  uint_t sublen = 0;
-
-  if (dst) SerializeData(NULL, sublen, obj);
-
-  SerializeData(dst, len, SerialDataType_Reference, sublen);
-  SerializeData(dst, len, obj->GetSerialDataType());
-  SerializeData(dst, len, obj->GetID());
-}
-
-void ADMObject::SerializeData(uint8_t *dst, uint_t& len, const Position& obj)
-{
-  SerializeData(dst, len, obj.polar);
-  if (obj.polar)
-  {
-    SerializeData(dst, len, obj.pos.x);
-    SerializeData(dst, len, obj.pos.y);
-    SerializeData(dst, len, obj.pos.z);
-  }
-  else
-  {
-    SerializeData(dst, len, obj.pos.az);
-    SerializeData(dst, len, obj.pos.el);
-    SerializeData(dst, len, obj.pos.d);
-  }
-}
-
-void ADMObject::SerializeData(uint8_t *dst, uint_t& len, const ParameterSet& obj)
-{
-  ParameterSet::Iterator it;
-  uint_t sublen = 0;
-
-  if (dst) SerializeData(NULL, sublen, obj);
-
-  SerializeData(dst, len, SerialDataType_Position_Supplement, sublen);
-
-  for (it = obj.GetBegin(); it != obj.GetEnd(); ++it)
-  {
-    SerializeData(dst, len, it->first);
-    SerializeData(dst, len, it->second);
-  }
-}
-
-void ADMObject::SerializeItem(uint8_t *dst, uint_t& len, const std::string& name, uint32_t obj)
-{
-  uint_t sublen = 0;
-
-  if (dst) SerializeItem(NULL, sublen, name, obj);
-
-  SerializeData(dst, len, SerialDataType_32bit, sublen);
-  SerializeData(dst, len, name);
-  SerializeData(dst, len, obj);
-}
-
-void ADMObject::SerializeItem(uint8_t *dst, uint_t& len, const std::string& name, uint64_t obj)
-{
-  uint_t sublen = 0;
-
-  if (dst) SerializeItem(NULL, sublen, name, obj);
-
-  SerializeData(dst, len, SerialDataType_64bit, sublen);
-  SerializeData(dst, len, name);
-  SerializeData(dst, len, obj);
-}
-
-void ADMObject::SerializeItem(uint8_t *dst, uint_t& len, const std::string& name, double obj)
-{
-  uint_t sublen = 0;
-
-  if (dst) SerializeItem(NULL, sublen, name, obj);
-
-  SerializeData(dst, len, SerialDataType_double, sublen);
-  SerializeData(dst, len, name);
-  SerializeData(dst, len, obj);
-}
-
-void ADMObject::SerializeTime(uint8_t *dst, uint_t& len, const std::string& name, uint64_t obj)
-{
-  uint_t sublen = 0;
-
-  if (dst) SerializeTime(NULL, sublen, name, obj);
-
-  SerializeData(dst, len, SerialDataType_Time_ns, sublen);
-  SerializeData(dst, len, name);
-  SerializeData(dst, len, obj);
-}
-
-void ADMObject::SerializeItem(uint8_t *dst, uint_t& len, const std::string& name, const std::string& obj)
-{
-  uint_t sublen = 0;
-
-  if (dst) SerializeItem(NULL, sublen, name, obj);
-
-  SerializeData(dst, len, SerialDataType_String, sublen);
-  SerializeData(dst, len, name);
-  SerializeData(dst, len, obj);
-}
-
-void ADMObject::SerializeItem(uint8_t *dst, uint_t& len, const std::string& name, const Position& obj, const ParameterSet& obj2)
-{
-  uint_t sublen = 0;
-
-  if (dst) SerializeItem(NULL, sublen, name, obj, obj2);
-
-  SerializeData(dst, len, SerialDataType_Position, sublen);
-  SerializeData(dst, len, name);
-  SerializeData(dst, len, obj);
-  SerializeData(dst, len, obj2);
-}
-
-void ADMObject::SerializeObjectCRC(uint8_t *dst, uint_t& len, uint_t len0)
-{
-  uint32_t crc = 0;
-
-  SerializeData(dst, len, SerialDataType_ObjectCRC, 2 * sizeof(uint32_t));
-  if (dst) crc  = CRC32(dst + len0, len - len0);
-  SerializeData(dst, len, crc);
-
-#if SERIALIZE_AS_TEXT
-  {
-    static const char *tail = "\n";
-    static const int  tlen  = strlen(tail);
-    if (dst) memcpy(dst + len, tail, tlen);
-    len += tlen;
-  }
-#endif
-}
-
 /*----------------------------------------------------------------------------------------------------*/
 
 const std::string ADMAudioProgramme::Type      = "audioProgramme";
@@ -1322,26 +943,6 @@ void ADMAudioProgramme::GenerateReferenceList(std::string& str) const
   uint_t i;
 
   for (i = 0; i < contentrefs.size(); i++) GenerateReference(str, contentrefs[i]);
-}
-  
-/*--------------------------------------------------------------------------------*/
-/** Serialize (or prepare to serialize) additional parts of this object
- *
- * @param dst destination buffer or NULL to calculate required buffer size
- * @param len offset into data to store data, modified by function
- *
- */
-/*--------------------------------------------------------------------------------*/
-void ADMAudioProgramme::SerializeEx(uint8_t *dst, uint_t& len) const
-{
-  uint_t i;
-
-  SerializeItem(dst, len, "language", language);
-
-  for (i = 0; i < contentrefs.size(); i++)
-  {
-    SerializeData(dst, len, contentrefs[i]);
-  }
 }
 
 /*----------------------------------------------------------------------------------------------------*/
@@ -1432,26 +1033,6 @@ void ADMAudioContent::GenerateReferenceList(std::string& str) const
   uint_t i;
 
   for (i = 0; i < objectrefs.size(); i++) GenerateReference(str, objectrefs[i]);
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Serialize (or prepare to serialize) additional parts of this object
- *
- * @param dst destination buffer or NULL to calculate required buffer size
- * @param len offset into data to store data, modified by function
- *
- */
-/*--------------------------------------------------------------------------------*/
-void ADMAudioContent::SerializeEx(uint8_t *dst, uint_t& len) const
-{
-  uint_t i;
-
-  SerializeItem(dst, len, "language", language);
-
-  for (i = 0; i < objectrefs.size(); i++)
-  {
-    SerializeData(dst, len, objectrefs[i]);
-  }
 }
 
 /*----------------------------------------------------------------------------------------------------*/
@@ -1658,37 +1239,6 @@ void ADMAudioObject::GenerateReferenceList(std::string& str) const
   for (i = 0; i < trackrefs.size(); i++) GenerateReference(str, trackrefs[i]);
 }
 
-/*--------------------------------------------------------------------------------*/
-/** Serialize (or prepare to serialize) additional parts of this object
- *
- * @param dst destination buffer or NULL to calculate required buffer size
- * @param len offset into data to store data, modified by function
- *
- */
-/*--------------------------------------------------------------------------------*/
-void ADMAudioObject::SerializeEx(uint8_t *dst, uint_t& len) const
-{
-  uint_t i;
-
-  SerializeTime(dst, len, "startTime", startTime);
-  SerializeTime(dst, len, "duration", duration);
-
-  for (i = 0; i < objectrefs.size(); i++)
-  {
-    SerializeData(dst, len, objectrefs[i]);
-  }
-
-  for (i = 0; i < packformatrefs.size(); i++)
-  {
-    SerializeData(dst, len, packformatrefs[i]);
-  }
-
-  for (i = 0; i < trackrefs.size(); i++)
-  {
-    SerializeData(dst, len, trackrefs[i]);
-  }
-}
-
 /*----------------------------------------------------------------------------------------------------*/
 
 const std::string ADMAudioTrack::Type      = "audioTrackUID";
@@ -1833,32 +1383,6 @@ void ADMAudioTrack::GenerateReferenceList(std::string& str) const
   for (i = 0; i < packformatrefs.size(); i++) GenerateReference(str, packformatrefs[i]);
 }
 
-/*--------------------------------------------------------------------------------*/
-/** Serialize (or prepare to serialize) additional parts of this object
- *
- * @param dst destination buffer or NULL to calculate required buffer size
- * @param len offset into data to store data, modified by function
- *
- */
-/*--------------------------------------------------------------------------------*/
-void ADMAudioTrack::SerializeEx(uint8_t *dst, uint_t& len) const
-{
-  uint_t i;
-
-  SerializeItem(dst, len, "sampleRate", sampleRate);
-  SerializeItem(dst, len, "bitDepth", bitDepth);
-
-  for (i = 0; i < trackformatrefs.size(); i++)
-  {
-    SerializeData(dst, len, trackformatrefs[i]);
-  }
-
-  for (i = 0; i < packformatrefs.size(); i++)
-  {
-    SerializeData(dst, len, packformatrefs[i]);
-  }
-}
-
 /*----------------------------------------------------------------------------------------------------*/
 
 const std::string ADMAudioPackFormat::Type      = "audioPackFormat";
@@ -1990,29 +1514,6 @@ void ADMAudioPackFormat::GenerateReferenceList(std::string& str) const
 
   for (i = 0; i < channelformatrefs.size(); i++) GenerateReference(str, channelformatrefs[i]);
   for (i = 0; i < packformatrefs.size(); i++) GenerateReference(str, packformatrefs[i]);
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Serialize (or prepare to serialize) additional parts of this object
- *
- * @param dst destination buffer or NULL to calculate required buffer size
- * @param len offset into data to store data, modified by function
- *
- */
-/*--------------------------------------------------------------------------------*/
-void ADMAudioPackFormat::SerializeEx(uint8_t *dst, uint_t& len) const
-{
-  uint_t i;
-
-  for (i = 0; i < channelformatrefs.size(); i++)
-  {
-    SerializeData(dst, len, channelformatrefs[i]);
-  }
-
-  for (i = 0; i < packformatrefs.size(); i++)
-  {
-    SerializeData(dst, len, packformatrefs[i]);
-  }
 }
 
 /*----------------------------------------------------------------------------------------------------*/
@@ -2190,32 +1691,6 @@ void ADMAudioStreamFormat::GenerateReferenceList(std::string& str) const
   for (i = 0; i < packformatrefs.size(); i++) GenerateReference(str, packformatrefs[i]);
 }
 
-/*--------------------------------------------------------------------------------*/
-/** Serialize (or prepare to serialize) additional parts of this object
- *
- * @param dst destination buffer or NULL to calculate required buffer size
- * @param len offset into data to store data, modified by function
- *
- */
-/*--------------------------------------------------------------------------------*/
-void ADMAudioStreamFormat::SerializeEx(uint8_t *dst, uint_t& len) const
-{
-  uint_t i;
-
-  SerializeItem(dst, len, "formatLabel",      formatLabel);
-  SerializeItem(dst, len, "formatDefinition", formatDefinition);
-
-  for (i = 0; i < channelformatrefs.size(); i++)
-  {
-    SerializeData(dst, len, channelformatrefs[i]);
-  }
-
-  for (i = 0; i < packformatrefs.size(); i++)
-  {
-    SerializeData(dst, len, packformatrefs[i]);
-  }
-}
-
 /*----------------------------------------------------------------------------------------------------*/
 
 const std::string ADMAudioTrackFormat::Type      = "audioTrackFormat";
@@ -2327,27 +1802,6 @@ void ADMAudioTrackFormat::GenerateReferenceList(std::string& str) const
   for (i = 0; i < streamformatrefs.size(); i++) GenerateReference(str, streamformatrefs[i]);
 }
 
-/*--------------------------------------------------------------------------------*/
-/** Serialize (or prepare to serialize) additional parts of this object
- *
- * @param dst destination buffer or NULL to calculate required buffer size
- * @param len offset into data to store data, modified by function
- *
- */
-/*--------------------------------------------------------------------------------*/
-void ADMAudioTrackFormat::SerializeEx(uint8_t *dst, uint_t& len) const
-{
-  uint_t i;
-
-  SerializeItem(dst, len, "formatLabel",      formatLabel);
-  SerializeItem(dst, len, "formatDefinition", formatDefinition);
-
-  for (i = 0; i < streamformatrefs.size(); i++)
-  {
-    SerializeData(dst, len, streamformatrefs[i]);
-  }
-}
-
 /*----------------------------------------------------------------------------------------------------*/
 
 const std::string ADMAudioChannelFormat::Type      = "audioChannelFormat";
@@ -2438,24 +1892,6 @@ void ADMAudioChannelFormat::XMLData(std::string& str, const std::string& indent,
 void ADMAudioChannelFormat::GenerateReferenceList(std::string& str) const
 {
   UNUSED_PARAMETER(str);
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Serialize (or prepare to serialize) additional parts of this object
- *
- * @param dst destination buffer or NULL to calculate required buffer size
- * @param len offset into data to store data, modified by function
- *
- */
-/*--------------------------------------------------------------------------------*/
-void ADMAudioChannelFormat::SerializeEx(uint8_t *dst, uint_t& len) const
-{
-  uint_t i;
-
-  for (i = 0; i < blockformatrefs.size(); i++)
-  {
-    SerializeData(dst, len, blockformatrefs[i]);
-  }
 }
 
 /*----------------------------------------------------------------------------------------------------*/
@@ -2612,21 +2048,6 @@ void ADMAudioBlockFormat::XMLData(std::string& str, const std::string& indent, c
 void ADMAudioBlockFormat::GenerateReferenceList(std::string& str) const
 {
   UNUSED_PARAMETER(str);
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Serialize (or prepare to serialize) additional parts of this object
- *
- * @param dst destination buffer or NULL to calculate required buffer size
- * @param len offset into data to store data, modified by function
- *
- */
-/*--------------------------------------------------------------------------------*/
-void ADMAudioBlockFormat::SerializeEx(uint8_t *dst, uint_t& len) const
-{
-  SerializeTime(dst, len, "rtime", rtime);
-  SerializeTime(dst, len, "duration", duration);
-  SerializeItem(dst, len, "position", position, supplement);
 }
 
 /*----------------------------------------------------------------------------------------------------*/
