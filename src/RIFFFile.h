@@ -278,6 +278,9 @@ protected:
   /*--------------------------------------------------------------------------------*/
   virtual void UpdateSamplePosition() {}
 
+  typedef std::vector<RIFFChunk *>        ChunkList_t;
+  typedef std::map<uint32_t, RIFFChunk *> ChunkMap_t;
+
 protected:
   EnhancedFile      *file;
   uint8_t           filetype;
@@ -285,8 +288,8 @@ protected:
   SoundFileSamples  *filesamples;
   bool              writing;
 
-  std::vector<RIFFChunk *>        chunklist;
-  std::map<uint32_t, RIFFChunk *> chunkmap;
+  ChunkList_t       chunklist;
+  ChunkMap_t        chunkmap;
 };
 
 BBC_AUDIOTOOLBOX_END

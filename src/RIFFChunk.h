@@ -12,6 +12,21 @@
 BBC_AUDIOTOOLBOX_START
 
 /*--------------------------------------------------------------------------------*/
+/** An interface to allow overriding of chunk sizes in cases such as RF64
+ *
+ */
+/*--------------------------------------------------------------------------------*/
+class RIFFChunkSizeHandler
+{
+public:
+  RIFFChunkSizeHandler() {}
+  virtual ~RIFFChunkSizeHandler() {}
+
+  virtual bool     SetChunkSize(uint32_t id, uint64_t length) = 0;
+  virtual uint64_t GetChunkSize(uint32_t id, uint64_t original_length) const = 0;
+};
+
+/*--------------------------------------------------------------------------------*/
 /** Class for handling RIFF file chunks (used in WAV/AIFF/AIFC files)
  *
  * This object provides basic chunk handling facilities which can be used for
@@ -166,7 +181,7 @@ public:
    * @note at return, the new file position will be at the start of the next chunk
    */
   /*--------------------------------------------------------------------------------*/
-  static RIFFChunk *Create(EnhancedFile *file);
+  static RIFFChunk *Create(EnhancedFile *file, const RIFFChunkSizeHandler *sizehandler = NULL);
 
   /*--------------------------------------------------------------------------------*/
   /** The primary chunk creation function when writing files
@@ -204,7 +219,7 @@ protected:
    * @return true if chunk successfully read/handled
    */
   /*--------------------------------------------------------------------------------*/
-  virtual bool ReadChunk(EnhancedFile *file);
+  virtual bool ReadChunk(EnhancedFile *file, const RIFFChunkSizeHandler *sizehandler);
   /*--------------------------------------------------------------------------------*/
   /** Read chunk data and byte swap it (derived object provided)
    *

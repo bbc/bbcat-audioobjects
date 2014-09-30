@@ -51,9 +51,10 @@ void RIFFRIFFChunk::Register()
  * a specific ReadChunk() function
  */
 /*--------------------------------------------------------------------------------*/
-bool RIFFWAVEChunk::ReadChunk(EnhancedFile *file)
+bool RIFFWAVEChunk::ReadChunk(EnhancedFile *file, const RIFFChunkSizeHandler *sizehandler)
 {
   UNUSED_PARAMETER(file);
+  UNUSED_PARAMETER(sizehandler);
 
   // there is no data after WAVE to read
   return true;
@@ -192,6 +193,20 @@ uint64_t RIFFds64Chunk::GetTableEntrySize(uint_t entry, char *id) const
   return size;
 }
 
+uint64_t RIFFds64Chunk::GetTableEntrySize(uint_t entry, uint32_t& id) const
+{
+  const ds64_CHUNK *ds64;
+  uint64_t size = 0;
+
+  if (((ds64 = (const ds64_CHUNK *)GetData()) != NULL) && (entry < ds64->TableEntryCount))
+  {
+    size = Convert32bitSizes(ds64->Table[entry].ChunkSizeLow, ds64->Table[entry].ChunkSizeHigh);
+    id   = IFFID(ds64->Table[entry].ChunkId);
+  }
+
+  return size;
+}
+
 void RIFFds64Chunk::SetRIFFSize(uint64_t size)
 {
   ds64_CHUNK *ds64;
@@ -220,6 +235,50 @@ void RIFFds64Chunk::SetSampleCount(uint64_t count)
     ds64->SampleCountLow  = (uint32_t)count;
     ds64->SampleCountHigh = (uint32_t)(count >> 32);
   }
+}
+
+bool RIFFds64Chunk::SetChunkSize(uint32_t id, uint64_t length)
+{
+  bool set = false;
+  
+  // WARNING: a switch statement cannot be used here because RIFF_ID, etc, uses an array (the name)!
+  if      (id == RIFF_ID) SetRIFFSize(length);
+  else if (id == data_ID) SetdataSize(length);
+  
+  return set;
+}
+
+uint64_t RIFFds64Chunk::GetChunkSize(uint32_t id, uint64_t original_length) const
+{
+  uint64_t length = original_length;
+
+  // only override if the original value is 0xffffffff
+  if (length == RIFFChunk::RIFF_MaxSize)
+  {
+    // WARNING: a switch statement cannot be used here because RIFF_ID, etc, uses an array (the name)!
+    if      (id == RIFF_ID) length = GetRIFFSize();
+    else if (id == data_ID) length = GetdataSize();
+    else if (GetTableCount()) {
+      uint32_t testid;
+      uint_t   i, n = GetTableCount();
+
+      // look for chunk in table
+      for (i = 0; i < n; i++)
+      {
+        uint64_t newlength = GetTableEntrySize(i, testid);
+
+        if (testid == id)
+        {
+          length = newlength;
+          break;
+        }
+      }
+    }
+
+    if (length != original_length) DEBUG2(("Updated chunk size of 0x%08lx to %lu bytes", (ulong_t)id, (ulong_t)length));
+  }
+
+  return length;
 }
 
 /*----------------------------------------------------------------------------------------------------*/
@@ -453,11 +512,11 @@ bool RIFFdataChunk::InitialiseForWriting()
  *
  */
 /*--------------------------------------------------------------------------------*/
-bool RIFFdataChunk::ReadChunk(EnhancedFile *file)
+bool RIFFdataChunk::ReadChunk(EnhancedFile *file, const RIFFChunkSizeHandler *sizehandler)
 {
   bool success = false;
 
-  if (RIFFChunk::ReadChunk(file))
+  if (RIFFChunk::ReadChunk(file, sizehandler))
   {
     // link file to SoundFileSamples object
     SetFile(file, datapos, length);

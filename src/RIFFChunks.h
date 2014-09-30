@@ -79,7 +79,7 @@ protected:
 
 protected:
   // dummy read function
-  virtual bool ReadChunk(EnhancedFile *file);
+  virtual bool ReadChunk(EnhancedFile *file, const RIFFChunkSizeHandler *sizehandler);
 };
 
 /*--------------------------------------------------------------------------------*/
@@ -89,10 +89,10 @@ protected:
  *
  */
 /*--------------------------------------------------------------------------------*/
-class RIFFds64Chunk : public RIFFChunk
+class RIFFds64Chunk : public RIFFChunk, public RIFFChunkSizeHandler
 {
 public:
-  RIFFds64Chunk(uint32_t chunk_id) : RIFFChunk(chunk_id) {}
+  RIFFds64Chunk(uint32_t chunk_id) : RIFFChunk(chunk_id), RIFFChunkSizeHandler() {}
   virtual ~RIFFds64Chunk() {}
 
   // create write data
@@ -103,11 +103,15 @@ public:
   uint64_t GetSampleCount() const;
   uint_t   GetTableCount() const;
   uint64_t GetTableEntrySize(uint_t entry, char *id = NULL) const;
+  uint64_t GetTableEntrySize(uint_t entry, uint32_t& id) const;
 
   void     SetRIFFSize(uint64_t size);
   void     SetdataSize(uint64_t size);
   void     SetSampleCount(uint64_t count);
 
+  virtual bool     SetChunkSize(uint32_t id, uint64_t length);
+  virtual uint64_t GetChunkSize(uint32_t id, uint64_t original_length) const;
+  
   // provider function register for this object
   static void Register();
 
@@ -298,7 +302,7 @@ protected:
   // initialise chunk when writing a file
   virtual bool InitialiseForWriting();
   // perform additional initialisation after chunk read
-  virtual bool ReadChunk(EnhancedFile *file);
+  virtual bool ReadChunk(EnhancedFile *file, const RIFFChunkSizeHandler *sizehandler);
   // copy sample data from temporary file
   virtual bool WriteChunkData(EnhancedFile *file);
   // return that this chunk changes its behaviour for RIFF64 files

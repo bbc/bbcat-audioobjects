@@ -40,6 +40,7 @@ bool RIFFFile::ReadChunks(uint64_t maxlength)
 
   if (IsOpen())
   {
+    const RIFFds64Chunk *ds64 = NULL;
     RIFFChunk *chunk;
     uint64_t  startpos = file->ftell();
 
@@ -47,12 +48,23 @@ bool RIFFFile::ReadChunks(uint64_t maxlength)
 
     while (success &&
            ((file->ftell() - startpos) < maxlength) &&
-           ((chunk = RIFFChunk::Create(file)) != NULL))
+           ((chunk = RIFFChunk::Create(file, ds64)) != NULL))
     {
-      const RIFFds64Chunk *ds64;
 
       chunklist.push_back(chunk);
       chunkmap[chunk->GetID()] = chunk;
+
+      if ((chunk->GetID() == ds64_ID) && ((ds64 = dynamic_cast<const RIFFds64Chunk *>(chunk)) != NULL))
+      {
+        DEBUG3(("Found ds64 chunk, will be used to set chunk sizes if necessary"));
+
+        if (maxlength == RIFFChunk::RIFF_MaxSize)
+        {
+          maxlength = ds64->GetRIFFSize();
+
+          DEBUG2(("Updated RIFF size to %lu bytes", (ulong_t)maxlength));
+        }
+      }
 
       if ((dynamic_cast<const SoundFormat *>(chunk)) != NULL)
       {
@@ -68,22 +80,6 @@ bool RIFFFile::ReadChunks(uint64_t maxlength)
         if (fileformat) filesamples->SetFormat(fileformat);
 
         DEBUG3(("Found data chunk (%s)", chunk->GetName()));
-
-        if ((ds64 = dynamic_cast<const RIFFds64Chunk *>(GetChunk("ds64"))) != NULL)
-        {
-          uint64_t datalength = ds64->GetdataSize();
-
-          DEBUG1(("Using ds64 chunk to update data chunk size to %lu bytes", (ulong_t)datalength));
-
-          filesamples->Set64bitLength(datalength);
-        }
-      }
-
-      if ((ds64 = dynamic_cast<const RIFFds64Chunk *>(chunk)) != NULL)
-      {
-        maxlength = ds64->GetdataSize();
-
-        DEBUG1(("Found ds64 chunk, updating max length to %lu bytes", (ulong_t)maxlength));
       }
             
       success = ProcessChunk(chunk);

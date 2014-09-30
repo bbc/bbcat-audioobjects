@@ -42,7 +42,7 @@ RIFFChunk::~RIFFChunk()
  * @return true if chunk successfully read/handled
  */
 /*--------------------------------------------------------------------------------*/
-bool RIFFChunk::ReadChunk(EnhancedFile *file)
+bool RIFFChunk::ReadChunk(EnhancedFile *file, const RIFFChunkSizeHandler *sizehandler)
 {
   uint32_t length32;    // internal length is 64-bit so need 32-bit variable temporarily
   bool success = false;
@@ -53,7 +53,9 @@ bool RIFFChunk::ReadChunk(EnhancedFile *file)
     // length is stored little-endian
     ByteSwap(length32, SWAP_FOR_LE);
 
-    length = length32;
+    // allow ds64 chunk to override length
+    if (sizehandler) length = sizehandler->GetChunkSize(GetID(), length32);
+    else             length = length32;
 
     // save file position
     datapos = file->ftell();
@@ -65,6 +67,8 @@ bool RIFFChunk::ReadChunk(EnhancedFile *file)
     {
       default:
       case ChunkHandling_SkipOverChunk:
+        DEBUG2(("Skipping chunk '%s'", GetName()));
+
         // skip to end of chunk
         if (file->fseek(datapos + length + (length & align), SEEK_SET) == 0) success = true;
         else
@@ -340,7 +344,7 @@ const char *RIFFChunk::GetChunkName(uint32_t id)
  * @note at return, the new file position will be at the start of the next chunk
  */
 /*--------------------------------------------------------------------------------*/
-RIFFChunk *RIFFChunk::Create(EnhancedFile *file)
+RIFFChunk *RIFFChunk::Create(EnhancedFile *file, const RIFFChunkSizeHandler *sizehandler)
 {
   RIFFChunk *chunk = NULL;
   uint32_t id;
@@ -365,7 +369,7 @@ RIFFChunk *RIFFChunk::Create(EnhancedFile *file)
         DEBUG4(("Found provider for chunk '%s'", GetChunkName(id)));
                 
         // let object handle the rest of the chunk
-        if (chunk->ReadChunk(file))
+        if (chunk->ReadChunk(file, sizehandler))
         {
           DEBUG4(("Read chunk '%s' successfully", GetChunkName(id)));
                     
@@ -380,7 +384,7 @@ RIFFChunk *RIFFChunk::Create(EnhancedFile *file)
 
       if ((chunk = new RIFFChunk(id)) != NULL)
       {
-        success = chunk->ReadChunk(file);
+        success = chunk->ReadChunk(file, sizehandler);
       }
     }
   }
