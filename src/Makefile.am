@@ -8,47 +8,56 @@ libap_audioobjects_@APLIBS_AUDIOOBJECTS_MAJORMINOR@_la_LDFLAGS =	\
      $(APLIBS_AUDIOOBJECTS_LDFLAGS)
 
 libap_audioobjects_@APLIBS_AUDIOOBJECTS_MAJORMINOR@_la_LIBADD =	\
-	$(APLIBS_DSP_LIBS)											\
-	$(APLIBS_RENDER_LIBS)										\
-	$(TINYXML_LIBS)
+	$(APLIBS_DSP_LIBS)
 
 libap_audioobjects_@APLIBS_AUDIOOBJECTS_MAJORMINOR@_la_CPPFLAGS =	\
 	$(APLIBS_AUDIOOBJECTS_CFLAGS)									\
-	$(APLIBS_DSP_CFLAGS)											\
-	$(APLIBS_RENDER_CFLAGS)											\
-	$(TINYXML_CFLAGS)
+	$(APLIBS_DSP_CFLAGS)
 
 libap_audioobjects_@APLIBS_AUDIOOBJECTS_MAJORMINOR@_la_SOURCES =	\
 	ADMAudioFileSamples.cpp											\
 	ADMData.cpp														\
-	ADMFileWriteRenderer.cpp										\
 	ADMObjects.cpp													\
 	ADMRIFFFile.cpp													\
-	FilePositionGenerator.cpp										\
-	PlaybackEngine.cpp												\
 	Playlist.cpp													\
 	RIFFChunk.cpp													\
 	RIFFChunks.cpp													\
 	RIFFFile.cpp													\
-	SoundFileAttributes.cpp											\
-	TinyXMLADMData.cpp
+	SoundFileAttributes.cpp
 
 pkginclude_HEADERS =							\
 	ADMAudioFileSamples.h						\
 	ADMData.h									\
-	ADMFileWriteRenderer.h						\
 	ADMObjects.h								\
 	ADMRIFFFile.h								\
-	FilePositionGenerator.h						\
-	PlaybackEngine.h							\
 	Playlist.h									\
 	RIFFChunk.h									\
 	RIFFChunk_Definitions.h						\
 	RIFFChunks.h								\
 	RIFFFile.h									\
 	SoundFileAttributes.h						\
-	SoundFileWithPosition.h						\
-	TinyXMLADMData.h
+	SoundFileWithPosition.h
+
+if ENABLE_GPL
+libap_audioobjects_@APLIBS_AUDIOOBJECTS_MAJORMINOR@_la_CPPFLAGS += $(TINYXML_CFLAGS)
+libap_audioobjects_@APLIBS_AUDIOOBJECTS_MAJORMINOR@_la_LIBADD   += $(TINYXML_LIBS)
+libap_audioobjects_@APLIBS_AUDIOOBJECTS_MAJORMINOR@_la_SOURCES 	+= TinyXMLADMData.cpp
+pkginclude_HEADERS												+= TinyXMLADMData.h
+endif
+
+if ENABLE_RENDERING
+libap_audioobjects_@APLIBS_AUDIOOBJECTS_MAJORMINOR@_la_CPPFLAGS += $(APLIBS_RENDER_CFLAGS)
+libap_audioobjects_@APLIBS_AUDIOOBJECTS_MAJORMINOR@_la_LIBADD   += $(APLIBS_RENDER_LIBS)
+libap_audioobjects_@APLIBS_AUDIOOBJECTS_MAJORMINOR@_la_SOURCES 	+=	\
+	ADMFileWriteRenderer.cpp										\
+	FilePositionGenerator.cpp										\
+	PlaybackEngine.cpp
+
+pkginclude_HEADERS +=							\
+	ADMFileWriteRenderer.h						\
+	FilePositionGenerator.h						\
+	PlaybackEngine.h
+endif
 
 noinst_HEADERS =
 

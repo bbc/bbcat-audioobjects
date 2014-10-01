@@ -56,18 +56,54 @@ if test "x${HAVE_APLIBS_DSP}" != xyes ; then
   AC_MSG_ERROR([aplibs-dsp-0.1 >= $APLIBS_DSP_VER is required])
 fi
 
-dnl aplibs-render is required
-APLIBS_RENDER_VER="0.1.0.0"
-PKG_CHECK_MODULES(APLIBS_RENDER, aplibs-render-0.1 >= $APLIBS_RENDER_VER, HAVE_APLIBS_RENDER=yes, HAVE_APLIBS_RENDER=no)
-if test "x${HAVE_APLIBS_RENDER}" != xyes ; then
-  AC_MSG_ERROR([aplibs-render-0.1 >= $APLIBS_RENDER_VER is required])
-fi
+# Check if we should disable render library requirement
+AC_MSG_CHECKING(whether to enable render support)
+AC_ARG_ENABLE(rendering, AS_HELP_STRING([--disable-rendering], [disable rendering]), ENABLE_RENDERING="no", ENABLE_RENDERING="yes")
+if test "x${ENABLE_RENDERING}" = "xyes"; then
+  AC_MSG_RESULT(yes)
+  CFLAGS="$CFLAGS -DENABLE_RENDERING=1"
 
-dnl tinyxml is required
-TINYXML_VER="2.6.2"
-PKG_CHECK_MODULES(TINYXML, tinyxml >= $TINYXML_VER, HAVE_TINYXML=yes, HAVE_TINYXML=no)
-if test "x${HAVE_TINYXML}" != xyes ; then
-  AC_MSG_ERROR([tinyxml >= $TINYXML_VER is required])
+  dnl aplibs-render is required
+  APLIBS_RENDER_VER="0.1.0.0"
+  PKG_CHECK_MODULES(APLIBS_RENDER, aplibs-render-0.1 >= $APLIBS_RENDER_VER, HAVE_APLIBS_RENDER=yes, HAVE_APLIBS_RENDER=no)
+  if test "x${HAVE_APLIBS_RENDER}" != xyes ; then
+    AC_MSG_ERROR([aplibs-render-0.1 >= $APLIBS_RENDER_VER is required])
+  fi
+else
+  AC_MSG_RESULT(no)
+  CFLAGS="$CFLAGS -DENABLE_RENDERING=0"
+fi
+AM_CONDITIONAL(ENABLE_RENDERING, test "x${ENABLE_RENDERING}" = "xyes")
+
+# Check for GPL support
+# only need ENABLE_GPL for inclusion of extra files, C flags are handled automatically!
+EXISTING_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS $APLIBS_DSP_CFLAGS"
+
+# Check for ENABLE_GPL
+AC_MSG_CHECKING(whether GPL code is supported)
+AC_TRY_COMPILE([],
+                [#if !ENABLE_GPL
+                 #error GPL not enabled
+                 #endif
+                ],
+                [ENABLE_GPL="yes"],
+                [ENABLE_GPL="no"])
+if test "x${ENABLE_GPL}" = "xyes"; then
+  AC_MSG_RESULT(yes)
+else
+  AC_MSG_RESULT(no)
+fi
+AM_CONDITIONAL(ENABLE_GPL, test "x${ENABLE_GPL}" = "xyes")
+CFLAGS="$EXISTING_CFLAGS"
+
+if test "x$ENABLE_GPL" = "xyes"; then
+  dnl tinyxml is required is GPL code is allowed
+  TINYXML_VER="2.6.2"
+  PKG_CHECK_MODULES(TINYXML, tinyxml >= $TINYXML_VER, HAVE_TINYXML=yes, HAVE_TINYXML=no)
+  if test "x${HAVE_TINYXML}" != xyes ; then
+    AC_MSG_ERROR([tinyxml >= $TINYXML_VER is required])
+  fi
 fi
 
 # Checks for typedefs, structures, and compiler characteristics.
