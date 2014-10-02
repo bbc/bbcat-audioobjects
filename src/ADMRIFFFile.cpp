@@ -76,7 +76,7 @@ bool ADMRIFFFile::Create(const char *filename, uint32_t samplerate, uint_t nchan
         {
           track->SetTrackNum(i + 1);
           track->SetSampleRate(GetSampleRate());
-          track->SetBitDepth(GetBytesPerSample());
+          track->SetBitDepth(GetBitsPerSample());
         }
       }
 

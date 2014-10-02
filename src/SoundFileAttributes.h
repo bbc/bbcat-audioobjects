@@ -20,6 +20,7 @@ public:
   virtual uint32_t       GetSampleRate()       const {return samplerate;}
   virtual uint_t         GetChannels()         const {return channels;}
   virtual uint8_t        GetBytesPerSample()   const {return bytespersample;}
+  virtual uint8_t        GetBitsPerSample()    const {return bbcat::GetBitsPerSample(format);}
   virtual uint_t         GetBytesPerFrame()    const {return channels * bytespersample;}
   virtual SampleFormat_t GetSampleFormat()     const {return format;}
   virtual bool           GetSamplesBigEndian() const {return bigendian;}

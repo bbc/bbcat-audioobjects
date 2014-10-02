@@ -111,6 +111,14 @@ public:
   uint_t GetBytesPerSample() const {return fileformat ? fileformat->GetBytesPerSample() : 0;}
 
   /*--------------------------------------------------------------------------------*/
+  /** Return bits per sample for data in the file
+   *
+   * @return bits per sample
+   */
+  /*--------------------------------------------------------------------------------*/
+  uint_t GetBitsPerSample() const {return fileformat ? fileformat->GetBitsPerSample() : 0;}
+
+  /*--------------------------------------------------------------------------------*/
   /** Return sample format of samples in the file
    *
    * @return SampleFormat_xxx enumeration
