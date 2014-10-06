@@ -121,12 +121,55 @@ public:
     std::string value;      // value value
     ADMATTRS    attrs;      // additional attributes (if attr == false)
   } ADMVALUE;
+  typedef std::vector<ADMVALUE> ADMVALUES;
+
+  /*--------------------------------------------------------------------------------*/
+  /** Set ADMVALUE object as a simple XML attribute (name/value pair)
+   */
+  /*--------------------------------------------------------------------------------*/
+  static void SetAttribute(ADMVALUE& obj, const std::string& name, const std::string& value) {SetValue(obj, name, value, true);}
+  static void SetAttribute(ADMVALUE& obj, const std::string& name, uint_t             value) {SetValue(obj, name, value, true);}
+  static void SetAttribute(ADMVALUE& obj, const std::string& name, uint64_t           value) {SetValue(obj, name, value, true);}
+  static void SetAttribute(ADMVALUE& obj, const std::string& name, double             value) {SetValue(obj, name, value, true);}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Set ADMVALUE object as a XML value (name/value pair) with optional attributes
+   */
+  /*--------------------------------------------------------------------------------*/
+  static void SetValue(ADMVALUE& obj, const std::string& name, const std::string& value, bool attr = false);
+  static void SetValue(ADMVALUE& obj, const std::string& name, uint_t             value, bool attr = false);
+  static void SetValue(ADMVALUE& obj, const std::string& name, uint64_t           value, bool attr = false);
+  static void SetValue(ADMVALUE& obj, const std::string& name, double             value, bool attr = false);
+
+  /*--------------------------------------------------------------------------------*/
+  /** Set attribute of ADMVALUE value object (initialised above)
+   */
+  /*--------------------------------------------------------------------------------*/
+  static void SetValueAttribute(ADMVALUE& obj, const std::string& name, const std::string& value);
+  static void SetValueAttribute(ADMVALUE& obj, const std::string& name, uint_t             value);
+  static void SetValueAttribute(ADMVALUE& obj, const std::string& name, uint64_t           value);
+  static void SetValueAttribute(ADMVALUE& obj, const std::string& name, double             value);
 
   /*--------------------------------------------------------------------------------*/
   /** Add a value to the internal list
    */
   /*--------------------------------------------------------------------------------*/
   virtual void AddValue(const ADMVALUE& value);
+
+  /*--------------------------------------------------------------------------------*/
+  /** Return list of values/attributes from internal variables and list of referenced objects
+   *
+   * @param objvalues list to be populated with ADMVALUE's holding object attributes and values
+   * @param objects list to be populdated with referenced or contained objects
+   * @param full true to generate complete list including values that do not appear in the XML
+   */
+  /*--------------------------------------------------------------------------------*/
+  typedef struct {
+    const ADMObject *obj;
+    bool            genref;     // generate reference to object from this object
+    bool            gendata;    // output object within this object
+  } REFERENCEDOBJECT;
+  virtual void GetValuesAndReferences(ADMVALUES& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full = false) const;
 
   /*--------------------------------------------------------------------------------*/
   /** Return human friendly summary of the object in the form:
@@ -137,54 +180,6 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   std::string ToString() const {std::string str; Printf(str, "%s/%s ('%s')", GetType().c_str(), GetID().c_str(), GetName().c_str()); return str;}
-
-  /*--------------------------------------------------------------------------------*/
-  /** Dump (in text form) information about this and reference objects
-   *
-   * @param str string to be modified
-   * @param indent a string representing one level of indentation (e.g. a tab or spaces)
-   * @param eol a string representing the end of line string
-   * @param ind_level the initial indentation level
-   *
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void Dump(std::string& str, const std::string& indent = "  ", const std::string& eol = "\n", uint_t ind_level = 0) const;
-
-  /*--------------------------------------------------------------------------------*/
-  /** A handler function for the above - DO NOT CALL THIS DIRECTLY, call the above
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void Dump(std::map<const ADMObject *,bool>& handledmap, std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level) const;
-    
-  /*--------------------------------------------------------------------------------*/
-  /** Generate XML for this and references objects in accordance with Tech3364
-   *
-   * @param str string to be modified
-   * @param indent a string representing one level of indentation (e.g. a tab or spaces)
-   * @param eol a string representing the end of line string
-   * @param ind_level the initial indentation level
-   *
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void GenerateXML(std::string& str, const std::string& indent = "  ", const std::string& eol = "\n", uint_t ind_level = 0) const;
-
-  /*--------------------------------------------------------------------------------*/
-  /** Output XML reference information for this object
-   *
-   * @note there is no need to call this function directly, it is called as part of GenerateXML()
-   *
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void XMLRef(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level) const;
-
-  /*--------------------------------------------------------------------------------*/
-  /** Output XML information for this object
-   *
-   * @note there is no need to call this function directly, it is called as part of GenerateXML()
-   *
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void XMLData(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, std::vector<const ADMObject *>& reflist) const;
 
   /*--------------------------------------------------------------------------------*/
   /** Generate a textual list of references 
@@ -241,8 +236,6 @@ protected:
   /*--------------------------------------------------------------------------------*/
   void Register();
 
-  typedef std::vector<ADMVALUE> ADMVALUES;
-
   /*--------------------------------------------------------------------------------*/
   /** Return ptr to value with specified name or NULL
    */
@@ -293,62 +286,6 @@ protected:
   virtual bool Add(ADMAudioChannelFormat *obj) {UNUSED_PARAMETER(obj); return false;}
   virtual bool Add(ADMAudioTrackFormat   *obj) {UNUSED_PARAMETER(obj); return false;}
   virtual bool Add(ADMAudioBlockFormat   *obj) {UNUSED_PARAMETER(obj); return false;}
-
-  /*--------------------------------------------------------------------------------*/
-  /** Individual variable type dumping helper functions
-   */
-  /*--------------------------------------------------------------------------------*/
-  static void Dump(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, const std::string& name, const std::string& value);
-  static void Dump(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, const std::string& name, uint_t value);
-  static void Dump(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, const std::string& name, double value);
-  static void Dump(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, const std::string& name, bool value);
-  static void DumpTime(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, const std::string& name, uint64_t value);
-
-  /*--------------------------------------------------------------------------------*/
-  /** Internal dumping functions implemented by each derived object
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void DumpEx(std::map<const ADMObject *,bool>& handledmap, std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level) const
-  {
-    UNUSED_PARAMETER(handledmap);
-    UNUSED_PARAMETER(str);
-    UNUSED_PARAMETER(indent);
-    UNUSED_PARAMETER(eol);
-    UNUSED_PARAMETER(ind_level);
-  }
-
-  /*--------------------------------------------------------------------------------*/
-  /** Individual variable type XML attribute helper functions
-   */
-  /*--------------------------------------------------------------------------------*/
-  static void XMLAttribute(std::string& str, const std::string& name, const std::string& value);
-  static void XMLAttribute(std::string& str, const std::string& name, uint_t value);
-  static void XMLAttribute(std::string& str, const std::string& name, double value);
-  static void XMLAttributeTime(std::string& str, const std::string& name, uint64_t value);
-
-  /*--------------------------------------------------------------------------------*/
-  /** 'Open' (start) an XML section
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void XMLOpen(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level) const;
-
-  /*--------------------------------------------------------------------------------*/
-  /** Output XML attributes (within the opening section), expanded by derived classes
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void XMLAttributes(std::string& str) const;
-
-  /*--------------------------------------------------------------------------------*/
-  /** Return true if there is no additional XML data to output (i.e. the XML close can be on the same line as the open)
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual bool XMLEmpty() const {return true;}
-
-  /*--------------------------------------------------------------------------------*/
-  /** Close an XML section
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void XMLClose(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level) const;
 
   /*--------------------------------------------------------------------------------*/
   /** Generate a textual reference 
@@ -509,10 +446,14 @@ public:
   const std::vector<ADMAudioContent *>& GetContentRefs() const {return contentrefs;}
 
   /*--------------------------------------------------------------------------------*/
-  /** Output additional XML data for this object
+  /** Return list of values/attributes from internal variables and list of referenced objects
+   *
+   * @param objvalues list to be populated with ADMVALUE's holding object attributes and values
+   * @param objects list to be populdated with referenced or contained objects
+   * @param full true to generate complete list including values that do not appear in the XML
    */
   /*--------------------------------------------------------------------------------*/
-  virtual void XMLData(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, std::vector<const ADMObject *>& reflist) const;
+  virtual void GetValuesAndReferences(ADMVALUES& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full = false) const;
 
   /*--------------------------------------------------------------------------------*/
   /** Generate a textual list of references 
@@ -528,25 +469,6 @@ public:
 
   // static type reference name
   static const std::string Reference;
-
-protected:
-  /*--------------------------------------------------------------------------------*/
-  /** Dump additional information about this object
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void DumpEx(std::map<const ADMObject *,bool>& handledmap, std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level) const;
-
-  /*--------------------------------------------------------------------------------*/
-  /** Output additional XML attributes for this object
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void XMLAttributes(std::string& str) const;
-
-  /*--------------------------------------------------------------------------------*/
-  /** Return true if there is no additional XML data to output (i.e. the XML close can be on the same line as the open)
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual bool XMLEmpty() const {return (ADMObject::XMLEmpty() && (contentrefs.size() == 0));}
 
 protected:
   std::vector<ADMAudioContent *> contentrefs;
@@ -608,10 +530,14 @@ public:
   const std::vector<ADMAudioObject *>& GetObjectRefs() const {return objectrefs;}
 
   /*--------------------------------------------------------------------------------*/
-  /** Output additional XML data for this object
+  /** Return list of values/attributes from internal variables and list of referenced objects
+   *
+   * @param objvalues list to be populated with ADMVALUE's holding object attributes and values
+   * @param objects list to be populdated with referenced or contained objects
+   * @param full true to generate complete list including values that do not appear in the XML
    */
   /*--------------------------------------------------------------------------------*/
-  virtual void XMLData(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, std::vector<const ADMObject *>& reflist) const;
+  virtual void GetValuesAndReferences(ADMVALUES& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full = false) const;
 
   /*--------------------------------------------------------------------------------*/
   /** Generate a textual list of references 
@@ -627,25 +553,6 @@ public:
 
   // static type reference name
   static const std::string Reference;
-
-protected:
-  /*--------------------------------------------------------------------------------*/
-  /** Dump additional information about this object
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void DumpEx(std::map<const ADMObject *,bool>& handledmap, std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level) const;
-
-  /*--------------------------------------------------------------------------------*/
-  /** Output additional XML attributes for this object
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void XMLAttributes(std::string& str) const;
-
-  /*--------------------------------------------------------------------------------*/
-  /** Return true if there is no additional XML data to output (i.e. the XML close can be on the same line as the open)
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual bool XMLEmpty() const {return (ADMObject::XMLEmpty() && (objectrefs.size() == 0));}
 
 protected:
   std::string                   language;
@@ -742,10 +649,14 @@ public:
   uint_t   GetChildrenChannelCount() const {return childrenMaxChannel + 1 - GetChildrenStartChannel();}
 
   /*--------------------------------------------------------------------------------*/
-  /** Output additional XML data for this object
+  /** Return list of values/attributes from internal variables and list of referenced objects
+   *
+   * @param objvalues list to be populated with ADMVALUE's holding object attributes and values
+   * @param objects list to be populdated with referenced or contained objects
+   * @param full true to generate complete list including values that do not appear in the XML
    */
   /*--------------------------------------------------------------------------------*/
-  virtual void XMLData(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, std::vector<const ADMObject *>& reflist) const;
+  virtual void GetValuesAndReferences(ADMVALUES& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full = false) const;
 
   static bool Compare(const ADMAudioObject *obj1, const ADMAudioObject *obj2)
   {
@@ -768,25 +679,6 @@ public:
 
   // static type reference name
   static const std::string Reference;
-
-protected:
-  /*--------------------------------------------------------------------------------*/
-  /** Dump additional information about this object
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void DumpEx(std::map<const ADMObject *,bool>& handledmap, std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level) const;
-
-  /*--------------------------------------------------------------------------------*/
-  /** Output additional XML attributes for this object
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void XMLAttributes(std::string& str) const;
-
-  /*--------------------------------------------------------------------------------*/
-  /** Return true if there is no additional XML data to output (i.e. the XML close can be on the same line as the open)
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual bool XMLEmpty() const {return (ADMObject::XMLEmpty() && (objectrefs.size() == 0) && (packformatrefs.size() == 0) && (trackrefs.size() == 0));}
 
 protected:
   std::vector<ADMAudioObject     *> objectrefs;
@@ -888,10 +780,14 @@ public:
   virtual void UpdateLimits();
 
   /*--------------------------------------------------------------------------------*/
-  /** Output additional XML data for this object
+  /** Return list of values/attributes from internal variables and list of referenced objects
+   *
+   * @param objvalues list to be populated with ADMVALUE's holding object attributes and values
+   * @param objects list to be populdated with referenced or contained objects
+   * @param full true to generate complete list including values that do not appear in the XML
    */
   /*--------------------------------------------------------------------------------*/
-  virtual void XMLData(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, std::vector<const ADMObject *>& reflist) const;
+  virtual void GetValuesAndReferences(ADMVALUES& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full = false) const;
 
   /*--------------------------------------------------------------------------------*/
   /** Convert ns time to samples
@@ -932,24 +828,6 @@ public:
   static const std::string Reference;
 
 protected:
-  /*--------------------------------------------------------------------------------*/
-  /** Dump additional information about this object
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void DumpEx(std::map<const ADMObject *,bool>& handledmap, std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level) const;
-
-  /*--------------------------------------------------------------------------------*/
-  /** Output additional XML attributes for this object
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void XMLAttributes(std::string& str) const;
-
-  /*--------------------------------------------------------------------------------*/
-  /** Return true if there is no additional XML data to output (i.e. the XML close can be on the same line as the open)
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual bool XMLEmpty() const {return (ADMObject::XMLEmpty() && (trackformatrefs.size() == 0) && (packformatrefs.size() == 0));}
-
   /*--------------------------------------------------------------------------------*/
   /** Generate a textual reference 
    *
@@ -1034,10 +912,14 @@ public:
   virtual void UpdateLimits();
 
   /*--------------------------------------------------------------------------------*/
-  /** Output additional XML data for this object
+  /** Return list of values/attributes from internal variables and list of referenced objects
+   *
+   * @param objvalues list to be populated with ADMVALUE's holding object attributes and values
+   * @param objects list to be populdated with referenced or contained objects
+   * @param full true to generate complete list including values that do not appear in the XML
    */
   /*--------------------------------------------------------------------------------*/
-  virtual void XMLData(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, std::vector<const ADMObject *>& reflist) const;
+  virtual void GetValuesAndReferences(ADMVALUES& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full = false) const;
 
   /*--------------------------------------------------------------------------------*/
   /** Generate a textual list of references 
@@ -1053,25 +935,6 @@ public:
 
   // static type reference name
   static const std::string Reference;
-
-protected:
-  /*--------------------------------------------------------------------------------*/
-  /** Dump additional information about this object
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void DumpEx(std::map<const ADMObject *,bool>& handledmap, std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level) const;
-
-  /*--------------------------------------------------------------------------------*/
-  /** Output additional XML attributes for this object
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void XMLAttributes(std::string& str) const;
-
-  /*--------------------------------------------------------------------------------*/
-  /** Return true if there is no additional XML data to output (i.e. the XML close can be on the same line as the open)
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual bool XMLEmpty() const {return (ADMObject::XMLEmpty() && (channelformatrefs.size() == 0) && (packformatrefs.size() == 0));}
 
 protected:
   std::vector<ADMAudioChannelFormat *> channelformatrefs;
@@ -1169,10 +1032,14 @@ public:
   virtual void UpdateLimits();
 
   /*--------------------------------------------------------------------------------*/
-  /** Output additional XML data for this object
+  /** Return list of values/attributes from internal variables and list of referenced objects
+   *
+   * @param objvalues list to be populated with ADMVALUE's holding object attributes and values
+   * @param objects list to be populdated with referenced or contained objects
+   * @param full true to generate complete list including values that do not appear in the XML
    */
   /*--------------------------------------------------------------------------------*/
-  virtual void XMLData(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, std::vector<const ADMObject *>& reflist) const;
+  virtual void GetValuesAndReferences(ADMVALUES& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full = false) const;
 
   /*--------------------------------------------------------------------------------*/
   /** Generate a textual list of references 
@@ -1188,25 +1055,6 @@ public:
 
   // static type reference name
   static const std::string Reference;
-
-protected:
-  /*--------------------------------------------------------------------------------*/
-  /** Dump additional information about this object
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void DumpEx(std::map<const ADMObject *,bool>& handledmap, std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level) const;
-
-  /*--------------------------------------------------------------------------------*/
-  /** Output additional XML attributes for this object
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void XMLAttributes(std::string& str) const;
-
-  /*--------------------------------------------------------------------------------*/
-  /** Return true if there is no additional XML data to output (i.e. the XML close can be on the same line as the open)
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual bool XMLEmpty() const {return (ADMObject::XMLEmpty() && (channelformatrefs.size() == 0) && (trackformatrefs.size() == 0) && (packformatrefs.size() == 0));}
 
 protected:
   std::string                          formatLabel;
@@ -1274,10 +1122,14 @@ public:
   virtual void Reset() {}
 
   /*--------------------------------------------------------------------------------*/
-  /** Output additional XML data for this object
+  /** Return list of values/attributes from internal variables and list of referenced objects
+   *
+   * @param objvalues list to be populated with ADMVALUE's holding object attributes and values
+   * @param objects list to be populdated with referenced or contained objects
+   * @param full true to generate complete list including values that do not appear in the XML
    */
   /*--------------------------------------------------------------------------------*/
-  virtual void XMLData(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, std::vector<const ADMObject *>& reflist) const;
+  virtual void GetValuesAndReferences(ADMVALUES& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full = false) const;
 
   /*--------------------------------------------------------------------------------*/
   /** Generate a textual list of references 
@@ -1293,25 +1145,6 @@ public:
 
   // static type reference name
   static const std::string Reference;
-
-protected:
-  /*--------------------------------------------------------------------------------*/
-  /** Dump additional information about this object
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void DumpEx(std::map<const ADMObject *,bool>& handledmap, std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level) const;
-
-  /*--------------------------------------------------------------------------------*/
-  /** Output additional XML attributes for this object
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void XMLAttributes(std::string& str) const;
-
-  /*--------------------------------------------------------------------------------*/
-  /** Return true if there is no additional XML data to output (i.e. the XML close can be on the same line as the open)
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual bool XMLEmpty() const {return false;}
 
 protected:
   std::vector<ADMAudioBlockFormat *> blockformatrefs;
@@ -1386,10 +1219,14 @@ public:
   virtual void UpdateLimits();
 
   /*--------------------------------------------------------------------------------*/
-  /** Output additional XML data for this object
+  /** Return list of values/attributes from internal variables and list of referenced objects
+   *
+   * @param objvalues list to be populated with ADMVALUE's holding object attributes and values
+   * @param objects list to be populdated with referenced or contained objects
+   * @param full true to generate complete list including values that do not appear in the XML
    */
   /*--------------------------------------------------------------------------------*/
-  virtual void XMLData(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, std::vector<const ADMObject *>& reflist) const;
+  virtual void GetValuesAndReferences(ADMVALUES& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full = false) const;
 
   /*--------------------------------------------------------------------------------*/
   /** Generate a textual list of references 
@@ -1405,25 +1242,6 @@ public:
 
   // static type reference name
   static const std::string Reference;
-
-protected:
-  /*--------------------------------------------------------------------------------*/
-  /** Dump additional information about this object
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void DumpEx(std::map<const ADMObject *,bool>& handledmap, std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level) const;
-
-  /*--------------------------------------------------------------------------------*/
-  /** Output additional XML attributes for this object
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void XMLAttributes(std::string& str) const;
-
-  /*--------------------------------------------------------------------------------*/
-  /** Return true if there is no additional XML data to output (i.e. the XML close can be on the same line as the open)
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual bool XMLEmpty() const {return (ADMObject::XMLEmpty() && (streamformatrefs.size() == 0));}
 
 protected:
   std::string formatLabel;
@@ -1527,10 +1345,14 @@ public:
   virtual void SetPosition(const Position& pos, const ParameterSet *supplement = NULL);
 
   /*--------------------------------------------------------------------------------*/
-  /** Output additional XML data for this object
+  /** Return list of values/attributes from internal variables and list of referenced objects
+   *
+   * @param objvalues list to be populated with ADMVALUE's holding object attributes and values
+   * @param objects list to be populdated with referenced or contained objects
+   * @param full true to generate complete list including values that do not appear in the XML
    */
   /*--------------------------------------------------------------------------------*/
-  virtual void XMLData(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, std::vector<const ADMObject *>& reflist) const;
+  virtual void GetValuesAndReferences(ADMVALUES& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full = false) const;
 
   static bool Compare(const ADMAudioBlockFormat *block1, const ADMAudioBlockFormat *block2)
   {
@@ -1551,25 +1373,6 @@ public:
 
   // static type reference name
   static const std::string Reference;
-
-protected:
-  /*--------------------------------------------------------------------------------*/
-  /** Dump additional information about this object
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void DumpEx(std::map<const ADMObject *,bool>& handledmap, std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level) const;
-
-  /*--------------------------------------------------------------------------------*/
-  /** Output additional XML attributes for this object
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void XMLAttributes(std::string& str) const;
-
-  /*--------------------------------------------------------------------------------*/
-  /** Return true if there is no additional XML data to output (i.e. the XML close can be on the same line as the open)
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual bool XMLEmpty() const {return false;}
 
 protected:
   uint64_t     rtime;

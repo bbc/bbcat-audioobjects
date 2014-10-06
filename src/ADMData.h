@@ -264,14 +264,61 @@ public:
   typedef ADMObject::ADMVALUE ADMVALUE;
   ADMObject *GetReference(const ADMVALUE& value);
 
+  /*--------------------------------------------------------------------------------*/
+  /** Get list of objects of specified type
+   *
+   * @param type audioXXX object type
+   * @param list list to be populated
+   */
+  /*--------------------------------------------------------------------------------*/
   void GetADMList(const std::string& type, std::vector<const ADMObject *>& list) const;
+
+  /*--------------------------------------------------------------------------------*/
+  /** Get ADM object by ID (with optional object type specified)
+   *
+   * @return object or NULL
+   */
+  /*--------------------------------------------------------------------------------*/
   const ADMObject *GetObjectByID(const std::string& id, const std::string& type = "") const;
+
+  /*--------------------------------------------------------------------------------*/
+  /** Get ADM object by Name (with optional object type specified)
+   *
+   * @return object or NULL
+   */
+  /*--------------------------------------------------------------------------------*/
   const ADMObject *GetObjectByName(const std::string& name, const std::string& type = "") const;
 
+  /*--------------------------------------------------------------------------------*/
+  /** Return track list (list of ADMAudioTrack objects)
+   */
+  /*--------------------------------------------------------------------------------*/
   typedef std::vector<const ADMAudioTrack *> TRACKLIST;
   const TRACKLIST& GetTrackList() const {return tracklist;}
 
-  virtual void Dump(std::string& str, const std::string& indent = "  ", const std::string& eol = "\n", uint_t level = 0) const;
+  /*--------------------------------------------------------------------------------*/
+  /** Dump ADM or part of ADM as textual description
+   *
+   * @param str std::string to be modified with description
+   * @param obj ADM object or NULL to dump the entire ADM
+   * @param indent indentation for each level of objects
+   * @param eol end-of-line string
+   * @param level initial indentation level
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void Dump(std::string& str, const ADMObject *obj, const std::string& indent = "  ", const std::string& eol = "\n", uint_t level = 0) const;
+
+  /*--------------------------------------------------------------------------------*/
+  /** Create XML representation of ADM
+   *
+   * @param str std::string to be modified with XML
+   * @param indent indentation for each level of objects
+   * @param eol end-of-line string
+   * @param level initial indentation level
+   *
+   * @note for other XML implementaions, this function can be overridden
+   */
+  /*--------------------------------------------------------------------------------*/
   virtual void GenerateXML(std::string& str, const std::string& indent = "\t", const std::string& eol = "\n", uint_t ind_level = 0) const;
 
   virtual void GenerateReferenceList(std::string& str);
@@ -328,7 +375,101 @@ protected:
     UNUSED_PARAMETER(userdata);
   }
 
-  static std::string FormatString(const char *fmt, ...);
+  /*--------------------------------------------------------------------------------*/
+  /** Generic XML creation
+   *
+   * @param xmlcontext user supplied argument representing context data
+   *
+   * @note for other XML implementaions, this function can be overridden
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void GenerateXML(void *xmlcontext) const;
+
+  /*--------------------------------------------------------------------------------*/
+  /** Generic XML creation
+   *
+   * @param obj ADM object to generate XML for
+   * @param list list of ADM objects that will subsequently need XML generating
+   * @param xmlcontext user supplied argument representing context data
+   *
+   * @note for other XML implementaions, this function can be overridden
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void GenerateXML(const ADMObject *obj, std::vector<const ADMObject *>& list, void *xmlcontext) const;
+
+  /*--------------------------------------------------------------------------------*/
+  /** Start an XML object
+   *
+   * @param xmlcontext user supplied argument representing context data
+   * @param name object name
+   *
+   * @note for other XML implementaions, this function MUST be overridden
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void OpenXMLObject(void *xmlcontext, const std::string& name) const;
+  /*--------------------------------------------------------------------------------*/
+  /** Add an attribute to the current XML object
+   *
+   * @param xmlcontext user supplied argument representing context data
+   * @param name attribute name
+   * @param name attribute value
+   *
+   * @note for other XML implementaions, this function MUST be overridden
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void AddXMLAttribute(void *xmlcontext, const std::string& name, const std::string& value) const;
+  /*--------------------------------------------------------------------------------*/
+  /** Set XML data
+   *
+   * @param xmlcontext user supplied argument representing context data
+   * @param data data
+   *
+   * @note for other XML implementaions, this function MUST be overridden
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void SetXMLData(void *xmlcontext, const std::string& data) const;
+  /*--------------------------------------------------------------------------------*/
+  /** Close XML object
+   *
+   * @param xmlcontext user supplied argument representing context data
+   *
+   * @note for other XML implementaions, this function MUST be overridden
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void CloseXMLObject(void *xmlcontext) const;
+ 
+  /*--------------------------------------------------------------------------------*/
+  /** Context structure for generating XML (this object ONLY!)
+   */
+  /*--------------------------------------------------------------------------------*/
+  typedef struct {
+    std::string str;                    ///< string into which XML is generated
+    std::string indent;                 ///< indent string for each level
+    std::string eol;                    ///< end-of-line string
+    uint_t      ind_level;              ///< current indentation level
+    bool        opened;                 ///< true if object is started but not ready for data (needs '>')
+    std::vector<std::string> stack;     ///< object stack
+  } TEXTXML;
+
+  /*--------------------------------------------------------------------------------*/
+  /** Context structure for generating textual dump of ADM
+   */
+  /*--------------------------------------------------------------------------------*/
+  typedef struct {
+    std::string str;                    ///< string into which text is generated
+    std::string indent;                 ///< indent string for each level
+    std::string eol;                    ///< end-of-line string
+    uint_t      ind_level;              ///< current indentation level
+  } DUMPCONTEXT;
+  /*--------------------------------------------------------------------------------*/
+  /** Generate textual description of ADM object (recursive
+   *
+   * @param obj ADM object
+   * @param map map of objects already stored (bool is a dummy)
+   * @param context DUMPCONTEXT for tracking indentation, etc
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void Dump(const ADMObject *obj, std::map<const ADMObject *,bool>& map, DUMPCONTEXT& context) const;
 
 protected:
   typedef struct

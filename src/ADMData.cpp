@@ -642,6 +642,15 @@ ADMAudioStreamFormat *ADMData::CreateStreamFormat(const std::string& name, ADMAu
   return streamFormat;
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Parse XML section
+ *
+ * @param type object type
+ * @param userdata context data
+ *
+ * @return newly created object
+ */
+/*--------------------------------------------------------------------------------*/
 ADMObject *ADMData::Parse(const std::string& type, void *userdata)
 {
   ADMHEADER header;
@@ -703,19 +712,29 @@ ADMObject *ADMData::GetReference(const ADMVALUE& value)
   return obj;
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Sort tracks into numerical order
+ */
+/*--------------------------------------------------------------------------------*/
 void ADMData::SortTracks()
 {
-  std::vector<const ADMAudioTrack *>::const_iterator it;
-
   sort(tracklist.begin(), tracklist.end(), ADMAudioTrack::Compare);
 
-  DEBUG4(("%lu tracks:", tracklist.size()));
+#if DEBUG_LEVEL >= 4
+  std::vector<const ADMAudioTrack *>::const_iterator it;
+
+  DEBUG1(("%lu tracks:", tracklist.size()));
   for (it = tracklist.begin(); it != tracklist.end(); ++it)
   {
-    DEBUG4(("%u: %s", (*it)->GetTrackNum(), (*it)->ToString().c_str()));
+    DEBUG1(("%u: %s", (*it)->GetTrackNum(), (*it)->ToString().c_str()));
   }
+#endif
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Connect references between objects
+ */
+/*--------------------------------------------------------------------------------*/
 void ADMData::ConnectReferences()
 {
   ADMOBJECTS_IT it;
@@ -726,6 +745,10 @@ void ADMData::ConnectReferences()
   }
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Update time and channel limits within objects
+ */
+/*--------------------------------------------------------------------------------*/
 void ADMData::UpdateLimits()
 {
   ADMOBJECTS_IT  it;
@@ -740,6 +763,13 @@ void ADMData::UpdateLimits()
   }
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Get list of objects of specified type
+ *
+ * @param type audioXXX object type
+ * @param list list to be populated
+ */
+/*--------------------------------------------------------------------------------*/
 void ADMData::GetADMList(const std::string& type, std::vector<const ADMObject *>& list) const
 {
   ADMOBJECTS_CIT it;
@@ -755,6 +785,12 @@ void ADMData::GetADMList(const std::string& type, std::vector<const ADMObject *>
   }
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Get ADM object by ID (with optional object type specified)
+ *
+ * @return object or NULL
+ */
+/*--------------------------------------------------------------------------------*/
 const ADMObject *ADMData::GetObjectByID(const std::string& id, const std::string& type) const
 {
   ADMOBJECTS_CIT it;
@@ -769,6 +805,12 @@ const ADMObject *ADMData::GetObjectByID(const std::string& id, const std::string
   return NULL;
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Get ADM object by Name (with optional object type specified)
+ *
+ * @return object or NULL
+ */
+/*--------------------------------------------------------------------------------*/
 const ADMObject *ADMData::GetObjectByName(const std::string& name, const std::string& type) const
 {
   ADMOBJECTS_CIT it;
@@ -783,78 +825,431 @@ const ADMObject *ADMData::GetObjectByName(const std::string& name, const std::st
   return NULL;
 }
 
-std::string ADMData::FormatString(const char *fmt, ...)
+/*--------------------------------------------------------------------------------*/
+/** Dump ADM or part of ADM as textual description
+ *
+ * @param str std::string to be modified with description
+ * @param obj ADM object or NULL to dump the entire ADM
+ * @param indent indentation for each level of objects
+ * @param eol end-of-line string
+ * @param level initial indentation level
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMData::Dump(std::string& str, const ADMObject *obj, const std::string& indent, const std::string& eol, uint_t level) const
 {
-  std::string str;
-  va_list ap;
-
-  va_start(ap, fmt);
-
-  char *buf = NULL;
-  if (vasprintf(&buf, fmt, ap) > 0)
-  {
-    str = buf;
-    free(buf);
-  }
-
-  va_end(ap);
-
-  return str;
-}
-
-void ADMData::Dump(std::string& str, const std::string& indent, const std::string& eol, uint_t level) const
-{
+  std::map<const ADMObject *,bool> map;
+  DUMPCONTEXT    context;
   ADMOBJECTS_CIT it;
 
-  for (it = admobjects.begin(); it != admobjects.end(); ++it)
+  // initialise context
+  context.str       = str;
+  context.indent    = indent;
+  context.eol       = eol;
+  context.ind_level = level;
+
+  // if explicit object specified, dump it
+  if (obj) Dump(obj, map, context);
+  else
   {
-    if (it->second->GetType() == ADMAudioProgramme::Type)
+    // otherwise find Programme object and start with it
+    for (it = admobjects.begin(); it != admobjects.end(); ++it)
     {
-      it->second->Dump(str, indent, eol, level);
+      const ADMObject *obj = it->second;
+
+      if (obj->GetType() == ADMAudioProgramme::Type)
+      {
+        Dump(obj, map, context);
+      }
     }
   }
+
+  // return generated string
+  str = context.str;
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Generate textual description of ADM object (recursive
+ *
+ * @param obj ADM object
+ * @param map map of objects already stored (bool is a dummy)
+ * @param context DUMPCONTEXT for tracking indentation, etc
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMData::Dump(const ADMObject *obj, std::map<const ADMObject *,bool>& map, DUMPCONTEXT& context) const
+{
+  std::vector<ADMObject::REFERENCEDOBJECT> objects;
+  ADMObject::ADMVALUES values;
+  std::string& str = context.str;
+  std::string  indent; 
+  uint_t i;
+
+  // mark this object is generated
+  map[obj] = true;
+
+  obj->GetValuesAndReferences(values, objects, true);
+
+  indent = CreateIndent(context.indent, context.ind_level++);
+
+  Printf(str, "%s%s: %s", indent.c_str(), obj->GetType().c_str(), obj->GetID().c_str());
+
+  if (obj->GetName() != "")
+  {
+    Printf(str, " / %s", obj->GetName().c_str());
+  }
+  
+  str    += context.eol;
+  indent += context.indent;
+
+  // output attributes
+  for (i = 0; i < values.size(); i++)
+  {
+    const ADMVALUE& value = values[i];
+
+    if (value.attr)
+    {
+      Printf(str, "%s%s: %s%s", indent.c_str(), value.name.c_str(), value.value.c_str(), context.eol.c_str());
+    }
+  }
+  
+  // output values
+  for (i = 0; i < values.size(); i++)
+  {
+    const ADMVALUE& value = values[i];
+
+    if (!value.attr)
+    {
+      ADMObject::ADMATTRS::const_iterator it;
+
+      Printf(str, "%s%s", indent.c_str(), value.name.c_str());
+
+      if (value.attrs.end() != value.attrs.begin())
+      {
+        Printf(str, " (");
+        for (it = value.attrs.begin(); it != value.attrs.end(); ++it)
+        {
+          Printf(str, "%s=%s", it->first.c_str(), it->second.c_str());
+        }
+        Printf(str, ")");
+      }
+
+      Printf(str, ": %s%s", value.value.c_str(), context.eol.c_str());
+    }
+  }
+
+  // output references
+  for (i = 0; i < objects.size(); i++)
+  {
+    const ADMObject::REFERENCEDOBJECT& object = objects[i];
+    bool dumpthisobject = (map.find(object.obj) == map.end());
+
+    if (object.genref)
+    {
+      // output reference to object.obj
+      Printf(str, "%s%s: %s", indent.c_str(), object.obj->GetReference().c_str(), object.obj->GetID().c_str());
+
+      if (dumpthisobject)
+      {
+        str += context.eol;
+        context.ind_level++;
+        Dump(object.obj, map, context);
+        context.ind_level--;
+      }
+      else Printf(str, " (see above)%s", context.eol.c_str());
+    }
+    else if (dumpthisobject) Dump(object.obj, map, context);
+  }
+
+  context.ind_level--;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Start an XML object
+ *
+ * @param xmlcontext user supplied argument representing context data
+ * @param name object name
+ *
+ * @note for other XML implementaions, this function MUST be overridden
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMData::OpenXMLObject(void *xmlcontext, const std::string& name) const
+{
+  TEXTXML& xml = *(TEXTXML *)xmlcontext;
+
+  // ensure any previous object is properly marked ready for data
+  if (xml.stack.size() && xml.opened)
+  {
+    xml.str   += ">";
+    xml.opened = false;
+  }
+
+  // add a newline if last bit of string isn't an eol
+  if (xml.eol.length() &&
+      (xml.str.length() >= xml.eol.length()) &&
+      (xml.str.substr(xml.str.length() - xml.eol.length()) != xml.eol)) xml.str += xml.eol;
+
+  Printf(xml.str,
+         "%s<%s",
+         CreateIndent(xml.indent, xml.ind_level + xml.stack.size()).c_str(),
+         name.c_str()); 
+
+  // stack this object name (for closing)
+  xml.stack.push_back(name);
+  xml.opened = true;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Add an attribute to the current XML object
+ *
+ * @param xmlcontext user supplied argument representing context data
+ * @param name attribute name
+ * @param name attribute value
+ *
+ * @note for other XML implementaions, this function MUST be overridden
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMData::AddXMLAttribute(void *xmlcontext, const std::string& name, const std::string& value) const
+{
+  TEXTXML& xml = *(TEXTXML *)xmlcontext;
+
+  Printf(xml.str, " %s=\"%s\"", name.c_str(), value.c_str());
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Set XML data
+ *
+ * @param xmlcontext user supplied argument representing context data
+ * @param data data
+ *
+ * @note for other XML implementaions, this function MUST be overridden
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMData::SetXMLData(void *xmlcontext, const std::string& data) const
+{
+  TEXTXML& xml = *(TEXTXML *)xmlcontext;
+
+  // ensure any object is marked ready for data
+  if (xml.stack.size() && xml.opened)
+  {
+    xml.str   += ">";
+    xml.opened = false;
+  }
+
+  xml.str += data;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Close XML object
+ *
+ * @param xmlcontext user supplied argument representing context data
+ *
+ * @note for other XML implementaions, this function MUST be overridden
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMData::CloseXMLObject(void *xmlcontext) const
+{
+  TEXTXML& xml = *(TEXTXML *)xmlcontext;
+
+  if (xml.stack.size() && xml.opened)
+  {
+    // object is empty
+    xml.str   += " />" + xml.eol;
+    xml.opened = false;
+  }
+  else
+  {
+    if ((xml.str.length() >= xml.eol.length()) && (xml.str.substr(xml.str.length() - xml.eol.length()) == xml.eol)) xml.str += CreateIndent(xml.indent, xml.ind_level + xml.stack.size() - 1);
+    Printf(xml.str, "</%s>%s", xml.stack.back().c_str(), xml.eol.c_str());
+  }
+
+  xml.stack.pop_back();
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Create XML representation of ADM
+ *
+ * @param str std::string to be modified with XML
+ * @param indent indentation for each level of objects
+ * @param eol end-of-line string
+ * @param level initial indentation level
+ *
+ * @note for other XML implementaions, this function can be overridden
+ */
+/*--------------------------------------------------------------------------------*/
 void ADMData::GenerateXML(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level) const
 {
+  TEXTXML context;
+
+  context.indent    = indent;
+  context.eol       = eol;
+  context.ind_level = ind_level;
+
+  GenerateXML((void *)&context);
+
+  str = context.str;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Generic XML creation
+ *
+ * @param xmlcontext user supplied argument representing context data
+ *
+ * @note for other XML implementaions, this function can be overridden
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMData::GenerateXML(void *xmlcontext) const
+{
+  std::vector<const ADMObject *>   list;
+  std::map<const ADMObject *,bool> map;
   ADMOBJECTS_CIT it;
+  uint_t i;
 
-  Printf(str,
-         "%s<coreMetadata>%s",
-         CreateIndent(indent, ind_level).c_str(), eol.c_str()); ind_level++;
+  OpenXMLObject(xmlcontext, "coreMetadata");
+  OpenXMLObject(xmlcontext, "format");
+  OpenXMLObject(xmlcontext, "audioFormatExtended");
 
-  Printf(str,
-         "%s<format>%s",
-         CreateIndent(indent, ind_level).c_str(), eol.c_str()); ind_level++;
-
-  Printf(str,
-         "%s<audioFormatExtended>%s",
-         CreateIndent(indent, ind_level).c_str(), eol.c_str()); ind_level++;
-
+  // find Programme object and start with it
   for (it = admobjects.begin(); it != admobjects.end(); ++it)
   {
     const ADMObject *obj = it->second;
 
     if (obj->GetType() == ADMAudioProgramme::Type)
     {
-      obj->GenerateXML(str, indent, eol, ind_level);
+      map[obj] = true;
+      GenerateXML(obj, list, xmlcontext);
     }
   }
 
-  ind_level--;
-  Printf(str,
-         "%s</audioFormatExtended>%s",
-         CreateIndent(indent, ind_level).c_str(), eol.c_str());
+  // output referenced and child objects if they have been done so yet
+  for (i = 0; i < list.size(); i++)
+  {
+    const ADMObject *obj = list[i];
 
-  ind_level--;
-  Printf(str,
-         "%s</format>%s",
-         CreateIndent(indent, ind_level).c_str(), eol.c_str());
-    
-  ind_level--;
-  Printf(str,
-         "%s</coreMetadata>%s",
-         CreateIndent(indent, ind_level).c_str(), eol.c_str());
+    // has object been output?
+    if (map.find(obj) == map.end())
+    {
+      // no, output it
+      map[obj] = true;
+      GenerateXML(obj, list, xmlcontext);
+    }
+  }
+
+  CloseXMLObject(xmlcontext);
+  CloseXMLObject(xmlcontext);
+  CloseXMLObject(xmlcontext);
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Generic XML creation
+ *
+ * @param obj ADM object to generate XML for
+ * @param list list of ADM objects that will subsequently need XML generating
+ * @param xmlcontext user supplied argument representing context data
+ *
+ * @note for other XML implementaions, this function can be overridden
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMData::GenerateXML(const ADMObject *obj, std::vector<const ADMObject *>& list, void *xmlcontext) const
+{
+  std::vector<ADMObject::REFERENCEDOBJECT> objects;
+  ADMObject::ADMVALUES values;
+  uint_t i;
+  bool   emptyobject = true;
+
+  obj->GetValuesAndReferences(values, objects);
+
+  // test to see if this object is 'empty'
+  for (i = 0; emptyobject && (i < values.size()); i++)
+  {
+    emptyobject &= !(!values[i].attr);                          // if any values (non-attribute) found, object cannot be empty
+  }
+  for (i = 0; emptyobject && (i < objects.size()); i++)
+  {
+    emptyobject &= !(objects[i].genref || objects[i].gendata);  // if any references or contained data to be generated, object cannot be empty
+  }
+
+  // start XML object
+  OpenXMLObject(xmlcontext, obj->GetType());
+
+  // output attributes
+  for (i = 0; i < values.size(); i++)
+  {
+    const ADMVALUE& value = values[i];
+
+    if (value.attr)
+    {
+      AddXMLAttribute(xmlcontext, value.name, value.value);
+    }
+  }
+  
+  if (!emptyobject)
+  {
+    // output values
+    for (i = 0; i < values.size(); i++)
+    {
+      const ADMVALUE& value = values[i];
+
+      if (!value.attr)
+      {
+        ADMObject::ADMATTRS::const_iterator it;
+
+        OpenXMLObject(xmlcontext, value.name);
+
+        for (it = value.attrs.begin(); it != value.attrs.end(); ++it)
+        {
+          AddXMLAttribute(xmlcontext, it->first, it->second);
+        }
+
+        SetXMLData(xmlcontext, value.value);
+        
+        CloseXMLObject(xmlcontext);
+      }
+    }
+
+    // output references
+    for (i = 0; i < objects.size(); i++)
+    {
+      const ADMObject::REFERENCEDOBJECT& object = objects[i];
+
+      if (object.genref)
+      {
+        // output reference to object.obj
+        OpenXMLObject(xmlcontext, object.obj->GetReference());
+        SetXMLData(xmlcontext, object.obj->GetID());
+        CloseXMLObject(xmlcontext);
+      }
+    }
+
+    // output contained data
+    for (i = 0; i < objects.size(); i++)
+    {
+      const ADMObject::REFERENCEDOBJECT& object = objects[i];
+
+      if (object.gendata)
+      {
+        GenerateXML(object.obj, list, xmlcontext);
+      }
+      else
+      {
+        // object itself needs to be output
+        list.push_back(object.obj);
+      }
+    }
+
+    // end XML object
+    CloseXMLObject(xmlcontext);
+  }
+  else
+  {
+    // end empty XML object
+    CloseXMLObject(xmlcontext);
+
+    // empty object but need to add objects to list to be processed
+    for (i = 0; i < objects.size(); i++)
+    {
+      // object itself needs to be output
+      list.push_back(objects[i].obj);
+    }      
+  }
 }
 
 void ADMData::GenerateReferenceList(std::string& str)

@@ -41,6 +41,59 @@ void ADMObject::Register()
 }
 
 /*--------------------------------------------------------------------------------*/
+/** Set ADMVALUE object as a XML value (name/value pair) with optional attributes
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMObject::SetValue(ADMVALUE& obj, const std::string& name, const std::string& value, bool attr)
+{
+  obj.attr  = attr;
+  obj.name  = name;
+  obj.value = value;
+  obj.attrs.clear();
+}
+void ADMObject::SetValue(ADMVALUE& obj, const std::string& name, uint_t value, bool attr)
+{
+  std::string valuestr;
+  Printf(valuestr, "%u", value);
+  SetValue(obj, name, valuestr, attr);
+}
+void ADMObject::SetValue(ADMVALUE& obj, const std::string& name, uint64_t value, bool attr)
+{
+  SetValue(obj, name, GenTime(value), attr);
+}
+void ADMObject::SetValue(ADMVALUE& obj, const std::string& name, double value, bool attr)
+{
+  std::string valuestr;
+  Printf(valuestr, "%0.6lf", value);
+  SetValue(obj, name, valuestr, attr);
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Set attribute of ADMVALUE value object (initialised above)
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMObject::SetValueAttribute(ADMVALUE& obj, const std::string& name, const std::string& value)
+{
+  obj.attrs[name] = value;
+}
+void ADMObject::SetValueAttribute(ADMVALUE& obj, const std::string& name, uint_t value)
+{
+  std::string valuestr;
+  Printf(valuestr, "%u", value);
+  obj.attrs[name] = valuestr;
+}
+void ADMObject::SetValueAttribute(ADMVALUE& obj, const std::string& name, uint64_t value)
+{
+  obj.attrs[name] = GenTime(value);
+}
+void ADMObject::SetValueAttribute(ADMVALUE& obj, const std::string& name, double value)
+{
+  std::string valuestr;
+  Printf(valuestr, "%0.6lf", value);
+  obj.attrs[name] = valuestr;
+}
+
+/*--------------------------------------------------------------------------------*/
 /** Set internal variables from values added to internal list (e.g. from XML)
  */
 /*--------------------------------------------------------------------------------*/
@@ -208,64 +261,50 @@ void ADMObject::SetReferences()
 }
 
 /*--------------------------------------------------------------------------------*/
-/** Output additional XML attributes for this object
+/** Return list of values/attributes from internal variables and list of referenced objects
  */
 /*--------------------------------------------------------------------------------*/
-void ADMObject::XMLAttributes(std::string& str) const
+void ADMObject::GetValuesAndReferences(ADMVALUES& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full) const
 {
   ADMVALUES::const_iterator it;
+  ADMVALUE value;
 
-  // typeLabel can appear in most objects, handle it here
-  XMLAttribute(str, "typeLabel", typeLabel);
-  XMLAttribute(str, "typeDefinition", typeDefinition);
+  UNUSED_PARAMETER(objects);
+  UNUSED_PARAMETER(full);
 
-  // output XML attribute values from list - this allows arbitary attributes to be stored
-  for (it = values.begin(); it != values.end(); ++it)
+  if (GetID() != "")
   {
-    const ADMVALUE& value = *it;
-
-    if (value.attr) XMLAttribute(str, value.name, value.value);
+    if (GetType() == ADMAudioTrack::Type) SetAttribute(value, "UID",            GetID());
+    else                                  SetAttribute(value, GetType() + "ID", GetID());
+    objvalues.push_back(value);
   }
-}
 
-/*--------------------------------------------------------------------------------*/
-/** Output additional XML data for this object
- */
-/*--------------------------------------------------------------------------------*/
-void ADMObject::XMLData(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, std::vector<const ADMObject *>& reflist) const
-{
-  ADMVALUES::const_iterator it;
+  if (GetName() != "")
+  {
+    SetAttribute(value, GetType() + "Name", GetName());
+    objvalues.push_back(value);
+  }
 
-  UNUSED_PARAMETER(reflist);
-
-  // this base object version will be called by every derived version
-
-  // cycle through all values looking for non-attribute values and output them
+  // add existing list of values/attributes to list
   for (it = values.begin(); it != values.end(); ++it)
   {
-    const ADMVALUE& value = *it;
-
-    if (!value.attr)
+    // only add non-empty attributes
+    if (full || (it->value != "") || (it->attrs.end() != it->attrs.begin()))
     {
-      ADMATTRS::const_iterator it2;
-
-      // create new XML section for this value
-      Printf(str, "%s<%s", CreateIndent(indent, ind_level + 1).c_str(), value.name.c_str());
-
-      // add sub-attributes as XML attributes of this section
-      for (it2 = value.attrs.begin(); it2 != value.attrs.end(); ++it2)
-      {
-        XMLAttribute(str, it2->first.c_str(), it2->second.c_str());
-      }
-
-      // if value is valid, output it and close the XML section
-      if (value.value != "")
-      {
-        Printf(str, ">%s</%s>%s", value.value.c_str(), value.name.c_str(), eol.c_str());
-      }
-      // otherwise close the XML section directly
-      else Printf(str, " />%s", eol.c_str());
+      objvalues.push_back(*it);
     }
+  }
+
+  // add values/attributes not held in 'values' to list
+  if (full || (typeLabel != ""))
+  {
+    SetAttribute(value, "typeLabel", typeLabel);
+    objvalues.push_back(value);
+  }
+  if (full || (typeDefinition != ""))
+  {
+    SetAttribute(value, "typeDefinition", typeDefinition);
+    objvalues.push_back(value);
   }
 }
 
@@ -595,266 +634,6 @@ std::string ADMObject::GenTime(uint64_t t)
   return str;
 }
 
-/*--------------------------------------------------------------------------------*/
-/** Individual variable type dumping helper function
- */
-/*--------------------------------------------------------------------------------*/
-void ADMObject::Dump(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, const std::string& name, const std::string& value)
-{
-  if (value != "")
-  {
-    Printf(str, "%s%s '%s'%s",
-           CreateIndent(indent, ind_level + 1).c_str(),
-           name.c_str(),
-           value.c_str(),
-           eol.c_str());
-  }
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Individual variable type dumping helper function
- */
-/*--------------------------------------------------------------------------------*/
-void ADMObject::Dump(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, const std::string& name, uint_t value)
-{
-  Printf(str, "%s%s %u%s",
-         CreateIndent(indent, ind_level + 1).c_str(),
-         name.c_str(),
-         value,
-         eol.c_str());
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Individual variable type dumping helper function
- */
-/*--------------------------------------------------------------------------------*/
-void ADMObject::Dump(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, const std::string& name, bool value)
-{
-  Printf(str, "%s%s %s%s",
-         CreateIndent(indent, ind_level + 1).c_str(),
-         name.c_str(),
-         value ? "true" : "false",
-         eol.c_str());
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Individual variable type dumping helper function
- */
-/*--------------------------------------------------------------------------------*/
-void ADMObject::Dump(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, const std::string& name, double value)
-{
-  Printf(str, "%s%s %0.6f%s",
-         CreateIndent(indent, ind_level + 1).c_str(),
-         name.c_str(),
-         value,
-         eol.c_str());
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Individual variable type dumping helper function
- */
-/*--------------------------------------------------------------------------------*/
-void ADMObject::DumpTime(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, const std::string& name, uint64_t value)
-{
-  Printf(str, "%s%s '%s' (%luns)%s",
-         CreateIndent(indent, ind_level + 1).c_str(),
-         name.c_str(),
-         GenTime(value).c_str(),
-         (ulong_t)value,
-         eol.c_str());
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Dump (in text form) information about this and reference objects
- *
- * @param str string to be modified
- * @param indent a string representing one level of indentation (e.g. a tab or spaces)
- * @param eol a string representing the end of line string
- * @param ind_level the initial indentation level
- *
- */
-/*--------------------------------------------------------------------------------*/
-void ADMObject::Dump(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level) const
-{
-  std::map<const ADMObject *,bool> handledmap;     // ensures each object is output ONLY once since references can be circular
-
-  Dump(handledmap, str, indent, eol, ind_level);
-}
-
-/*--------------------------------------------------------------------------------*/
-/** A handler function for the above - DO NOT CALL THIS DIRECTLY, call the above
- */
-/*--------------------------------------------------------------------------------*/
-void ADMObject::Dump(std::map<const ADMObject *,bool>& handledmap, std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level) const
-{
-  // if this object has not been outputted previously
-  if (handledmap.find(this) == handledmap.end())
-  {
-    handledmap[this] = true;        // the true is somewhat irrelevant, it is just used to store 'this' in the map
-
-    // output header
-    Printf(str, "%s%s ID '%s' name '%s':%s",
-           CreateIndent(indent, ind_level).c_str(),
-           GetType().c_str(), GetID().c_str(), GetName().c_str(),
-           eol.c_str());
-
-    // output known variables
-    Dump(str, indent, eol, ind_level, "typeLabel", typeLabel);
-    Dump(str, indent, eol, ind_level, "typeDefinition", typeDefinition);
-
-    // call derived function to output variables from derived classes and recurse through references
-    DumpEx(handledmap, str, indent, eol, ind_level);
-  }
-  else
-  {
-    // output information and note
-    Printf(str, "%s%s ID '%s' name '%s' (see above)%s",
-           CreateIndent(indent, ind_level).c_str(),
-           GetType().c_str(), GetID().c_str(), GetName().c_str(),
-           eol.c_str());
-  }
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Generate XML for this and references objects in accordance with Tech3364
- *
- * @param str string to be modified
- * @param indent a string representing one level of indentation (e.g. a tab or spaces)
- * @param eol a string representing the end of line string
- * @param ind_level the initial indentation level
- *
- */
-/*--------------------------------------------------------------------------------*/
-void ADMObject::GenerateXML(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level) const
-{
-  std::vector<const ADMObject *>   reflist;
-  std::map<const ADMObject *,bool> map;    // output each object only once
-  uint_t i;
-
-  // output list of references to objects and THEN output those objects themselves (which may output more references, etc.)
-  XMLData(str, indent, eol, ind_level, reflist);
-
-  // output information about objects stored in reflist
-  for (i = 0; i < reflist.size(); i++)
-  {
-    const ADMObject *obj = reflist[i];
-
-    // if object has not be outputted before, output it here
-    if (map.find(obj) == map.end())
-    {
-      map[obj] = true;
-
-      obj->XMLData(str, indent, eol, ind_level, reflist);
-    }
-  }
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Individual variable type XML attribute helper function
- */
-/*--------------------------------------------------------------------------------*/
-void ADMObject::XMLAttribute(std::string& str, const std::string& name, const std::string& value)
-{
-  if (value != "") Printf(str, " %s=\"%s\"", name.c_str(), value.c_str());
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Individual variable type XML attribute helper function
- */
-/*--------------------------------------------------------------------------------*/
-void ADMObject::XMLAttribute(std::string& str, const std::string& name, uint_t value)
-{
-  if (value != 0) Printf(str, " %s=\"%u\"", name.c_str(), value);
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Individual variable type XML attribute helper function
- */
-/*--------------------------------------------------------------------------------*/
-void ADMObject::XMLAttribute(std::string& str, const std::string& name, double value)
-{
-  if (value != 0.0) Printf(str, " %s=\"%0.6f\"", name.c_str(), value);
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Individual variable type XML attribute helper function
- */
-/*--------------------------------------------------------------------------------*/
-void ADMObject::XMLAttributeTime(std::string& str, const std::string& name, uint64_t value)
-{
-  if (value != 0) Printf(str, " %s=\"%s\"", name.c_str(), GenTime(value).c_str());
-}
-
-/*--------------------------------------------------------------------------------*/
-/** 'Open' (start) an XML section
- */
-/*--------------------------------------------------------------------------------*/
-void ADMObject::XMLOpen(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level) const
-{
-  // if this type is NOT an AudioBlockFormat object, output a blank line
-  if (GetType() != ADMAudioBlockFormat::Type) Printf(str, "%s", eol.c_str());
-
-  // output header
-  Printf(str, "%s<%s",
-         CreateIndent(indent, ind_level).c_str(),
-         GetType().c_str());
-
-  // AudioTrack objects are specified slightly differently
-  if (GetType() == ADMAudioTrack::Type)
-  {
-    Printf(str, " UID=\"%s\"", GetID().c_str());
-  }
-  else
-  {
-    Printf(str, " %sID=\"%s\"", GetType().c_str(), GetID().c_str());
-  }
-
-  // output name only if it is valid
-  if (GetName() != "") Printf(str, " %sName=\"%s\"",  GetType().c_str(), GetName().c_str());
-
-  // output XML attributes
-  XMLAttributes(str);
-
-  // if no further data is needed, close the XML section now
-  if (XMLEmpty()) Printf(str, " />%s", eol.c_str());
-  else            Printf(str, ">%s", eol.c_str());
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Close an XML section
- */
-/*--------------------------------------------------------------------------------*/
-void ADMObject::XMLClose(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level) const
-{
-  // only need to close XML section here if some XML data has been outputted
-  if (!XMLEmpty())
-  {
-    Printf(str, "%s</%s>%s",
-           CreateIndent(indent, ind_level).c_str(),
-           GetType().c_str(),
-           eol.c_str());
-  }
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Output XML reference information for this object
- *
- * @note there is no need to call this function directly, it is called as part of GenerateXML()
- *
- */
-/*--------------------------------------------------------------------------------*/
-void ADMObject::XMLRef(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level) const
-{
-  std::string ref = GetReference();
-
-  Printf(str, "%s<%s>%s</%s>%s",
-         CreateIndent(indent, ind_level).c_str(),
-         ref.c_str(),
-         GetID().c_str(),
-         ref.c_str(),
-         eol.c_str());
-}
-
 /*----------------------------------------------------------------------------------------------------*/
 
 const std::string ADMAudioProgramme::Type      = "audioProgramme";
@@ -884,51 +663,34 @@ bool ADMAudioProgramme::Add(ADMAudioContent *obj)
 }
 
 /*--------------------------------------------------------------------------------*/
-/** Dump additional information about this object
+/** Return list of values/attributes from internal variables and list of referenced objects
  */
 /*--------------------------------------------------------------------------------*/
-void ADMAudioProgramme::DumpEx(std::map<const ADMObject *,bool>& handledmap, std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level) const
+void ADMAudioProgramme::GetValuesAndReferences(ADMVALUES& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full) const
 {
+  REFERENCEDOBJECT object;
+  ADMVALUE value;
   uint_t i;
 
-  Dump(str, indent, eol, ind_level, "language", language);
+  // populate list from parent object
+  ADMObject::GetValuesAndReferences(objvalues, objects, full);
+
+  // add values/attributes not held in 'values' to list
+  if (full || (language != ""))
+  {
+    SetAttribute(value, "language", language);
+    objvalues.push_back(value);
+  }
+
+  // references only
+  object.genref  = true;
+  object.gendata = false;
 
   for (i = 0; i < contentrefs.size(); i++)
   {
-    contentrefs[i]->Dump(handledmap, str, indent, eol, ind_level + 1);
+    object.obj = contentrefs[i];
+    objects.push_back(object);
   }
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Output additional XML attributes for this object
- */
-/*--------------------------------------------------------------------------------*/
-void ADMAudioProgramme::XMLAttributes(std::string& str) const
-{
-  ADMObject::XMLAttributes(str);
-
-  XMLAttribute(str, "language", language);
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Output additional XML data for this object
- */
-/*--------------------------------------------------------------------------------*/
-void ADMAudioProgramme::XMLData(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, std::vector<const ADMObject *>& reflist) const
-{
-  uint_t i;
-
-  XMLOpen(str, indent, eol, ind_level);
-
-  ADMObject::XMLData(str, indent, eol, ind_level, reflist);
-        
-  for (i = 0; i < contentrefs.size(); i++)
-  {
-    contentrefs[i]->XMLRef(str, indent, eol, ind_level + 1);
-    reflist.push_back(contentrefs[i]);
-  }
-
-  XMLClose(str, indent, eol, ind_level);
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -974,51 +736,34 @@ bool ADMAudioContent::Add(ADMAudioObject *obj)
 }
 
 /*--------------------------------------------------------------------------------*/
-/** Dump additional information about this object
+/** Return list of values/attributes from internal variables and list of referenced objects
  */
 /*--------------------------------------------------------------------------------*/
-void ADMAudioContent::DumpEx(std::map<const ADMObject *,bool>& handledmap, std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level) const
+void ADMAudioContent::GetValuesAndReferences(ADMVALUES& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full) const
 {
+  REFERENCEDOBJECT object;
+  ADMVALUE value;
   uint_t i;
 
-  Dump(str, indent, eol, ind_level, "language", language);
+  // populate list from parent object
+  ADMObject::GetValuesAndReferences(objvalues, objects, full);
+
+  // add values/attributes not held in 'values' to list
+  if (full || (language != ""))
+  {
+    SetAttribute(value, "language", language);
+    objvalues.push_back(value);
+  }
+
+  // references only
+  object.genref  = true;
+  object.gendata = false;
 
   for (i = 0; i < objectrefs.size(); i++)
   {
-    objectrefs[i]->Dump(handledmap, str, indent, eol, ind_level + 1);
+    object.obj = objectrefs[i];
+    objects.push_back(object);
   }
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Output additional XML attributes for this object
- */
-/*--------------------------------------------------------------------------------*/
-void ADMAudioContent::XMLAttributes(std::string& str) const
-{
-  ADMObject::XMLAttributes(str);
-
-  XMLAttribute(str, "language", language);
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Output additional XML data for this object
- */
-/*--------------------------------------------------------------------------------*/
-void ADMAudioContent::XMLData(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, std::vector<const ADMObject *>& reflist) const
-{
-  uint_t i;
-
-  XMLOpen(str, indent, eol, ind_level);
-        
-  ADMObject::XMLData(str, indent, eol, ind_level, reflist);
-
-  for (i = 0; i < objectrefs.size(); i++)
-  {
-    objectrefs[i]->XMLRef(str, indent, eol, ind_level + 1);
-    reflist.push_back(objectrefs[i]);
-  }
-
-  XMLClose(str, indent, eol, ind_level);
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -1146,81 +891,67 @@ void ADMAudioObject::UpdateLimits()
 }
 
 /*--------------------------------------------------------------------------------*/
-/** Dump additional information about this object
+/** Return list of values/attributes from internal variables and list of referenced objects
  */
 /*--------------------------------------------------------------------------------*/
-void ADMAudioObject::DumpEx(std::map<const ADMObject *,bool>& handledmap, std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level) const
+void ADMAudioObject::GetValuesAndReferences(ADMVALUES& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full) const
 {
+  REFERENCEDOBJECT object;
+  ADMVALUE value;
   uint_t i;
 
-  DumpTime(str, indent, eol, ind_level, "startTime", startTime);
-  DumpTime(str, indent, eol, ind_level, "duration", duration);
+  // populate list from parent object
+  ADMObject::GetValuesAndReferences(objvalues, objects, full);
 
-  Dump(str, indent, eol, ind_level,     "block channel",   GetChildrenStartChannel());
-  Dump(str, indent, eol, ind_level,     "block nchannels", GetChildrenChannelCount());
+  // add values/attributes not held in 'values' to list
+  if (startTime)
+  {
+    SetAttribute(value, "startTime", startTime);
+    objvalues.push_back(value);
+  }
+  if (duration)
+  {
+    SetAttribute(value, "duration",  duration);
+    objvalues.push_back(value);
+  }
 
-  DumpTime(str, indent, eol, ind_level, "block start",     GetChildrenStartTime());
-  DumpTime(str, indent, eol, ind_level, "block end",       GetChildrenEndTime());
+  if (full)
+  {
+    // full (non-XML) list
+    SetAttribute(value, "blockChannelStart", GetChildrenStartChannel());
+    objvalues.push_back(value);
+
+    SetAttribute(value, "blockChannelCount", GetChildrenChannelCount());
+    objvalues.push_back(value);
+
+    SetAttribute(value, "blockStartTime",    GetChildrenStartTime());
+    objvalues.push_back(value);
+
+    SetAttribute(value, "blockEndTime",      GetChildrenEndTime());
+    objvalues.push_back(value);
+  }
+
+  // references only
+  object.genref  = true;
+  object.gendata = false;
 
   for (i = 0; i < objectrefs.size(); i++)
   {
-    objectrefs[i]->Dump(handledmap, str, indent, eol, ind_level + 1);
+    object.obj = objectrefs[i];
+    objects.push_back(object);
   }
 
   for (i = 0; i < packformatrefs.size(); i++)
   {
-    packformatrefs[i]->Dump(handledmap, str, indent, eol, ind_level + 1);
+    object.obj = packformatrefs[i];
+    objects.push_back(object);
   }
 
   for (i = 0; i < trackrefs.size(); i++)
   {
-    trackrefs[i]->Dump(handledmap, str, indent, eol, ind_level + 1);
+    object.obj = trackrefs[i];
+    objects.push_back(object);
   }
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Output additional XML attributes for this object
- */
-/*--------------------------------------------------------------------------------*/
-void ADMAudioObject::XMLAttributes(std::string& str) const
-{
-  ADMObject::XMLAttributes(str);
-
-  XMLAttributeTime(str, "startTime", startTime);
-  XMLAttributeTime(str, "duration", duration);
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Output additional XML data for this object
- */
-/*--------------------------------------------------------------------------------*/
-void ADMAudioObject::XMLData(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, std::vector<const ADMObject *>& reflist) const
-{
-  uint_t i;
-
-  XMLOpen(str, indent, eol, ind_level);
-        
-  ADMObject::XMLData(str, indent, eol, ind_level, reflist);
-
-  for (i = 0; i < objectrefs.size(); i++)
-  {
-    objectrefs[i]->XMLRef(str, indent, eol, ind_level + 1);
-    reflist.push_back(objectrefs[i]);
-  }
-
-  for (i = 0; i < packformatrefs.size(); i++)
-  {
-    packformatrefs[i]->XMLRef(str, indent, eol, ind_level + 1);
-    reflist.push_back(packformatrefs[i]);
-  }
-
-  for (i = 0; i < trackrefs.size(); i++)
-  {
-    trackrefs[i]->XMLRef(str, indent, eol, ind_level + 1);
-    reflist.push_back(trackrefs[i]);
-  }
-
-  XMLClose(str, indent, eol, ind_level);
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -1258,65 +989,41 @@ void ADMAudioTrack::SetValues()
 }
 
 /*--------------------------------------------------------------------------------*/
-/** Dump additional information about this object
+/** Return list of values/attributes from internal variables and list of referenced objects
  */
 /*--------------------------------------------------------------------------------*/
-void ADMAudioTrack::DumpEx(std::map<const ADMObject *,bool>& handledmap, std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level) const
+void ADMAudioTrack::GetValuesAndReferences(ADMVALUES& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full) const
 {
+  REFERENCEDOBJECT object;
+  ADMVALUE value;
   uint_t i;
 
-  Dump(str, indent, eol, ind_level, "trackNum",   trackNum);
-  Dump(str, indent, eol, ind_level, "sampleRate", sampleRate);
-  Dump(str, indent, eol, ind_level, "bitDepth",   bitDepth);
+  // populate list from parent object
+  ADMObject::GetValuesAndReferences(objvalues, objects, full);
+
+  // add values/attributes not held in 'values' to list
+  if (full)
+  {
+    SetAttribute(value, "trackNum", trackNum); objvalues.push_back(value);
+  }
+  SetAttribute(value, "sampleRate", sampleRate); objvalues.push_back(value);
+  SetAttribute(value, "bitDepth",   bitDepth);   objvalues.push_back(value);
+
+  // only record references for later output
+  object.genref  = false;
+  object.gendata = false;
 
   for (i = 0; i < trackformatrefs.size(); i++)
   {
-    trackformatrefs[i]->Dump(handledmap, str, indent, eol, ind_level + 1);
+    object.obj = trackformatrefs[i];
+    objects.push_back(object);
   }
 
   for (i = 0; i < packformatrefs.size(); i++)
   {
-    packformatrefs[i]->Dump(handledmap, str, indent, eol, ind_level + 1);
+    object.obj = packformatrefs[i];
+    objects.push_back(object);
   }
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Output additional XML attributes for this object
- */
-/*--------------------------------------------------------------------------------*/
-void ADMAudioTrack::XMLAttributes(std::string& str) const
-{
-  ADMObject::XMLAttributes(str);
-
-  XMLAttribute(str, "sampleRate", sampleRate);
-  XMLAttribute(str, "bitDepth", bitDepth);
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Output additional XML data for this object
- */
-/*--------------------------------------------------------------------------------*/
-void ADMAudioTrack::XMLData(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, std::vector<const ADMObject *>& reflist) const
-{
-  uint_t i;
-
-  XMLOpen(str, indent, eol, ind_level);
-        
-  ADMObject::XMLData(str, indent, eol, ind_level, reflist);
-
-  for (i = 0; i < trackformatrefs.size(); i++)
-  {
-    //trackformatrefs[i]->XMLRef(str, indent, eol, ind_level + 1);
-    reflist.push_back(trackformatrefs[i]);
-  }
-
-  for (i = 0; i < packformatrefs.size(); i++)
-  {
-    //packformatrefs[i]->XMLRef(str, indent, eol, ind_level + 1);
-    reflist.push_back(packformatrefs[i]);
-  }
-
-  XMLClose(str, indent, eol, ind_level);
 }
 
 bool ADMAudioTrack::Add(ADMAudioTrackFormat *obj)
@@ -1414,61 +1121,42 @@ bool ADMAudioPackFormat::Add(ADMAudioChannelFormat *obj)
 }
 
 /*--------------------------------------------------------------------------------*/
-/** Dump additional information about this object
+/** Return list of values/attributes from internal variables and list of referenced objects
  */
 /*--------------------------------------------------------------------------------*/
-void ADMAudioPackFormat::DumpEx(std::map<const ADMObject *,bool>& handledmap, std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level) const
+void ADMAudioPackFormat::GetValuesAndReferences(ADMVALUES& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full) const
 {
+  REFERENCEDOBJECT object;
+  ADMVALUE         value;
   uint_t i;
 
-  DumpTime(str, indent, eol, ind_level, "start", GetChildrenStartTime());
-  DumpTime(str, indent, eol, ind_level, "end",   GetChildrenEndTime());
+  // populate list from parent object
+  ADMObject::GetValuesAndReferences(objvalues, objects, full);
+
+  if (full)
+  {
+    SetAttribute(value, "startTime", GetChildrenStartTime());
+    objvalues.push_back(value);
+
+    SetAttribute(value, "endTime",   GetChildrenEndTime());
+    objvalues.push_back(value);
+  }
+
+  // generate references only
+  object.genref  = true;
+  object.gendata = false;
 
   for (i = 0; i < channelformatrefs.size(); i++)
   {
-    channelformatrefs[i]->Dump(handledmap, str, indent, eol, ind_level + 1);
+    object.obj = channelformatrefs[i];
+    objects.push_back(object);
   }
 
   for (i = 0; i < packformatrefs.size(); i++)
   {
-    packformatrefs[i]->Dump(handledmap, str, indent, eol, ind_level + 1);
+    object.obj = packformatrefs[i];
+    objects.push_back(object);
   }
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Output additional XML attributes for this object
- */
-/*--------------------------------------------------------------------------------*/
-void ADMAudioPackFormat::XMLAttributes(std::string& str) const
-{
-  ADMObject::XMLAttributes(str);
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Output additional XML data for this object
- */
-/*--------------------------------------------------------------------------------*/
-void ADMAudioPackFormat::XMLData(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, std::vector<const ADMObject *>& reflist) const
-{
-  uint_t i;
-
-  XMLOpen(str, indent, eol, ind_level);
-
-  ADMObject::XMLData(str, indent, eol, ind_level, reflist);
-
-  for (i = 0; i < channelformatrefs.size(); i++)
-  {
-    channelformatrefs[i]->XMLRef(str, indent, eol, ind_level + 1);
-    reflist.push_back(channelformatrefs[i]);
-  }
-
-  for (i = 0; i < packformatrefs.size(); i++)
-  {
-    packformatrefs[i]->XMLRef(str, indent, eol, ind_level + 1);
-    reflist.push_back(packformatrefs[i]);
-  }
-    
-  XMLClose(str, indent, eol, ind_level);
 }
 
 bool ADMAudioPackFormat::Add(ADMAudioPackFormat *obj)
@@ -1608,72 +1296,54 @@ void ADMAudioStreamFormat::UpdateLimits()
 }
 
 /*--------------------------------------------------------------------------------*/
-/** Dump additional information about this object
+/** Return list of values/attributes from internal variables and list of referenced objects
  */
 /*--------------------------------------------------------------------------------*/
-void ADMAudioStreamFormat::DumpEx(std::map<const ADMObject *,bool>& handledmap, std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level) const
+void ADMAudioStreamFormat::GetValuesAndReferences(ADMVALUES& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full) const
 {
+  REFERENCEDOBJECT object;
+  ADMVALUE value;
   uint_t i;
 
-  DumpTime(str, indent, eol, ind_level, "start", GetChildrenStartTime());
-  DumpTime(str, indent, eol, ind_level, "end",   GetChildrenEndTime());
+  // populate list from parent object
+  ADMObject::GetValuesAndReferences(objvalues, objects, full);
 
-  Dump(str, indent, eol, ind_level, "formatLabel", formatLabel);
-  Dump(str, indent, eol, ind_level, "formatDefinition", formatDefinition);
+  // add values/attributes not held in 'values' to list
+  if (full || (formatLabel != ""))
+  {
+    SetAttribute(value, "formatLabel", formatLabel);
+    objvalues.push_back(value);
+  }
+  if (full || (formatDefinition != ""))
+  {
+    SetAttribute(value, "formatDefinition", formatDefinition);
+    objvalues.push_back(value);
+  }
+
+  if (full)
+  {
+    SetAttribute(value, "startTime", GetChildrenStartTime());
+    objvalues.push_back(value);
+
+    SetAttribute(value, "endTime",   GetChildrenEndTime());
+    objvalues.push_back(value);
+  }
+
+  // generate references only
+  object.genref  = true;
+  object.gendata = false;
 
   for (i = 0; i < channelformatrefs.size(); i++)
   {
-    channelformatrefs[i]->Dump(handledmap, str, indent, eol, ind_level + 1);
+    object.obj = channelformatrefs[i];
+    objects.push_back(object);
   }
 
   for (i = 0; i < packformatrefs.size(); i++)
   {
-    packformatrefs[i]->Dump(handledmap, str, indent, eol, ind_level + 1);
+    object.obj = packformatrefs[i];
+    objects.push_back(object);
   }
-
-  for (i = 0; i < trackformatrefs.size(); i++)
-  {
-    trackformatrefs[i]->Dump(handledmap, str, indent, eol, ind_level + 1);
-  }
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Output additional XML attributes for this object
- */
-/*--------------------------------------------------------------------------------*/
-void ADMAudioStreamFormat::XMLAttributes(std::string& str) const
-{
-  ADMObject::XMLAttributes(str);
-
-  XMLAttribute(str, "formatLabel",      formatLabel);
-  XMLAttribute(str, "formatDefinition", formatDefinition);
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Output additional XML data for this object
- */
-/*--------------------------------------------------------------------------------*/
-void ADMAudioStreamFormat::XMLData(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, std::vector<const ADMObject *>& reflist) const
-{
-  uint_t i;
-
-  XMLOpen(str, indent, eol, ind_level);
-        
-  ADMObject::XMLData(str, indent, eol, ind_level, reflist);
-
-  for (i = 0; i < channelformatrefs.size(); i++)
-  {
-    channelformatrefs[i]->XMLRef(str, indent, eol, ind_level + 1);
-    reflist.push_back(channelformatrefs[i]);
-  }
-
-  for (i = 0; i < packformatrefs.size(); i++)
-  {
-    packformatrefs[i]->XMLRef(str, indent, eol, ind_level + 1);
-    reflist.push_back(packformatrefs[i]);
-  }
-
-  XMLClose(str, indent, eol, ind_level);
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -1709,53 +1379,39 @@ void ADMAudioTrackFormat::SetValues()
 }
 
 /*--------------------------------------------------------------------------------*/
-/** Dump additional information about this object
+/** Return list of values/attributes from internal variables and list of referenced objects
  */
 /*--------------------------------------------------------------------------------*/
-void ADMAudioTrackFormat::DumpEx(std::map<const ADMObject *,bool>& handledmap, std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level) const
+void ADMAudioTrackFormat::GetValuesAndReferences(ADMVALUES& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full) const
 {
+  REFERENCEDOBJECT object;
+  ADMVALUE value;
   uint_t i;
 
-  Dump(str, indent, eol, ind_level, "formatLabel", formatLabel);
-  Dump(str, indent, eol, ind_level, "formatDefinition", formatDefinition);
+  // populate list from parent object
+  ADMObject::GetValuesAndReferences(objvalues, objects, full);
+
+  // add values/attributes not held in 'values' to list
+  if (full || (formatLabel != ""))
+  {
+    SetAttribute(value, "formatLabel", formatLabel);
+    objvalues.push_back(value);
+  }
+  if (full || (formatDefinition != ""))
+  {
+    SetAttribute(value, "formatDefinition", formatDefinition);
+    objvalues.push_back(value);
+  }
+
+  // generate references only
+  object.genref  = true;
+  object.gendata = false;
 
   for (i = 0; i < streamformatrefs.size(); i++)
   {
-    streamformatrefs[i]->Dump(handledmap, str, indent, eol, ind_level + 1);
+    object.obj = streamformatrefs[i];
+    objects.push_back(object);
   }
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Output additional XML attributes for this object
- */
-/*--------------------------------------------------------------------------------*/
-void ADMAudioTrackFormat::XMLAttributes(std::string& str) const
-{
-  ADMObject::XMLAttributes(str);
-
-  XMLAttribute(str, "formatLabel",      formatLabel);
-  XMLAttribute(str, "formatDefinition", formatDefinition);
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Output additional XML data for this object
- */
-/*--------------------------------------------------------------------------------*/
-void ADMAudioTrackFormat::XMLData(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, std::vector<const ADMObject *>& reflist) const
-{
-  uint_t i;
-
-  XMLOpen(str, indent, eol, ind_level);
-        
-  ADMObject::XMLData(str, indent, eol, ind_level, reflist);
-
-  for (i = 0; i < streamformatrefs.size(); i++)
-  {
-    streamformatrefs[i]->XMLRef(str, indent, eol, ind_level + 1);
-    reflist.push_back(streamformatrefs[i]);
-  }
-
-  XMLClose(str, indent, eol, ind_level);
 }
 
 bool ADMAudioTrackFormat::Add(ADMAudioStreamFormat *obj)
@@ -1836,50 +1492,36 @@ bool ADMAudioChannelFormat::Add(ADMAudioBlockFormat *obj)
 }
 
 /*--------------------------------------------------------------------------------*/
-/** Dump additional information about this object
+/** Return list of values/attributes from internal variables and list of referenced objects
  */
 /*--------------------------------------------------------------------------------*/
-void ADMAudioChannelFormat::DumpEx(std::map<const ADMObject *,bool>& handledmap, std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level) const
+void ADMAudioChannelFormat::GetValuesAndReferences(ADMVALUES& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full) const
 {
+  REFERENCEDOBJECT object;
+  ADMVALUE         value;
   uint_t i;
 
-  DumpTime(str, indent, eol, ind_level, "start", GetChildrenStartTime());
-  DumpTime(str, indent, eol, ind_level, "end",   GetChildrenEndTime());
+  // populate list from parent object
+  ADMObject::GetValuesAndReferences(objvalues, objects, full);
+
+  if (full)
+  {
+    SetAttribute(value, "startTime", GetChildrenStartTime());
+    objvalues.push_back(value);
+
+    SetAttribute(value, "endTime",   GetChildrenEndTime());
+    objvalues.push_back(value);
+  }
+
+  // generate contained data entries
+  object.genref  = false;
+  object.gendata = true;
 
   for (i = 0; i < blockformatrefs.size(); i++)
   {
-    blockformatrefs[i]->Dump(handledmap, str, indent, eol, ind_level + 1);
+    object.obj = blockformatrefs[i];
+    objects.push_back(object);
   }
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Output additional XML attributes for this object
- */
-/*--------------------------------------------------------------------------------*/
-void ADMAudioChannelFormat::XMLAttributes(std::string& str) const
-{
-  ADMObject::XMLAttributes(str);
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Output additional XML data for this object
- */
-/*--------------------------------------------------------------------------------*/
-void ADMAudioChannelFormat::XMLData(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, std::vector<const ADMObject *>& reflist) const
-{
-  uint_t i;
-
-  XMLOpen(str, indent, eol, ind_level);
-
-  ADMObject::XMLData(str, indent, eol, ind_level, reflist);
-
-  for (i = 0; i < blockformatrefs.size(); i++)
-  {
-    if (i) Printf(str, "%s", eol.c_str());
-    blockformatrefs[i]->XMLData(str, indent, eol, ind_level + 1, reflist);
-  }
-        
-  XMLClose(str, indent, eol, ind_level);
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -1961,81 +1603,65 @@ void ADMAudioBlockFormat::SetPosition(const Position& pos, const ParameterSet *s
 }
 
 /*--------------------------------------------------------------------------------*/
-/** Dump additional information about this object
+/** Return list of values/attributes from internal variables and list of referenced objects
  */
 /*--------------------------------------------------------------------------------*/
-void ADMAudioBlockFormat::DumpEx(std::map<const ADMObject *,bool>& handledmap, std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level) const
+void ADMAudioBlockFormat::GetValuesAndReferences(ADMVALUES& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full) const
 {
-  UNUSED_PARAMETER(handledmap);
+  ADMVALUE value;
 
-  DumpTime(str, indent, eol, ind_level, "rtime", rtime);
-  DumpTime(str, indent, eol, ind_level, "duration", duration);
+  UNUSED_PARAMETER(objects);
 
-  Printf(str, "%sposition %s %s%s", CreateIndent(indent, ind_level + 1).c_str(), position.ToString().c_str(), supplement.ToString().c_str(), eol.c_str());
-}
+  // populate list from parent object
+  ADMObject::GetValuesAndReferences(objvalues, objects, full);
 
-/*--------------------------------------------------------------------------------*/
-/** Output additional XML attributes for this object
- */
-/*--------------------------------------------------------------------------------*/
-void ADMAudioBlockFormat::XMLAttributes(std::string& str) const
-{
-  ADMObject::XMLAttributes(str);
-
-  XMLAttributeTime(str, "rtime", rtime);
-  XMLAttributeTime(str, "duration", duration);
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Output additional XML data for this object
- */
-/*--------------------------------------------------------------------------------*/
-void ADMAudioBlockFormat::XMLData(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, std::vector<const ADMObject *>& reflist) const
-{
-  XMLOpen(str, indent, eol, ind_level);
-
-  ADMObject::XMLData(str, indent, eol, ind_level, reflist);
+  // add values/attributes not held in 'values' to list
+  if (full || rtime)
+  {
+    SetAttribute(value, "rtime", rtime);
+    objvalues.push_back(value);
+  }
+  if (full || duration)
+  {
+    SetAttribute(value, "duration", duration);
+    objvalues.push_back(value);
+  }
 
   if (position.polar)
   {
-    Printf(str, "%s<position coordinate=\"azimuth\">%0.6f</position>%s",
-           CreateIndent(indent, ind_level + 1).c_str(),
-           position.pos.az,
-           eol.c_str());
-    Printf(str, "%s<position coordinate=\"elevation\">%0.6f</position>%s",
-           CreateIndent(indent, ind_level + 1).c_str(),
-           position.pos.el,
-           eol.c_str());
-    Printf(str, "%s<position coordinate=\"distance\">%0.6f</position>%s",
-           CreateIndent(indent, ind_level + 1).c_str(),
-           position.pos.d,
-           eol.c_str());
+    SetValue(value, "position", position.pos.az);
+    SetValueAttribute(value, "coordinate", "azimuth");
+    objvalues.push_back(value);
+
+    SetValue(value, "position", position.pos.el);
+    SetValueAttribute(value, "coordinate", "elevation");
+    objvalues.push_back(value);
+
+    SetValue(value, "position", position.pos.d);
+    SetValueAttribute(value, "coordinate", "distance");
+    objvalues.push_back(value);
   }
   else
   {
-    Printf(str, "%s<position coordinate=\"x\">%0.6f</position>%s",
-           CreateIndent(indent, ind_level + 1).c_str(),
-           position.pos.x,
-           eol.c_str());
-    Printf(str, "%s<position coordinate=\"y\">%0.6f</position>%s",
-           CreateIndent(indent, ind_level + 1).c_str(),
-           position.pos.y,
-           eol.c_str());
-    Printf(str, "%s<position coordinate=\"z\">%0.6f</position>%s",
-           CreateIndent(indent, ind_level + 1).c_str(),
-           position.pos.z,
-           eol.c_str());
+    SetValue(value, "position", position.pos.x);
+    SetValueAttribute(value, "coordinate", "x");
+    objvalues.push_back(value);
+
+    SetValue(value, "position", position.pos.y);
+    SetValueAttribute(value, "coordinate", "y");
+    objvalues.push_back(value);
+
+    SetValue(value, "position", position.pos.z);
+    SetValueAttribute(value, "coordinate", "z");
+    objvalues.push_back(value);
   }
+
   bool diffuse;
   if (supplement.Get("diffuse", diffuse))
   {
-    Printf(str, "%s<diffuse>%s</diffuse>%s",
-           CreateIndent(indent, ind_level + 1).c_str(),
-           diffuse ? "true" : "false",
-           eol.c_str());
+    SetValue(value, "diffuse", diffuse ? "true" : "false");
+    objvalues.push_back(value);
   }
-
-  XMLClose(str, indent, eol, ind_level);
 }
 
 /*--------------------------------------------------------------------------------*/
