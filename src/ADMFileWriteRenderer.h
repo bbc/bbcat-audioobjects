@@ -1,7 +1,7 @@
 #ifndef __ADM_FILE_WRITE_RENDERER__
 #define __ADM_FILE_WRITE_RENDERER__
 
-#include <aplibs-render/SoundRenderer.h>
+#include <bbcat-render/SoundRenderer.h>
 
 #include "ADMRIFFFile.h"
 

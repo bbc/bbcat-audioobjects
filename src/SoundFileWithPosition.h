@@ -3,9 +3,9 @@
 
 #include <vector>
 
-#include <aplibs-dsp/misc.h>
-#include <aplibs-dsp/PositionCursor.h>
-#include <aplibs-dsp/3DPosition.h>
+#include <bbcat-base/misc.h>
+#include <bbcat-base/PositionCursor.h>
+#include <bbcat-base/3DPosition.h>
 
 #include "SoundFileAttributes.h"
 

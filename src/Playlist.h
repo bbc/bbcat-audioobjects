@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include <aplibs-dsp/misc.h>
+#include <bbcat-base/misc.h>
 
 BBC_AUDIOTOOLBOX_START
 

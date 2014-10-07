@@ -5,7 +5,7 @@
 #include <errno.h>
 
 #define DEBUG_LEVEL 1
-#include <aplibs-dsp/ByteSwap.h>
+#include <bbcat-base/ByteSwap.h>
 
 #include "RIFFChunk.h"
 #include "RIFFFile.h"

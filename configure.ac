@@ -1,14 +1,14 @@
 AC_PREREQ([2.68])
-AC_INIT([APLIBS_AUDIOOBJECTS],[0.1.0.0])
+AC_INIT([BBCAT_AUDIOOBJECTS],[0.1.0.0])
 
-AS_NANO(APLIBS_AUDIOOBJECTS_CVS=no,APLIBS_AUDIOOBJECTS_CVS=yes)
+AS_NANO(BBCAT_AUDIOOBJECTS_CVS=no,BBCAT_AUDIOOBJECTS_CVS=yes)
 
 AM_INIT_AUTOMAKE([1.11 silent-rules])
 AM_SILENT_RULES([yes])
 
 # Version number that will be appended to the library filename
-APLIBS_AUDIOOBJECTS_MAJORMINOR=0.1
-AC_SUBST(APLIBS_AUDIOOBJECTS_MAJORMINOR)
+BBCAT_AUDIOOBJECTS_MAJORMINOR=0.1
+AC_SUBST(BBCAT_AUDIOOBJECTS_MAJORMINOR)
 
 AC_CONFIG_HEADERS([config.h])
 
@@ -18,8 +18,8 @@ AC_CONFIG_HEADERS([config.h])
 # - interfaces added -> increment AGE also
 # - interfaces removed -> set AGE = 0
 #    (AGE is the number of previous values of CURRENT that are compatible)
-APLIBS_AUDIOOBJECTS_LIBVERSION="1:0:0"
-AC_SUBST(APLIBS_AUDIOOBJECTS_LIBVERSION)
+BBCAT_AUDIOOBJECTS_LIBVERSION="1:0:0"
+AC_SUBST(BBCAT_AUDIOOBJECTS_LIBVERSION)
 
 LT_PREREQ([2.2.6])
 LT_INIT(disable-static win32-dll)
@@ -34,7 +34,7 @@ ACLOCAL_AMFLAGS="-I m4 $ACLOCAL_AMFLAGS"
 AC_SUBST(ACLOCAL_AMFLAGS)
 
 DX_DOXYGEN_FEATURE(ON)
-DX_INIT_DOXYGEN(aplibs-audioobjects, doxygen.cfg)
+DX_INIT_DOXYGEN(bbcat-audioobjects, doxygen.cfg)
 
 # Check if we should disable optimization  (./configure --disable-opt)
 AC_MSG_CHECKING(whether to disable optimization)
@@ -49,11 +49,18 @@ fi
 AC_SUBST(CFLAGS)
 AC_SUBST(CXXFLAGS)
 
-dnl aplibs-dsp is required
-APLIBS_DSP_VER="0.1.1.0"
-PKG_CHECK_MODULES(APLIBS_DSP, aplibs-dsp-0.1 >= $APLIBS_DSP_VER, HAVE_APLIBS_DSP=yes, HAVE_APLIBS_DSP=no)
-if test "x${HAVE_APLIBS_DSP}" != xyes ; then
-  AC_MSG_ERROR([aplibs-dsp-0.1 >= $APLIBS_DSP_VER is required])
+dnl bbcat-base is required
+BBCAT_BASE_VER="0.1.0.0"
+PKG_CHECK_MODULES(BBCAT_BASE, bbcat-base-0.1 >= $BBCAT_BASE_VER, HAVE_BBCAT_BASE=yes, HAVE_BBCAT_BASE=no)
+if test "x${HAVE_BBCAT_BASE}" != xyes ; then
+  AC_MSG_ERROR([bbcat-base-0.1 >= $BBCAT_BASE_VER is required])
+fi
+
+dnl bbcat-dsp is required
+BBCAT_DSP_VER="0.1.0.0"
+PKG_CHECK_MODULES(BBCAT_DSP, bbcat-dsp-0.1 >= $BBCAT_DSP_VER, HAVE_BBCAT_DSP=yes, HAVE_BBCAT_DSP=no)
+if test "x${HAVE_BBCAT_DSP}" != xyes ; then
+  AC_MSG_ERROR([bbcat-dsp-0.1 >= $BBCAT_DSP_VER is required])
 fi
 
 # Check if we should disable render library requirement
@@ -63,11 +70,11 @@ if test "x${ENABLE_RENDERING}" = "xyes"; then
   AC_MSG_RESULT(yes)
   CFLAGS="$CFLAGS -DENABLE_RENDERING=1"
 
-  dnl aplibs-render is required
-  APLIBS_RENDER_VER="0.1.0.0"
-  PKG_CHECK_MODULES(APLIBS_RENDER, aplibs-render-0.1 >= $APLIBS_RENDER_VER, HAVE_APLIBS_RENDER=yes, HAVE_APLIBS_RENDER=no)
-  if test "x${HAVE_APLIBS_RENDER}" != xyes ; then
-    AC_MSG_ERROR([aplibs-render-0.1 >= $APLIBS_RENDER_VER is required])
+  dnl bbcat-render is required
+  BBCAT_RENDER_VER="0.1.0.0"
+  PKG_CHECK_MODULES(BBCAT_RENDER, bbcat-render-0.1 >= $BBCAT_RENDER_VER, HAVE_BBCAT_RENDER=yes, HAVE_BBCAT_RENDER=no)
+  if test "x${HAVE_BBCAT_RENDER}" != xyes ; then
+    AC_MSG_ERROR([bbcat-render-0.1 >= $BBCAT_RENDER_VER is required])
   fi
 else
   AC_MSG_RESULT(no)
@@ -78,7 +85,7 @@ AM_CONDITIONAL(ENABLE_RENDERING, test "x${ENABLE_RENDERING}" = "xyes")
 # Check for GPL support
 # only need ENABLE_GPL for inclusion of extra files, C flags are handled automatically!
 EXISTING_CFLAGS="$CFLAGS"
-CFLAGS="$CFLAGS $APLIBS_DSP_CFLAGS"
+CFLAGS="$CFLAGS $BBCAT_DSP_CFLAGS"
 
 # Check for ENABLE_GPL
 AC_MSG_CHECKING(whether GPL code is supported)
@@ -106,37 +113,33 @@ if test "x$ENABLE_GPL" = "xyes"; then
   fi
 fi
 
-# Checks for typedefs, structures, and compiler characteristics.
-AC_TYPE_SIZE_T
-AX_CREATE_STDINT_H([src/aplibs-audioobjects-stdint.h])
+AC_APPEND_SUPPORTED_CFLAGS(BBCAT_AUDIOOBJECTS_CFLAGS, [-Wall])
+AC_APPEND_SUPPORTED_CFLAGS(BBCAT_AUDIOOBJECTS_CFLAGS, [-Werror])
+AC_APPEND_SUPPORTED_CFLAGS(BBCAT_AUDIOOBJECTS_CFLAGS, [-Wextra])
+AC_APPEND_SUPPORTED_CFLAGS(BBCAT_AUDIOOBJECTS_CFLAGS, [-msse2])
 
-AC_APPEND_SUPPORTED_CFLAGS(APLIBS_AUDIOOBJECTS_CFLAGS, [-Wall])
-AC_APPEND_SUPPORTED_CFLAGS(APLIBS_AUDIOOBJECTS_CFLAGS, [-Werror])
-AC_APPEND_SUPPORTED_CFLAGS(APLIBS_AUDIOOBJECTS_CFLAGS, [-Wextra])
-AC_APPEND_SUPPORTED_CFLAGS(APLIBS_AUDIOOBJECTS_CFLAGS, [-msse2])
+BBCAT_AUDIOOBJECTS_CFLAGS="$BBCAT_AUDIOOBJECTS_CFLAGS -I\$(top_srcdir)"
+AC_SUBST(BBCAT_AUDIOOBJECTS_CFLAGS)
 
-APLIBS_AUDIOOBJECTS_CFLAGS="$APLIBS_AUDIOOBJECTS_CFLAGS -I\$(top_srcdir)"
-AC_SUBST(APLIBS_AUDIOOBJECTS_CFLAGS)
+BBCAT_AUDIOOBJECTS_LDFLAGS=""
+AC_APPEND_SUPPORTED_LDFLAGS(BBCAT_AUDIOOBJECTS_LDFLAGS, [-Wl,--no-undefined])
+AC_SUBST(BBCAT_AUDIOOBJECTS_LDFLAGS)
 
-APLIBS_AUDIOOBJECTS_LDFLAGS=""
-AC_APPEND_SUPPORTED_LDFLAGS(APLIBS_AUDIOOBJECTS_LDFLAGS, [-Wl,--no-undefined])
-AC_SUBST(APLIBS_AUDIOOBJECTS_LDFLAGS)
+BBCAT_AUDIOOBJECTS_LIBS="\$(top_builddir)/src/libap-audioobjects-$BBCAT_AUDIOOBJECTS_MAJORMINOR.la"
+AC_SUBST(BBCAT_AUDIOOBJECTS_LIBS)
 
-APLIBS_AUDIOOBJECTS_LIBS="\$(top_builddir)/src/libap-audioobjects-$APLIBS_AUDIOOBJECTS_MAJORMINOR.la"
-AC_SUBST(APLIBS_AUDIOOBJECTS_LIBS)
-
-AC_SUBST(APLIBS_AUDIOOBJECTS_PKG_DEPS)
+AC_SUBST(BBCAT_AUDIOOBJECTS_PKG_DEPS)
 
 pkgconfigdir="\$(libdir)/pkgconfig"
 AC_SUBST(pkgconfigdir)
 
-aplibsaudioobjectsbindir="\$(libdir)/aplibs-audioobjects/"
-AC_SUBST(aplibsaudioobjectsbindir)
+bbcataudioobjectsbindir="\$(libdir)/bbcat-audioobjects/"
+AC_SUBST(bbcataudioobjectsbindir)
 
 AC_CONFIG_FILES([
 Makefile
-aplibs-audioobjects-uninstalled.pc
-aplibs-audioobjects.pc
+bbcat-audioobjects-uninstalled.pc
+bbcat-audioobjects.pc
 src/Makefile
 ])
 AC_OUTPUT

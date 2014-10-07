@@ -1,7 +1,7 @@
 #ifndef __FILE_POSITION_GENERATOR__
 #define __FILE_POSITION_GENERATOR__
 
-#include <aplibs-render/PositionGenerator.h>
+#include <bbcat-render/PositionGenerator.h>
 
 BBC_AUDIOTOOLBOX_START
 

@@ -5,8 +5,9 @@ Audio Objects handling library
 Dependencies
 
 apf - git@git0.rd.bbc.co.uk:apf/apf.git
-aplibs-dsp - git@git0.rd.bbc.co.uk:aplibs/aplibs-dsp.git
-aplibs-render - git@git0.rd.bbc.co.uk:aplibs/aplibs-render.git
+bbcat-base - git@git0.rd.bbc.co.uk:aplibs/bbcat-base.git
+bbcat-dsp - git@git0.rd.bbc.co.uk:aplibs/bbcat-dsp.git
+bbcat-render - git@git0.rd.bbc.co.uk:aplibs/bbcat-render.git
 netcdf-bbc - git@git0.rd.bbc.co.uk:aplibs/netcdf-bbc.git (for SOFA file support)
 netcdf-cxx4-bbc - git@git0.rd.bbc.co.uk:aplibs/netcdf-cxx4-bbc.git (for SOFA file support)
 
@@ -38,14 +39,8 @@ src/ADMObjects.h                        |
 src/ADMRIFFFile.cpp                     | ADM RIFF (BWF) file support
 src/ADMRIFFFile.h                       |
 
-src/crc32.cpp                           | 32-bit CRC
-src/crc32.h                             |
-
 src/FilePositionGenerator.cpp           | Position generator using a file as a source
 src/FilePositionGenerator.h             |
-
-src/mt19937ar.c                         | Implementation of the MT19937AR PRNG
-src/mt19937ar.h                         |
 
 src/PlaybackEngine.cpp                  | File playback engine derived from AudioPositionProcessor 
 src/PlaybackEngine.h                    |

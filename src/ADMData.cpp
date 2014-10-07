@@ -6,7 +6,7 @@
 #include <algorithm>
 
 #define DEBUG_LEVEL 1
-#include <aplibs-dsp/EnhancedFile.h>
+#include <bbcat-base/EnhancedFile.h>
 
 #include "ADMData.h"
 #include "RIFFChunk_Definitions.h"

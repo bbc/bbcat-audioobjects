@@ -5,7 +5,7 @@
 #include <map>
 #include <string>
 
-#include <aplibs-dsp/misc.h>
+#include <bbcat-base/misc.h>
 
 #include "SoundFileAttributes.h"
 

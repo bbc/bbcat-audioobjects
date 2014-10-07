@@ -9,7 +9,7 @@
 #include <algorithm>
 
 #define DEBUG_LEVEL 1
-#include <aplibs-dsp/ByteSwap.h>
+#include <bbcat-base/ByteSwap.h>
 
 #include "ADMObjects.h"
 #include "ADMData.h"

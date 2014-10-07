@@ -1,7 +1,7 @@
 #ifndef __RIFF_CHUNK_DEFINITIONS__
 #define __RIFF_CHUNK_DEFINITIONS__
 
-#include <aplibs-dsp/misc.h>
+#include <bbcat-base/misc.h>
 
 BBC_AUDIOTOOLBOX_START
 

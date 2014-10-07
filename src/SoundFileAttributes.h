@@ -3,11 +3,11 @@
 
 #include <string>
 
-#include <aplibs-dsp/misc.h>
-#include <aplibs-dsp/EnhancedFile.h>
+#include <bbcat-base/misc.h>
+#include <bbcat-base/EnhancedFile.h>
+#include <bbcat-base/UniversalTime.h>
 
-#include <aplibs-dsp/SoundFormatConversions.h>
-#include <aplibs-dsp/UniversalTime.h>
+#include <bbcat-dsp/SoundFormatConversions.h>
 
 BBC_AUDIOTOOLBOX_START
 

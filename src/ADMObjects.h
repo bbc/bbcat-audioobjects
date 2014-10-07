@@ -7,8 +7,8 @@
 #include <vector>
 #include <map>
 
-#include <aplibs-dsp/misc.h>
-#include <aplibs-dsp/PositionCursor.h>
+#include <bbcat-base/misc.h>
+#include <bbcat-base/PositionCursor.h>
 
 BBC_AUDIOTOOLBOX_START
 

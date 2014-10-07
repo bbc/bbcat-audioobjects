@@ -3,9 +3,9 @@
 
 #include <vector>
 
-#include <aplibs-dsp/ThreadLock.h>
-#include <aplibs-render/SoundRenderer.h>
-#include <aplibs-render/AudioPositionProcessor.h>
+#include <bbcat-base/ThreadLock.h>
+#include <bbcat-render/SoundRenderer.h>
+#include <bbcat-render/AudioPositionProcessor.h>
 
 #include "Playlist.h"
 #include "SoundFileAttributes.h"
