@@ -361,6 +361,10 @@ const std::string *ADMObject::GetAttribute(const ADMVALUE& value, const std::str
 
 /*--------------------------------------------------------------------------------*/
 /** Remove and delete value from internal list of values
+ *
+ * @param value address of value to be erased
+ *
+ * @note value passed MUST be the address of the desired item
  */
 /*--------------------------------------------------------------------------------*/
 void ADMObject::EraseValue(const ADMVALUE *value)
@@ -371,6 +375,7 @@ void ADMObject::EraseValue(const ADMVALUE *value)
   {
     const ADMVALUE& value1 = *it;
 
+    // note address comparison not value comparison!
     if (value == &value1)
     {
       values.erase(it);

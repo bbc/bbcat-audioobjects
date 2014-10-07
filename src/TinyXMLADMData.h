@@ -11,7 +11,6 @@ BBC_AUDIOTOOLBOX_START
 /** An implementation of ADMData using the TinyXML library (GPL)
  */
 /*--------------------------------------------------------------------------------*/
-
 class TinyXMLADMData : public ADMData
 {
 public:

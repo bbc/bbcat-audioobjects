@@ -11,6 +11,17 @@
 
 BBC_AUDIOTOOLBOX_START
 
+/*--------------------------------------------------------------------------------*/
+/** ADM data class
+ *
+ * This class forms the base class of ADM reading and writing
+ *
+ * It CANNOT, by itself decode the XML from axml chunks, that must be done by a derived class.
+ *
+ * It CAN, however, generate XML (using a very simple method) from a manually created ADM
+ *
+ */
+/*--------------------------------------------------------------------------------*/
 class ADMData
 {
 public:
@@ -31,6 +42,8 @@ public:
    * @param axmllength length of axml data
    *
    * @return true if data read successfully
+   *
+   * @note this requires facilities from a derived class
    */
   /*--------------------------------------------------------------------------------*/
   bool Set(const uint8_t *chna, const uint8_t *axml, uint_t axmllength);
@@ -267,7 +280,7 @@ public:
   /*--------------------------------------------------------------------------------*/
   /** Get list of objects of specified type
    *
-   * @param type audioXXX object type
+   * @param type audioXXX object type (ADMAudioXXX::Type)
    * @param list list to be populated
    */
   /*--------------------------------------------------------------------------------*/
@@ -276,6 +289,9 @@ public:
   /*--------------------------------------------------------------------------------*/
   /** Get ADM object by ID (with optional object type specified)
    *
+   * @param id object ID
+   * @param type audioXXX object type (ADMAudioXXX::Type)
+   *
    * @return object or NULL
    */
   /*--------------------------------------------------------------------------------*/
@@ -283,6 +299,9 @@ public:
 
   /*--------------------------------------------------------------------------------*/
   /** Get ADM object by Name (with optional object type specified)
+   *
+   * @param name object name
+   * @param type audioXXX object type (ADMAudioXXX::Type)
    *
    * @return object or NULL
    */
@@ -321,8 +340,24 @@ public:
   /*--------------------------------------------------------------------------------*/
   virtual void GenerateXML(std::string& str, const std::string& indent = "\t", const std::string& eol = "\n", uint_t ind_level = 0) const;
 
+  /*--------------------------------------------------------------------------------*/
+  /** Generate a textual list of references 
+   *
+   * @param str string to be modified
+   */
+  /*--------------------------------------------------------------------------------*/
   virtual void GenerateReferenceList(std::string& str);
 
+  /*--------------------------------------------------------------------------------*/
+  /** Create a set of cursors, one for each track, to allow tracking of position over time
+   *
+   * @param list list to be populated (items MUST be deleted by caller)
+   * @param channel start channel (defaults to first channel)
+   * @param nchannels number of channels (defaults to maximum number of channels)
+   *
+   * @note PositionCursor objects allow the list of positions within the ADM to be treated like an eventlist 
+   */
+  /*--------------------------------------------------------------------------------*/
   virtual void CreateCursors(std::vector<PositionCursor *>& list, uint_t channel = 0, uint_t nchannels = ~0) const;
 
   /*--------------------------------------------------------------------------------*/

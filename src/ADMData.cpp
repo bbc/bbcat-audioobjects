@@ -166,11 +166,13 @@ uint8_t *ADMData::GetChna(uint32_t& len) const
 {
   CHNA_CHUNK *p = NULL;
 
+  // calculate size of chna chunk
   len = sizeof(*p) + tracklist.size() * sizeof(p->UIDs[0]);
   if ((p = (CHNA_CHUNK *)calloc(1, len)) != NULL)
   {
     uint_t i;
 
+    // populate structure
     p->TrackCount = tracklist.size();
     p->UIDCount   = tracklist.size();
         
@@ -178,15 +180,18 @@ uint8_t *ADMData::GetChna(uint32_t& len) const
     {
       const ADMAudioTrack *track = tracklist[i];
 
+      // set track number and UID
       p->UIDs[i].TrackNum = track->GetTrackNum();
       strncpy(p->UIDs[i].UID, track->GetID().c_str(), sizeof(p->UIDs[i].UID));
 
+      // set trackformat references
       const ADMAudioTrackFormat *trackref = NULL;
       if (track->GetTrackFormatRefs().size() && ((trackref = track->GetTrackFormatRefs()[0]) != NULL))
       {
         strncpy(p->UIDs[i].TrackRef, trackref->GetID().c_str(), sizeof(p->UIDs[i].TrackRef));
       }
 
+      // set packformat references
       const ADMAudioPackFormat *packref = NULL;
       if (track->GetPackFormatRefs().size() && ((packref = track->GetPackFormatRefs()[0]) != NULL))
       {
@@ -284,15 +289,14 @@ void ADMData::RegisterProvider(CREATOR fn, void *context)
 void ADMData::Register(ADMObject *obj)
 {
   std::string uuid = obj->GetType() + "/" + obj->GetID();
+  const ADMAudioTrack *track;
 
   admobjects[uuid] = obj;
 
+  // if object is an audioTrack object, add it to the tracklist (list will be sorted later)
+  if ((track = dynamic_cast<const ADMAudioTrack *>(obj)) != NULL)
   {
-    const ADMAudioTrack *track;
-    if ((track = dynamic_cast<const ADMAudioTrack *>(obj)) != NULL)
-    {
-      tracklist.push_back(track);
-    }
+    tracklist.push_back(track);
   }
 
   obj->SetReferences();
@@ -1252,6 +1256,12 @@ void ADMData::GenerateXML(const ADMObject *obj, std::vector<const ADMObject *>& 
   }
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Generate a textual list of references 
+ *
+ * @param str string to be modified
+ */
+/*--------------------------------------------------------------------------------*/
 void ADMData::GenerateReferenceList(std::string& str)
 {
   ADMOBJECTS_CIT it;
@@ -1264,10 +1274,21 @@ void ADMData::GenerateReferenceList(std::string& str)
   }
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Create a set of cursors, one for each track, to allow tracking of position over time
+ *
+ * @param list list to be populated (items MUST be deleted by caller)
+ * @param channel start channel
+ * @param nchannels number of channels
+ *
+ * @note PositionCursor objects allow the list of positions within the ADM to be treated like an eventlist 
+ */
+/*--------------------------------------------------------------------------------*/
 void ADMData::CreateCursors(std::vector<PositionCursor *>& list, uint_t channel, uint_t nchannels) const
 {
   uint_t i;
 
+  // limit values
   channel   = MIN(channel,   tracklist.size() - 1);
   nchannels = MIN(nchannels, tracklist.size() - channel);
 

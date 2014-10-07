@@ -88,6 +88,10 @@ bool ADMRIFFFile::Create(const char *filename, uint32_t samplerate, uint_t nchan
   return success;
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Close RIFF file, writing chunks if file was opened for writing 
+ */
+/*--------------------------------------------------------------------------------*/
 void ADMRIFFFile::Close()
 {
   if (adm && writing)
@@ -100,23 +104,28 @@ void ADMRIFFFile::Close()
     adm->ConnectReferences();
     adm->UpdateLimits();
 
-    // set up chna and axml chunks
+    // get ADM object to create chna chunk
     if ((chna = adm->GetChna(chnalen)) != NULL)
     {
+      // and add it to the RIFF file
       if ((chunk = AddChunk(chna_ID)) != NULL)
       {
         chunk->CreateWriteData(chna, chnalen);
       }
       else ERROR("Failed to add chna chunk");
 
+      // don't need the raw data any more
       delete[] chna;
     }
     else ERROR("No chna data available");
 
+    // add axml chunk
     if ((chunk = AddChunk(axml_ID)) != NULL)
     {
+      // create axml data
       std::string str = adm->GetAxml();
 
+      // set chunk data
       chunk->CreateWriteData(str.c_str(), str.size());
 
       DEBUG3(("AXML: %s", str.c_str()));
@@ -137,26 +146,30 @@ bool ADMRIFFFile::PostReadChunks()
 {
   bool success = RIFFFile::PostReadChunks();
 
+  // after reading of chunks, find chna and axml chunks and decode them
+  // to create an ADM
   if (success)
   {
     RIFFChunk *chna = GetChunk(chna_ID);
     RIFFChunk *axml = GetChunk(axml_ID);
 
+    // ensure each chunk is valid
     if (adm &&
         chna && chna->GetData() &&
         axml && axml->GetData())
     {
+      // decode chunks
       success = adm->Set(chna->GetData(), axml->GetData(), axml->GetLength());
 
 #if DEBUG_LEVEL >= 4
-      {
+      { // dump ADM as text
         std::string str;
         adm->Dump(str);
                 
         DEBUG("%s", str.c_str());
       }
 
-      {
+      { // dump ADM as XML
         std::string str;
         adm->GenerateXML(str);
                 

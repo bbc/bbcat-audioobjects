@@ -250,6 +250,10 @@ protected:
 
   /*--------------------------------------------------------------------------------*/
   /** Remove and delete value from internal list of values
+   *
+   * @param value address of value to be erased
+   *
+   * @note value passed MUST be the address of the desired item
    */
   /*--------------------------------------------------------------------------------*/
   void EraseValue(const ADMVALUE *value);
