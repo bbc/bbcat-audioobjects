@@ -51,12 +51,12 @@ if ENABLE_RENDERING
 libbbcat_audioobjects_@BBCAT_AUDIOOBJECTS_MAJORMINOR@_la_CPPFLAGS += $(BBCAT_RENDER_CFLAGS)
 libbbcat_audioobjects_@BBCAT_AUDIOOBJECTS_MAJORMINOR@_la_LIBADD   += $(BBCAT_RENDER_LIBS)
 libbbcat_audioobjects_@BBCAT_AUDIOOBJECTS_MAJORMINOR@_la_SOURCES  +=	\
-	ADMFileWriteRenderer.cpp											\
+	ADMFileWriter.cpp													\
 	FilePositionGenerator.cpp											\
 	PlaybackEngine.cpp
 
 pkginclude_HEADERS +=							\
-	ADMFileWriteRenderer.h						\
+	ADMFileWriter.h								\
 	FilePositionGenerator.h						\
 	PlaybackEngine.h
 endif

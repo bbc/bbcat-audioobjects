@@ -39,17 +39,22 @@ public:
   virtual bool Open(const char *filename);
 
   /*--------------------------------------------------------------------------------*/
-  /** Create a WAVE/RIFF file
+  /** Create ADM from text file
    *
-   * @param filename filename of file to create
-   * @param samplerate sample rate of audio
-   * @param nchannels number of audio channels
-   * @param format sample format of audio in file
+   * @param filename text filename (see below for format)
    *
-   * @return true if file created properly
+   * @return true if successful
+   *
+   * The file MUST be of the following format with each entry on its own line:
+   * <ADM programme name>[:<ADM content name>]
+   *
+   * then for each track:
+   * <track>:<trackname>:<objectname>
+   *
+   * Where <track> is 1..number of tracks available within ADM
    */
   /*--------------------------------------------------------------------------------*/
-  virtual bool Create(const char *filename, uint32_t samplerate = 48000, uint_t nchannels = 2, SampleFormat_t format = SampleFormat_24bit);
+  virtual bool CreateADM(const char *filename);
 
   /*--------------------------------------------------------------------------------*/
   /** Close file

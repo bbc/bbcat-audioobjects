@@ -44,26 +44,32 @@ bool ADMRIFFFile::Open(const char *filename)
   return success;
 }
 
+
 /*--------------------------------------------------------------------------------*/
-/** Create a WAVE/RIFF file
+/** Create ADM from text file
  *
- * @param filename filename of file to create
- * @param samplerate sample rate of audio
- * @param nchannels number of audio channels
- * @param format sample format of audio in file
+ * @param filename text filename (see below for format)
  *
- * @return true if file created properly
+ * @return true if successful
+ *
+ * The file MUST be of the following format with each entry on its own line:
+ * <ADM programme name>[:<ADM content name>]
+ *
+ * then for each track:
+ * <track>:<trackname>:<objectname>
+ *
+ * Where <track> is 1..number of tracks available within ADM
  */
 /*--------------------------------------------------------------------------------*/
-bool ADMRIFFFile::Create(const char *filename, uint32_t samplerate, uint_t nchannels, SampleFormat_t format)
+bool ADMRIFFFile::CreateADM(const char *filename)
 {
   bool success = false;
 
-  if ((adm = ADMData::Create()) != NULL)
+  if (IsOpen() && !adm)
   {
-    if (RIFFFile::Create(filename, samplerate, nchannels, format))
+    if ((adm = ADMData::Create()) != NULL)
     {
-      uint_t i;
+      uint_t i, nchannels = GetChannels();
 
       for (i = 0; i < nchannels; i++)
       {
@@ -80,10 +86,10 @@ bool ADMRIFFFile::Create(const char *filename, uint32_t samplerate, uint_t nchan
         }
       }
 
-      success = true;
+      success = adm->CreateFromFile(filename);
     }
+    else ERROR("No providers for ADM XML decoding!");
   }
-  else ERROR("No providers for ADM XML decoding!");
 
   return success;
 }
