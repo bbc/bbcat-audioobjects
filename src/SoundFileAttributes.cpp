@@ -202,7 +202,7 @@ uint_t SoundFileSamples::WriteSamples(const uint8_t *buffer, SampleFormat_t type
   {
     uint_t bpf = format->GetBytesPerFrame();
 
-    firstchannel = MIN(firstchannel, clip.nchannels - 1);
+    firstchannel = MIN(firstchannel, clip.nchannels);
     nchannels    = MIN(nchannels,    clip.nchannels - firstchannel);
 
     n = 0;

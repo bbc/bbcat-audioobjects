@@ -55,7 +55,7 @@ void ADMFileWriter::Consume(const Sample_t *src, uint_t nsrcchannels, uint_t nsr
   if (filesamples)
   {
     // write to file
-    filesamples->WriteSamples(src, 0, nsrcchannels, nsrcframes);
+    filesamples->WriteSamples(src, consumestartchannel, nsrcchannels, nsrcframes);
   }
 }
 
@@ -75,7 +75,7 @@ void ADMFileWriter::Consume(const uint8_t *src, SampleFormat_t srcformat, uint_t
   if (filesamples)
   {
     // write to file
-    filesamples->WriteSamples(src, srcformat, 0, nsrcchannels, nsrcframes);
+    filesamples->WriteSamples(src, srcformat, consumestartchannel, nsrcchannels, nsrcframes);
   }
 }
 
