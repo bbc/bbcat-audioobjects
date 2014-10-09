@@ -89,6 +89,12 @@ public:
   virtual uint_t Render(const Sample_t *src, Sample_t *dst,
                         uint_t nsrcchannels, uint_t ndstchannels, uint_t nsrcframes, uint_t ndstframes, Sample_t level = 1.0);
 
+  /*--------------------------------------------------------------------------------*/
+  /** Return max number of audio channels of playlist
+   */
+  /*--------------------------------------------------------------------------------*/
+  uint_t GetMaxOutputChannels() const {return playlist.GetMaxOutputChannels();}
+
 protected:
   virtual void SetFileChannelsAndSampleRate();
 

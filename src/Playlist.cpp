@@ -89,4 +89,22 @@ SoundFileSamples *Playlist::GetFile()
   return (it != list.end()) ? *it : NULL;
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Return max number of audio channels of playlist
+ */
+/*--------------------------------------------------------------------------------*/
+uint_t Playlist::GetMaxOutputChannels() const
+{
+  uint_t i, channels = 0;
+
+  for (i = 0; i < list.size(); i++)
+  {
+    uint_t file_channels = list[i]->GetChannels();
+
+    channels = MAX(channels, file_channels);
+  }
+
+  return channels;
+}
+
 BBC_AUDIOTOOLBOX_END

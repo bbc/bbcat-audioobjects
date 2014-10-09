@@ -58,6 +58,12 @@ public:
   /*--------------------------------------------------------------------------------*/
   SoundFileSamples *GetFile();
 
+  /*--------------------------------------------------------------------------------*/
+  /** Return max number of audio channels of playlist
+   */
+  /*--------------------------------------------------------------------------------*/
+  uint_t GetMaxOutputChannels() const;
+
 protected:
   std::vector<SoundFileSamples *> list;
   std::vector<SoundFileSamples *>::iterator it;

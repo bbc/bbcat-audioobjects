@@ -6,7 +6,7 @@
 
 #include <string>
 
-#define DEBUG_LEVEL 2
+#define DEBUG_LEVEL 1
 
 #include "ADMRIFFFile.h"
 #include "RIFFChunk_Definitions.h"
