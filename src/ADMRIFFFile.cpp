@@ -192,11 +192,22 @@ bool ADMRIFFFile::PostReadChunks()
       }
 #endif
     }
-    else
+    // test for different types of failure
+    else if (!adm)
     {
-      if (!adm)                       ERROR("Cannot decode ADM, no ADM decoder available");
-      if (!(chna && chna->GetData())) ERROR("Cannot decode ADM, chna chunk not available");
-      if (!(axml && axml->GetData())) ERROR("Cannot decode ADM, chna chunk not available");
+      ERROR("Cannot decode ADM, no ADM decoder available");
+      success = false;
+    }
+    else if (!chna && !axml)
+    {
+      // acceptable failure - neither chna nor axml chunk specified - not an ADM compatible BWF file but open anyway
+      DEBUG("Warning: no chna or axml chunks!");
+      success = true;
+    }
+    else {
+      // unacceptible failures: empty chna or empty axml chunks
+      if (chna && !chna->GetData()) ERROR("Cannot decode ADM, chna chunk not available");
+      if (axml && !axml->GetData()) ERROR("Cannot decode ADM, axml chunk not available");
       success = false;
     }
 

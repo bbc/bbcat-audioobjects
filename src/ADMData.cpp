@@ -967,6 +967,28 @@ void ADMData::Dump(const ADMObject *obj, std::map<const ADMObject *,bool>& map, 
 }
 
 /*--------------------------------------------------------------------------------*/
+/** Start XML
+ *
+ * @param xmlcontext user supplied argument representing context data
+ * @param version XML version
+ * @param encoding XML encoding
+ *
+ * @note for other XML implementaions, this function MUST be overridden
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMData::StartXML(void *xmlcontext, const std::string& version, const std::string& encoding) const
+{
+  TEXTXML& xml = *(TEXTXML *)xmlcontext;
+
+  Printf(xml.str,
+         "%s<?xml version=\"%s\" encoding=\"%s\"?>%s",
+         CreateIndent(xml.indent, xml.ind_level).c_str(),
+         version.c_str(),
+         encoding.c_str(),
+         xml.eol.c_str());
+}
+
+/*--------------------------------------------------------------------------------*/
 /** Start an XML object
  *
  * @param xmlcontext user supplied argument representing context data
@@ -1106,7 +1128,14 @@ void ADMData::GenerateXML(void *xmlcontext) const
   std::map<const ADMObject *,bool> map;
   ADMOBJECTS_CIT it;
   uint_t i;
-
+  
+  StartXML(xmlcontext);
+  OpenXMLObject(xmlcontext, "ebuCoreMain");
+  AddXMLAttribute(xmlcontext, "xmlns:dc", "http://purl.org/dc/elements/1.1/");
+  AddXMLAttribute(xmlcontext, "xmlns", "urn:ebu:metadata-schema:ebuCore_2014");
+  AddXMLAttribute(xmlcontext, "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
+  AddXMLAttribute(xmlcontext, "schema", "EBU_CORE_20140201.xsd");
+  AddXMLAttribute(xmlcontext, "xml:lang", "en");
   OpenXMLObject(xmlcontext, "coreMetadata");
   OpenXMLObject(xmlcontext, "format");
   OpenXMLObject(xmlcontext, "audioFormatExtended");
@@ -1137,6 +1166,7 @@ void ADMData::GenerateXML(void *xmlcontext) const
     }
   }
 
+  CloseXMLObject(xmlcontext);
   CloseXMLObject(xmlcontext);
   CloseXMLObject(xmlcontext);
   CloseXMLObject(xmlcontext);

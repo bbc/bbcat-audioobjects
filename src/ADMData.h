@@ -433,6 +433,17 @@ protected:
   virtual void GenerateXML(const ADMObject *obj, std::vector<const ADMObject *>& list, void *xmlcontext) const;
 
   /*--------------------------------------------------------------------------------*/
+  /** Start XML
+   *
+   * @param xmlcontext user supplied argument representing context data
+   * @param version XML version
+   * @param encoding XML encoding
+   *
+   * @note for other XML implementaions, this function MUST be overridden
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void StartXML(void *xmlcontext, const std::string& version = "1.0", const std::string& encoding = "UTF-8") const;
+  /*--------------------------------------------------------------------------------*/
   /** Start an XML object
    *
    * @param xmlcontext user supplied argument representing context data
