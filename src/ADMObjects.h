@@ -1271,6 +1271,7 @@ public:
   ADMAudioBlockFormat(ADMData& _owner, const std::string& _id, const std::string& _name) :
     ADMObject(_owner, _id, _name),
     ADMLevelObject(),
+    startTime(0),
     rtime(0),
     duration(0),
     position(),
@@ -1294,6 +1295,7 @@ public:
   /*--------------------------------------------------------------------------------*/
   virtual void SetValues();
 
+
   /*--------------------------------------------------------------------------------*/
   /** Set and Get rtime
    */
@@ -1309,16 +1311,28 @@ public:
   uint64_t GetDuration() const {return duration;}
 
   /*--------------------------------------------------------------------------------*/
+  /** Set parent start time
+   */
+  /*--------------------------------------------------------------------------------*/
+  void SetStartTime(uint64_t t) {startTime = t;}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Return parent start time
+   */
+  /*--------------------------------------------------------------------------------*/
+  uint64_t GetStartTime() const {return startTime;}
+
+  /*--------------------------------------------------------------------------------*/
   /** Return block start time
    */
   /*--------------------------------------------------------------------------------*/
-  uint64_t GetStartTime() const {return rtime;}
+  uint64_t GetBlockStartTime() const {return startTime + rtime;}
 
   /*--------------------------------------------------------------------------------*/
   /** Return block end time
    */
   /*--------------------------------------------------------------------------------*/
-  uint64_t GetEndTime() const {return rtime + duration;}
+  uint64_t GetBlockEndTime() const {return startTime + rtime + duration;}
 
   /*--------------------------------------------------------------------------------*/
   /** Return (modifiable) physical position of this object
@@ -1379,6 +1393,7 @@ public:
   static const std::string Reference;
 
 protected:
+  uint64_t     startTime;
   uint64_t     rtime;
   uint64_t     duration;
   Position     position;
@@ -1440,11 +1455,18 @@ public:
   virtual void EndPositionChanges();
 
 protected:
+  /*--------------------------------------------------------------------------------*/
+  /** Return whether blockindex points to a valid block
+   */
+  /*--------------------------------------------------------------------------------*/
+  bool BlockIndexValid() const;
+
+protected:
   const ADMAudioTrack                *track;
   ADMAudioChannelFormat              *channelformat;
   std::vector<ADMAudioBlockFormat *> *blockformats;
   uint64_t                           currenttime;
-  uint_t                             blockindex;
+  sint_t                             blockindex;        ///< NOTE: this can be -ve or beyond the end of the array!
 };
 
 BBC_AUDIOTOOLBOX_END

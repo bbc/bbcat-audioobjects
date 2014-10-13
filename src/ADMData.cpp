@@ -1389,12 +1389,22 @@ void ADMData::CreateCursors(std::vector<PositionCursor *>& list, uint_t channel,
   uint_t i;
 
   // limit values
-  channel   = MIN(channel,   tracklist.size() - 1);
+  channel   = MIN(channel,   tracklist.size());
   nchannels = MIN(nchannels, tracklist.size() - channel);
 
-  for (i = 0; i < nchannels; i++)
+  if (nchannels)
   {
-    list.push_back(new ADMTrackCursor(tracklist[channel + i]));
+    for (i = 0; i < tracklist.size(); i++)
+    {
+      const ADMAudioTrack *track = tracklist[i];
+      uint_t tr = track->GetTrackNum() - 1;
+
+      if ((tr >= channel) && (tr < (channel + nchannels)))
+      {
+        // this track is within the channel range -> add it
+        list.push_back(new ADMTrackCursor(tracklist[channel + i]));
+      }
+    }
   }
 }
 

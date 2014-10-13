@@ -1485,10 +1485,12 @@ bool ADMAudioChannelFormat::Add(ADMAudioBlockFormat *obj)
 {
   if (std::find(blockformatrefs.begin(), blockformatrefs.end(), obj) == blockformatrefs.end())
   {
+    // set offset?
+    //obj->SetStartTime();
     blockformatrefs.push_back(obj);
     sort(blockformatrefs.begin(), blockformatrefs.end(), ADMAudioBlockFormat::Compare);
 
-    Update(obj->GetStartTime(), obj->GetEndTime());
+    Update(obj->GetBlockStartTime(), obj->GetBlockEndTime());
     return true;
   }
 
@@ -1688,7 +1690,7 @@ ADMTrackCursor::ADMTrackCursor(const ADMAudioTrack *_track) : PositionCursor(),
                                                               channelformat(NULL),
                                                               blockformats(NULL),
                                                               currenttime(0),
-                                                              blockindex(0)
+                                                              blockindex(-1)
 {
   if (_track) Setup(_track);
 }
@@ -1709,7 +1711,7 @@ ADMTrackCursor::~ADMTrackCursor()
 void ADMTrackCursor::Setup(const ADMAudioTrack *_track)
 {
   blockformats = NULL;
-  blockindex   = 0;
+  blockindex   = -1;
 
   if ((track = _track) != NULL)
   {
@@ -1744,6 +1746,17 @@ ADMTrackCursor& ADMTrackCursor::operator = (const ADMTrackCursor& obj)
 }
 
 /*--------------------------------------------------------------------------------*/
+/** Return whether blockindex points to a valid block
+ */
+/*--------------------------------------------------------------------------------*/
+bool ADMTrackCursor::BlockIndexValid() const
+{
+  return (blockformats &&
+          (blockindex >= 0) &&
+          (blockindex < (sint_t)blockformats->size()));
+}
+
+/*--------------------------------------------------------------------------------*/
 /** Return position at current time
  */
 /*--------------------------------------------------------------------------------*/
@@ -1751,7 +1764,10 @@ const Position *ADMTrackCursor::GetPosition() const
 {
   const Position *res = NULL;
 
-  if (blockformats && (blockindex < blockformats->size())) res = &(*blockformats)[blockindex]->GetPosition();
+  if (BlockIndexValid())
+  {
+    res = &(*blockformats)[blockindex]->GetPosition();
+  }
 
   return res;
 }
@@ -1764,7 +1780,10 @@ const ParameterSet *ADMTrackCursor::GetPositionSupplement() const
 {
   const ParameterSet *res = NULL;
 
-  if (blockformats && (blockindex < blockformats->size())) res = &(*blockformats)[blockindex]->GetPositionSupplement();
+  if (BlockIndexValid())
+  {
+    res = &(*blockformats)[blockindex]->GetPositionSupplement();
+  }
 
   return res;
 }
@@ -1792,24 +1811,24 @@ void ADMTrackCursor::SetPosition(const Position& pos, const ParameterSet *supple
       bool                newblockrequired = true;
 
       // close current one off by setting end time
-      if (blockindex < blockformats->size())
+      if (BlockIndexValid())
       {
         blockformat = (*blockformats)[blockindex];
 
-        if (blockformat->GetRTime() == currenttime)
+        if (blockformat->GetBlockStartTime() == currenttime)
         {
           // new position at same time as original -> just update this position
           blockformat->SetPosition(pos, supplement);
           // no need to create new blockformat
           newblockrequired = false;
         }
-        else blockformat->SetDuration(currenttime - blockformat->GetRTime());
+        else blockformat->SetDuration(currenttime - blockformat->GetBlockStartTime());
       }
 
       // create new blockformat if required
       if (newblockrequired && ((blockformat = new ADMAudioBlockFormat(adm, adm.CreateID(ADMAudioBlockFormat::Type, channelformat), "")) != NULL))
       {
-        blockformat->SetRTime(currenttime);
+        blockformat->SetRTime(currenttime - blockformat->GetStartTime());
         blockformat->SetPosition(pos, supplement);
         channelformat->Add(blockformat);
         Seek(currenttime);
@@ -1857,15 +1876,22 @@ void ADMTrackCursor::EndPositionChanges()
 /*--------------------------------------------------------------------------------*/
 bool ADMTrackCursor::Seek(uint64_t t)
 {
-  uint_t oldindex = blockindex;
+  sint_t oldindex = blockindex;
 
   if (blockformats)
   {
-    size_t n = blockformats->size();
+    sint_t n = blockformats->size();
 
     // move blockindex to point to the correct index
-    while ((blockindex       > 0) && (t <  (*blockformats)[blockindex]->GetRTime()))     blockindex--;
-    while (((blockindex + 1) < n) && (t >= (*blockformats)[blockindex + 1]->GetRTime())) blockindex++;
+    // blockindex is ALLOWED to be off either end, indicating there are no valid positions for this block at the specified time
+    // move back if necessary
+    while ((blockindex >= 0) && (t <  (*blockformats)[blockindex]->GetBlockStartTime())) blockindex--;
+
+    // handle case where blockindex is -ve but can move to the start of the array
+    if    ((blockindex <  0) && (t >= (*blockformats)[0]->GetBlockStartTime())) blockindex++;
+
+    // move forward if necessary
+    while ((blockindex >= 0) && (blockindex < n) && (t >= (*blockformats)[blockindex]->GetBlockEndTime())) blockindex++;
   }
 
   currenttime = t;
