@@ -2,7 +2,6 @@
 *.o
 *.la
 *.lo
-Makefile
 Makefile.in
 config.h
 config.h.in
