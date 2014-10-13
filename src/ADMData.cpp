@@ -61,34 +61,38 @@ bool ADMData::SetChna(const uint8_t *data)
   uint16_t i;
   for (i = 0; i < chna.UIDCount; i++)
   {
-    ADMAudioTrack *track;
-    std::string id;
-
-    id.assign(chna.UIDs[i].UID, sizeof(chna.UIDs[i].UID));
-
-    if ((track = dynamic_cast<ADMAudioTrack *>(Create(ADMAudioTrack::Type, id, ""))) != NULL)
+    // only handle non-zero track numbers
+    if (chna.UIDs[i].TrackNum)
     {
-      ADMVALUE value;
+      ADMAudioTrack *track;
+      std::string id;
 
-      value.attr = false;
+      id.assign(chna.UIDs[i].UID, sizeof(chna.UIDs[i].UID));
 
-      track->SetTrackNum(chna.UIDs[i].TrackNum);
+      if ((track = dynamic_cast<ADMAudioTrack *>(Create(ADMAudioTrack::Type, id, ""))) != NULL)
+      {
+        ADMVALUE value;
 
-      value.name = ADMAudioTrackFormat::Reference;
-      value.value.assign(chna.UIDs[i].TrackRef, sizeof(chna.UIDs[i].TrackRef));
-      // trim any zero bytes off the end of the string
-      value.value = value.value.substr(0, value.value.find(terminator));
-      track->AddValue(value);
+        value.attr = false;
+
+        track->SetTrackNum(chna.UIDs[i].TrackNum);
+
+        value.name = ADMAudioTrackFormat::Reference;
+        value.value.assign(chna.UIDs[i].TrackRef, sizeof(chna.UIDs[i].TrackRef));
+        // trim any zero bytes off the end of the string
+        value.value = value.value.substr(0, value.value.find(terminator));
+        track->AddValue(value);
             
-      value.name = ADMAudioPackFormat::Reference;
-      value.value.assign(chna.UIDs[i].PackRef, sizeof(chna.UIDs[i].PackRef));
-      // trim any zero bytes off the end of the string
-      value.value = value.value.substr(0, value.value.find(terminator));
-      track->AddValue(value);
+        value.name = ADMAudioPackFormat::Reference;
+        value.value.assign(chna.UIDs[i].PackRef, sizeof(chna.UIDs[i].PackRef));
+        // trim any zero bytes off the end of the string
+        value.value = value.value.substr(0, value.value.find(terminator));
+        track->AddValue(value);
 
-      track->SetValues();
+        track->SetValues();
+      }
+      else ERROR("Failed to create AudioTrack for UID %u", i);
     }
-    else ERROR("Failed to create AudioTrack for UID %u", i);
   }
 
   SortTracks();
@@ -170,41 +174,67 @@ uint8_t *ADMData::GetChna(uint32_t& len) const
   len = sizeof(*p) + tracklist.size() * sizeof(p->UIDs[0]);
   if ((p = (CHNA_CHUNK *)calloc(1, len)) != NULL)
   {
+    std::vector<uint32_t> uniquetracks; // bitmap of unique tracks
+    const uint_t uniquetracks_bitmapsize = sizeof(uniquetracks[0]) << 3;
     uint_t i;
-
+    
+    // initially support up to 32 tracks (resizing is handled below)
+    uniquetracks.resize(1);
+    
     // populate structure
-    p->TrackCount = tracklist.size();
-    p->UIDCount   = tracklist.size();
-        
+    p->TrackCount = 0;
+    p->UIDCount   = 0;
+    
     for (i = 0; i < p->UIDCount; i++)
     {
       const ADMAudioTrack *track = tracklist[i];
+      uint_t tr = track->GetTrackNum();
 
-      // set track number and UID
-      p->UIDs[i].TrackNum = track->GetTrackNum();
-      strncpy(p->UIDs[i].UID, track->GetID().c_str(), sizeof(p->UIDs[i].UID));
-
-      // set trackformat references
-      const ADMAudioTrackFormat *trackref = NULL;
-      if (track->GetTrackFormatRefs().size() && ((trackref = track->GetTrackFormatRefs()[0]) != NULL))
+      // only process non-zero track numebrs
+      if (tr)
       {
-        strncpy(p->UIDs[i].TrackRef, trackref->GetID().c_str(), sizeof(p->UIDs[i].TrackRef));
+        uint_t   trindex = tr / uniquetracks_bitmapsize;
+        uint32_t trmask  = 1ULL << (tr % uniquetracks_bitmapsize);
+      
+        // test to see if uniquetracks array needs expanding
+        if (trindex >= uniquetracks.size()) uniquetracks.resize(trindex + 1);
+      
+        // if this is a new track (i.e. one not previously used), set the bit in the uniquetracks bitmap and increment TrackCount
+        if (!(uniquetracks[trindex] & trmask))
+        {
+          // set bit
+          uniquetracks[trindex] |= trmask;
+          // increment TrackCount
+          p->TrackCount++;
+        }
+
+        // set track number and UID
+        p->UIDs[i].TrackNum = tr;
+        strncpy(p->UIDs[i].UID, track->GetID().c_str(), sizeof(p->UIDs[i].UID));
+
+        // set trackformat references
+        const ADMAudioTrackFormat *trackref = NULL;
+        if (track->GetTrackFormatRefs().size() && ((trackref = track->GetTrackFormatRefs()[0]) != NULL))
+        {
+          strncpy(p->UIDs[i].TrackRef, trackref->GetID().c_str(), sizeof(p->UIDs[i].TrackRef));
+        }
+
+        // set packformat references
+        const ADMAudioPackFormat *packref = NULL;
+        if (track->GetPackFormatRefs().size() && ((packref = track->GetPackFormatRefs()[0]) != NULL))
+        {
+          strncpy(p->UIDs[i].PackRef, packref->GetID().c_str(), sizeof(p->UIDs[i].PackRef));
+        }
+        
+        p->UIDCount++;
+
+        DEBUG2(("Track %u/%u: Index %u UID '%s' TrackFormatRef '%s' PackFormatRef '%s'",
+                i, p->UIDCount,
+                track->GetTrackNum(),
+                track->GetID().c_str(),
+                trackref ? trackref->GetID().c_str() : "<none>",
+                packref  ? packref->GetID().c_str()  : "<none>"));
       }
-
-      // set packformat references
-      const ADMAudioPackFormat *packref = NULL;
-      if (track->GetPackFormatRefs().size() && ((packref = track->GetPackFormatRefs()[0]) != NULL))
-      {
-        strncpy(p->UIDs[i].PackRef, packref->GetID().c_str(), sizeof(p->UIDs[i].PackRef));
-      }
-
-      DEBUG2(("Track %u/%u: Index %u UID '%s' TrackFormatRef '%s' PackFormatRef '%s'",
-              i + 1, p->UIDCount,
-              track->GetTrackNum(),
-              track->GetID().c_str(),
-              trackref ? trackref->GetID().c_str() : "<none>",
-              packref  ? packref->GetID().c_str()  : "<none>"));
-
     }
   }
 
