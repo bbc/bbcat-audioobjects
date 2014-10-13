@@ -1391,33 +1391,49 @@ bool ADMData::CreateObjects(const OBJECTNAMES& names)
   // look up objects and create any that need creating
   if ((names.programmeName != "") && ((programme = dynamic_cast<ADMAudioProgramme *>(GetWritableObjectByName(names.programmeName, ADMAudioProgramme::Type))) == NULL))
   {
-    if ((programme = CreateProgramme(names.programmeName)) == NULL)
+    if ((programme = CreateProgramme(names.programmeName)) != NULL)
+    {
+      DEBUG2(("Created programme '%s'", names.programmeName.c_str()));
+    }
+    else
     {
       ERROR("Failed to create programme '%s'", names.programmeName.c_str());
       success = false;
     }
   }
+
   if ((names.contentName != "") && ((content = dynamic_cast<ADMAudioContent *>(GetWritableObjectByName(names.contentName, ADMAudioContent::Type))) == NULL))
   {
-    if ((content = CreateContent(names.contentName)) == NULL)
+    if ((content = CreateContent(names.contentName)) != NULL)
+    {
+      DEBUG2(("Created content '%s'", names.contentName.c_str()));
+    }
+    else
     {
       ERROR("Failed to create content '%s'", names.contentName.c_str());
       success = false;
     }
   }
+
   if ((names.objectName != "") && ((object = dynamic_cast<ADMAudioObject *>(GetWritableObjectByName(names.objectName, ADMAudioObject::Type))) == NULL))
   {
-    if ((object = CreateObject(names.objectName)) == NULL)
+    if ((object = CreateObject(names.objectName)) != NULL)
+    {
+      DEBUG2(("Created object '%s'", names.objectName.c_str()));
+    }
+    else
     {
       ERROR("Failed to create object '%s'", names.objectName.c_str());
       success = false;
     }
   }
+
   if ((names.packFormatName != "") && ((packFormat = dynamic_cast<ADMAudioPackFormat *>(GetWritableObjectByName(names.packFormatName, ADMAudioPackFormat::Type))) == NULL))
   {
     if ((packFormat = CreatePackFormat(names.packFormatName)) != NULL)
     {
       // set pack type
+      DEBUG2(("Created pack format '%s'", names.packFormatName.c_str()));
       packFormat->SetTypeLabel("0003");
       packFormat->SetTypeDefinition("Objects");
     }
@@ -1427,11 +1443,13 @@ bool ADMData::CreateObjects(const OBJECTNAMES& names)
       success = false;
     }
   }
+
   if ((names.channelFormatName != "") && ((channelFormat = dynamic_cast<ADMAudioChannelFormat *>(GetWritableObjectByName(names.channelFormatName, ADMAudioChannelFormat::Type))) == NULL))
   {
     if ((channelFormat = CreateChannelFormat(names.channelFormatName)) != NULL)
     {
       // set channel type
+      DEBUG2(("Created channel format '%s'", names.channelFormatName.c_str()));
       channelFormat->SetTypeLabel("0003");
       channelFormat->SetTypeDefinition("Objects");
     }
@@ -1441,11 +1459,13 @@ bool ADMData::CreateObjects(const OBJECTNAMES& names)
       success = false;
     }
   }
+
   if ((names.streamFormatName != "") && ((streamFormat = dynamic_cast<ADMAudioStreamFormat *>(GetWritableObjectByName(names.streamFormatName, ADMAudioStreamFormat::Type))) == NULL))
   {
     if ((streamFormat = CreateStreamFormat(names.streamFormatName)) != NULL)
     {
       // set stream type (PCM)
+      DEBUG2(("Created stream format '%s'", names.streamFormatName.c_str()));
       streamFormat->SetFormatLabel("0001");
       streamFormat->SetFormatDefinition("PCM");
     }
@@ -1455,11 +1475,13 @@ bool ADMData::CreateObjects(const OBJECTNAMES& names)
       success = false;
     }
   }
+
   if ((names.trackFormatName != "") && ((trackFormat = dynamic_cast<ADMAudioTrackFormat *>(GetWritableObjectByName(names.trackFormatName, ADMAudioTrackFormat::Type))) == NULL))
   {
     if ((trackFormat = CreateTrackFormat(names.trackFormatName)) != NULL)
     {
       // set track type (PCM)
+      DEBUG2(("Created track format '%s'", names.trackFormatName.c_str()));
       trackFormat->SetFormatLabel("0001");
       trackFormat->SetFormatDefinition("PCM");
     }
@@ -1469,17 +1491,39 @@ bool ADMData::CreateObjects(const OBJECTNAMES& names)
       success = false;
     }
   }
-  if (names.trackNumber < tracklist.size()) audioTrack = const_cast<ADMAudioTrack *>(tracklist[names.trackNumber]);
+
+  if (names.trackNumber < tracklist.size())
+  {
+    if ((audioTrack = const_cast<ADMAudioTrack *>(tracklist[names.trackNumber])) != NULL)
+    {
+      DEBUG2(("Found track number %u (%u tracks)", names.trackNumber, (uint_t)tracklist.size()));
+    }
+    else
+    {
+      ERROR("Failed to find track number %u (%u tracks)", names.trackNumber, (uint_t)tracklist.size());
+    }
+  }
 
 #define LINK(master,slave)                          \
-  if (master && slave && !master->Add(slave))       \
+  if (master && slave)                              \
   {                                                 \
-    ERROR("Failed to connect %s '%s' to %s '%s'",   \
-          slave->GetType().c_str(),                 \
-          slave->GetName().c_str(),                 \
-          master->GetType().c_str(),                \
-          master->GetName().c_str());               \
-    success = false;                                \
+    if (master->Add(slave))                         \
+    {                                               \
+      DEBUG2(("Connected %s '%s' to %s '%s'",       \
+              slave->GetType().c_str(),             \
+              slave->GetName().c_str(),             \
+              master->GetType().c_str(),            \
+              master->GetName().c_str()));          \
+    }                                               \
+    else                                            \
+    {                                               \
+      ERROR("Failed to connect %s '%s' to %s '%s'", \
+            slave->GetType().c_str(),               \
+            slave->GetName().c_str(),               \
+            master->GetType().c_str(),              \
+            master->GetName().c_str());             \
+      success = false;                              \
+    }                                               \
   }
 
   // link objects
@@ -1522,8 +1566,7 @@ bool ADMData::CreateFromFile(const char *filename)
   if (fp.fopen(filename, "r"))
   {
     static char line[1024];
-    ADMAudioProgramme *programme = NULL;
-    ADMAudioContent   *content   = NULL;
+    ADMData::OBJECTNAMES names;
     uint_t ln = 1;
 
     success = true;
@@ -1533,32 +1576,18 @@ bool ADMData::CreateFromFile(const char *filename)
       if (ln == 1)
       {
         // line 1: <programme-name>[:<content-name>]
-        std::string programmename, contentname;
         const char *p;
 
+        // set names for programme and content objects
         // find optionally different content name
         if ((p = strchr(line, ':')) != NULL)
         {
-          programmename.assign(line, p - line);
-          contentname.assign(p + 1);
+          names.programmeName.assign(line, p - line);
+          names.contentName.assign(p + 1);
         }
-        else programmename = contentname = line;
-
-        if ((programme = CreateProgramme(programmename)) != NULL)
-        {
-          if ((content = CreateContent(contentname, programme)) == NULL)
-          {
-            ERROR("Failed to create content '%s'", contentname.c_str());
-            success = false;
-          }
-        }
-        else
-        {
-          ERROR("Failed to create programme '%s'", programmename.c_str());
-          success = false;
-        }
+        else names.programmeName = names.contentName = line;
       }
-      else if (content)
+      else
       {
         const char *p1, *p2;
         uint_t tr;
@@ -1569,59 +1598,29 @@ bool ADMData::CreateFromFile(const char *filename)
           {
             if (((p1 = strchr(line, ':')) != NULL) && ((p2 = strchr(p1 + 1, ':')) != NULL))
             {
-              std::string trackname, objectname;
+              std::string trackname;
 
               p1++;
-              
+
+              // set track number
+              names.trackNumber = tr - 1;
+
+              // set track name
               trackname.assign(p1, p2 - p1);
-              objectname.assign(p2 + 1);
-              
-              ADMAudioTrack         *audioTrack    = const_cast<ADMAudioTrack *>(tracklist[tr - 1]);
-              ADMAudioPackFormat    *packFormat    = dynamic_cast<ADMAudioPackFormat *>(const_cast<ADMObject *>(GetObjectByName(objectname, ADMAudioPackFormat::Type)));
-              ADMAudioChannelFormat *channelFormat = CreateChannelFormat(trackname);
-              ADMAudioStreamFormat  *streamFormat  = CreateStreamFormat("PCM_" + trackname);
-              ADMAudioTrackFormat   *trackFormat   = CreateTrackFormat("PCM_" + trackname);
-              ADMAudioObject        *object        = dynamic_cast<ADMAudioObject *>(const_cast<ADMObject *>(GetObjectByName(objectname, ADMAudioObject::Type)));
 
-              // the same pack can cover a number of tracks
-              if (packFormat == NULL)
-              {
-                packFormat = CreatePackFormat(objectname);
-                // set pack type
-                packFormat->SetTypeLabel("0003");
-                packFormat->SetTypeDefinition("Objects");
-              }
+              // derive channel and stream names from track name
+              names.channelFormatName = trackname;
+              names.streamFormatName  = "PCM_" + trackname;
+              names.trackFormatName   = "PCM_" + trackname;
 
-              if (object == NULL)
-              {
-                // create object if it does not already exist
-                object = CreateObject(objectname, content);
-              }
+              // set object name
+              names.objectName.assign(p2 + 1);
 
-              // set channel type
-              channelFormat->SetTypeLabel("0003");
-              channelFormat->SetTypeDefinition("Objects");
+              // set pack name from object name
+              names.packFormatName = names.objectName;
 
-              // set track type (PCM)
-              trackFormat->SetFormatLabel("0001");
-              trackFormat->SetFormatDefinition("PCM");
-
-              // set stream type (PCM)
-              streamFormat->SetFormatLabel("0001");
-              streamFormat->SetFormatDefinition("PCM");
-
-              // connect ADM objects
-              packFormat->Add(channelFormat);
-              trackFormat->Add(streamFormat);
-              streamFormat->Add(trackFormat);
-              streamFormat->Add(channelFormat);
-              audioTrack->Add(trackFormat);
-              audioTrack->Add(packFormat);
-
-              // add the pack to the object
-              object->Add(packFormat);
-              // add the track to the object
-              object->Add(audioTrack);
+              // create / connect objects
+              CreateObjects(names);
             }
             else
             {

@@ -350,7 +350,7 @@ public:
   /*--------------------------------------------------------------------------------*/
   typedef struct
   {
-    uint_t      trackNumber;            ///< physical track number to use (NOTE: tracks are never created by CreateObjects())
+    uint_t      trackNumber;            ///< physical track number to use (0- based) (NOTE: tracks are never created by CreateObjects())
     std::string programmeName;          ///< programme title
     std::string contentName;            ///< content title
     std::string objectName;             ///< object name

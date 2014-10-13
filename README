@@ -23,7 +23,7 @@ m4 - folder for autotools
 Makefile.am - makefile for automake
 README - this file
 src/ - source folder containing C/C++ source and header files
-
+examples/ - folder with example C++ files (just type make)
 
 src/Makefile.am                         | Makefile for automake
 
