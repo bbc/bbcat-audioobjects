@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define DEBUG_LEVEL 2
+#define DEBUG_LEVEL 1
 #include "ADMAudioFileSamples.h"
 
 BBC_AUDIOTOOLBOX_START
@@ -22,7 +22,7 @@ ADMAudioFileSamples::ADMAudioFileSamples(const ADMData *iadm, const SoundFileSam
     }
     else
     {
-      newclip.nsamples = ADMObject::TimeToSamples(obj->GetChildrenEndTime(),   format->GetSampleRate()) - newclip.start;
+      newclip.nsamples = ADMObject::TimeToSamples(obj->GetChildrenEndTime(), format->GetSampleRate()) - newclip.start;
     }
     newclip.channel   = obj->GetChildrenStartChannel();
     newclip.nchannels = obj->GetChildrenChannelCount();

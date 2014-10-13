@@ -309,11 +309,66 @@ public:
   const ADMObject *GetObjectByName(const std::string& name, const std::string& type = "") const;
 
   /*--------------------------------------------------------------------------------*/
+  /** Get writable ADM object by ID (with optional object type specified)
+   *
+   * @param id object ID
+   * @param type audioXXX object type (ADMAudioXXX::Type)
+   *
+   * @return object or NULL
+   */
+  /*--------------------------------------------------------------------------------*/
+  ADMObject *GetWritableObjectByID(const std::string& id, const std::string& type = "");
+
+  /*--------------------------------------------------------------------------------*/
+  /** Get writable ADM object by Name (with optional object type specified)
+   *
+   * @param name object name
+   * @param type audioXXX object type (ADMAudioXXX::Type)
+   *
+   * @return object or NULL
+   */
+  /*--------------------------------------------------------------------------------*/
+  ADMObject *GetWritableObjectByName(const std::string& name, const std::string& type = "");
+
+  /*--------------------------------------------------------------------------------*/
   /** Return track list (list of ADMAudioTrack objects)
    */
   /*--------------------------------------------------------------------------------*/
   typedef std::vector<const ADMAudioTrack *> TRACKLIST;
   const TRACKLIST& GetTrackList() const {return tracklist;}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Structure containing names of ADM objects to create and connect together using CreateObjects()
+   *
+   * If the required object of the specified name does not exist, it is created
+   *
+   * Objects are connected according to the ADM rules, as many objects in the structure
+   * are connected together as possible
+   *
+   * Any empty names will be ignored and objects not created or connected
+   */
+  /*--------------------------------------------------------------------------------*/
+  typedef struct
+  {
+    uint_t      trackNumber;            ///< physical track number to use (NOTE: tracks are never created by CreateObjects())
+    std::string programmeName;          ///< programme title
+    std::string contentName;            ///< content title
+    std::string objectName;             ///< object name
+    std::string packFormatName;         ///< pack format name
+    std::string channelFormatName;      ///< channel format name
+    std::string streamFormatName;       ///< stream format name
+    std::string trackFormatName;        ///< track format name
+  } OBJECTNAMES;
+
+  /*--------------------------------------------------------------------------------*/
+  /** Create/link ADM objects
+   *
+   * @param data OBJECTNAMES structure populated with names of objects to link/create (see above)
+   *
+   * @return true if successful
+   */
+  /*--------------------------------------------------------------------------------*/
+  bool CreateObjects(const OBJECTNAMES& names);
 
   /*--------------------------------------------------------------------------------*/
   /** Dump ADM or part of ADM as textual description

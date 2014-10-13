@@ -39,6 +39,14 @@ public:
   virtual bool Open(const char *filename);
 
   /*--------------------------------------------------------------------------------*/
+  /** Create empty ADM and populate basic track information
+   *
+   * @return true if successful
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual bool CreateADM();
+
+  /*--------------------------------------------------------------------------------*/
   /** Create ADM from text file
    *
    * @param filename text filename (see below for format)

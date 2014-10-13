@@ -44,24 +44,13 @@ bool ADMRIFFFile::Open(const char *filename)
   return success;
 }
 
-
 /*--------------------------------------------------------------------------------*/
-/** Create ADM from text file
- *
- * @param filename text filename (see below for format)
+/** Create empty ADM and populate basic track information
  *
  * @return true if successful
- *
- * The file MUST be of the following format with each entry on its own line:
- * <ADM programme name>[:<ADM content name>]
- *
- * then for each track:
- * <track>:<trackname>:<objectname>
- *
- * Where <track> is 1..number of tracks available within ADM
  */
 /*--------------------------------------------------------------------------------*/
-bool ADMRIFFFile::CreateADM(const char *filename)
+bool ADMRIFFFile::CreateADM()
 {
   bool success = false;
 
@@ -86,9 +75,37 @@ bool ADMRIFFFile::CreateADM(const char *filename)
         }
       }
 
-      success = adm->CreateFromFile(filename);
+      success = true;
     }
     else ERROR("No providers for ADM XML decoding!");
+  }
+
+  return success;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Create ADM from text file
+ *
+ * @param filename text filename (see below for format)
+ *
+ * @return true if successful
+ *
+ * The file MUST be of the following format with each entry on its own line:
+ * <ADM programme name>[:<ADM content name>]
+ *
+ * then for each track:
+ * <track>:<trackname>:<objectname>
+ *
+ * Where <track> is 1..number of tracks available within ADM
+ */
+/*--------------------------------------------------------------------------------*/
+bool ADMRIFFFile::CreateADM(const char *filename)
+{
+  bool success = false;
+
+  if (CreateADM())
+  {
+    success = adm->CreateFromFile(filename);
   }
 
   return success;
