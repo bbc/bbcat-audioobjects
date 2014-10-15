@@ -45,21 +45,25 @@ void ADMData::Delete()
 /** Read ADM data from the chna RIFF chunk
  *
  * @param data ptr to chna chunk data 
+ * @param len length of chna chunk
  *
  * @return true if data read successfully
  */
 /*--------------------------------------------------------------------------------*/
-bool ADMData::SetChna(const uint8_t *data)
+bool ADMData::SetChna(const uint8_t *data, uint_t len)
 {
   const CHNA_CHUNK& chna = *(const CHNA_CHUNK *)data;
+  uint_t maxuids = (len - sizeof(CHNA_CHUNK)) / sizeof(chna.UIDs[0]);   // calculate maximum number of UIDs given chunk length
   std::string terminator;
   bool success = true;
 
   // create string with a single 0 byte in it to detect terminators
   terminator.push_back(0);
 
+  if (maxuids < chna.UIDCount) ERROR("Warning: chna specifies %u UIDs but chunk has only length for %u", (uint_t)chna.UIDCount, maxuids);
+
   uint16_t i;
-  for (i = 0; i < chna.UIDCount; i++)
+  for (i = 0; (i < chna.UIDCount) && (i < maxuids); i++)
   {
     // only handle non-zero track numbers
     if (chna.UIDs[i].TrackNum)
@@ -75,7 +79,7 @@ bool ADMData::SetChna(const uint8_t *data)
 
         value.attr = false;
 
-        track->SetTrackNum(chna.UIDs[i].TrackNum);
+        track->SetTrackNum(chna.UIDs[i].TrackNum - 1);
 
         value.name = ADMAudioTrackFormat::Reference;
         value.value.assign(chna.UIDs[i].TrackRef, sizeof(chna.UIDs[i].TrackRef));
@@ -135,7 +139,6 @@ bool ADMData::SetAxml(const std::string& data)
   if (TranslateXML(data))
   {
     ConnectReferences();
-    UpdateLimits();
 
     success = true;
   }
@@ -147,15 +150,16 @@ bool ADMData::SetAxml(const std::string& data)
 /** Read ADM data from the chna and axml RIFF chunks
  *
  * @param chna ptr to chna chunk data 
+ * @param chnalength length of chna data
  * @param axml ptr to axml chunk data 
  * @param axmllength length of axml data
  *
  * @return true if data read successfully
  */
 /*--------------------------------------------------------------------------------*/
-bool ADMData::Set(const uint8_t *chna, const uint8_t *axml, uint_t axmllength)
+bool ADMData::Set(const uint8_t *chna, uint_t chnalength, const uint8_t *axml, uint_t axmllength)
 {
-  return (SetChna(chna) && SetAxml(axml, axmllength));
+  return (SetChna(chna, chnalength) && SetAxml(axml, axmllength));
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -174,12 +178,11 @@ uint8_t *ADMData::GetChna(uint32_t& len) const
   len = sizeof(*p) + tracklist.size() * sizeof(p->UIDs[0]);
   if ((p = (CHNA_CHUNK *)calloc(1, len)) != NULL)
   {
-    std::vector<uint32_t> uniquetracks; // bitmap of unique tracks
-    const uint_t uniquetracks_bitmapsize = sizeof(uniquetracks[0]) << 3;
+    std::vector<bool> uniquetracks; // list of unique tracks
     uint_t i;
     
-    // initially support up to 32 tracks (resizing is handled below)
-    uniquetracks.resize(1);
+    // allocate maximum number of tracks
+    uniquetracks.resize(tracklist.size());
     
     // populate structure
     p->TrackCount = 0;
@@ -190,51 +193,44 @@ uint8_t *ADMData::GetChna(uint32_t& len) const
       const ADMAudioTrack *track = tracklist[i];
       uint_t tr = track->GetTrackNum();
 
-      // only process non-zero track numebrs
-      if (tr)
+      // test to see if uniquetracks array needs expanding
+      if (tr >= uniquetracks.size()) uniquetracks.resize(tr + 1);
+      
+      // if this is a new track (i.e. one not previously used),increment TrackCount
+      if (!uniquetracks[tr])
       {
-        uint_t   trindex = tr / uniquetracks_bitmapsize;
-        uint32_t trmask  = 1ULL << (tr % uniquetracks_bitmapsize);
-      
-        // test to see if uniquetracks array needs expanding
-        if (trindex >= uniquetracks.size()) uniquetracks.resize(trindex + 1);
-      
-        // if this is a new track (i.e. one not previously used), set the bit in the uniquetracks bitmap and increment TrackCount
-        if (!(uniquetracks[trindex] & trmask))
-        {
-          // set bit
-          uniquetracks[trindex] |= trmask;
-          // increment TrackCount
-          p->TrackCount++;
-        }
-
-        // set track number and UID
-        p->UIDs[i].TrackNum = tr;
-        strncpy(p->UIDs[i].UID, track->GetID().c_str(), sizeof(p->UIDs[i].UID));
-
-        // set trackformat references
-        const ADMAudioTrackFormat *trackref = NULL;
-        if (track->GetTrackFormatRefs().size() && ((trackref = track->GetTrackFormatRefs()[0]) != NULL))
-        {
-          strncpy(p->UIDs[i].TrackRef, trackref->GetID().c_str(), sizeof(p->UIDs[i].TrackRef));
-        }
-
-        // set packformat references
-        const ADMAudioPackFormat *packref = NULL;
-        if (track->GetPackFormatRefs().size() && ((packref = track->GetPackFormatRefs()[0]) != NULL))
-        {
-          strncpy(p->UIDs[i].PackRef, packref->GetID().c_str(), sizeof(p->UIDs[i].PackRef));
-        }
-        
-        p->UIDCount++;
-
-        DEBUG2(("Track %u/%u: Index %u UID '%s' TrackFormatRef '%s' PackFormatRef '%s'",
-                i, p->UIDCount,
-                track->GetTrackNum(),
-                track->GetID().c_str(),
-                trackref ? trackref->GetID().c_str() : "<none>",
-                packref  ? packref->GetID().c_str()  : "<none>"));
+        // set flag
+        uniquetracks[tr] = true;
+        // increment TrackCount
+        p->TrackCount++;
       }
+
+      // set track number (1- based) and UID
+      p->UIDs[i].TrackNum = tr + 1;
+      strncpy(p->UIDs[i].UID, track->GetID().c_str(), sizeof(p->UIDs[i].UID));
+
+      // set trackformat references
+      const ADMAudioTrackFormat *trackref = NULL;
+      if (track->GetTrackFormatRefs().size() && ((trackref = track->GetTrackFormatRefs()[0]) != NULL))
+      {
+        strncpy(p->UIDs[i].TrackRef, trackref->GetID().c_str(), sizeof(p->UIDs[i].TrackRef));
+      }
+
+      // set packformat references
+      const ADMAudioPackFormat *packref = NULL;
+      if (track->GetPackFormatRefs().size() && ((packref = track->GetPackFormatRefs()[0]) != NULL))
+      {
+        strncpy(p->UIDs[i].PackRef, packref->GetID().c_str(), sizeof(p->UIDs[i].PackRef));
+      }
+        
+      p->UIDCount++;
+
+      DEBUG2(("Track %u/%u: Index %u UID '%s' TrackFormatRef '%s' PackFormatRef '%s'",
+              i, (uint_t)tracklist.size(),
+              track->GetTrackNum(),
+              track->GetID().c_str(),
+              trackref ? trackref->GetID().c_str() : "<none>",
+              packref  ? packref->GetID().c_str()  : "<none>"));
     }
   }
 
@@ -776,24 +772,6 @@ void ADMData::ConnectReferences()
   for (it = admobjects.begin(); it != admobjects.end(); ++it)
   {
     it->second->SetReferences();
-  }
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Update time and channel limits within objects
- */
-/*--------------------------------------------------------------------------------*/
-void ADMData::UpdateLimits()
-{
-  ADMOBJECTS_IT  it;
-  ADMAudioObject *obj;
-
-  for (it = admobjects.begin(); it != admobjects.end(); ++it)
-  {
-    if ((obj = dynamic_cast<ADMAudioObject *>(it->second)) != NULL)
-    {
-      obj->UpdateLimits();
-    }
   }
 }
 
@@ -1371,40 +1349,6 @@ void ADMData::GenerateReferenceList(std::string& str)
     const ADMObject *obj = it->second;
 
     obj->GenerateReferenceList(str);
-  }
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Create a set of cursors, one for each track, to allow tracking of position over time
- *
- * @param list list to be populated (items MUST be deleted by caller)
- * @param channel start channel
- * @param nchannels number of channels
- *
- * @note PositionCursor objects allow the list of positions within the ADM to be treated like an eventlist 
- */
-/*--------------------------------------------------------------------------------*/
-void ADMData::CreateCursors(std::vector<PositionCursor *>& list, uint_t channel, uint_t nchannels) const
-{
-  uint_t i;
-
-  // limit values
-  channel   = MIN(channel,   tracklist.size());
-  nchannels = MIN(nchannels, tracklist.size() - channel);
-
-  if (nchannels)
-  {
-    for (i = 0; i < tracklist.size(); i++)
-    {
-      const ADMAudioTrack *track = tracklist[i];
-      uint_t tr = track->GetTrackNum() - 1;
-
-      if ((tr >= channel) && (tr < (channel + nchannels)))
-      {
-        // this track is within the channel range -> add it
-        list.push_back(new ADMTrackCursor(tracklist[channel + i]));
-      }
-    }
   }
 }
 

@@ -8,51 +8,114 @@
 
 BBC_AUDIOTOOLBOX_START
 
-ADMAudioFileSamples::ADMAudioFileSamples(const ADMData *iadm, const SoundFileSamples *isamples, const ADMAudioObject *obj) : SoundFileSamplesWithPosition(isamples),
-                                                                                                                             adm(iadm)
+ADMAudioFileSamples::ADMAudioFileSamples(const SoundFileSamples *isamples, const ADMAudioObject *obj) : SoundFileSamplesWithPosition(isamples)
 {
-  if (obj)
+  uint_t i, n = GetChannels();
+
+  for (i = 0; i < n; i++)
   {
-    Clip_t newclip;
-
-    newclip.start = ADMObject::TimeToSamples(obj->GetChildrenStartTime(), format->GetSampleRate());
-    if (obj->GetChildrenEndTime() == obj->GetChildrenStartTime())
-    {
-      newclip.nsamples = ~(uint64_t)0;
-    }
-    else
-    {
-      newclip.nsamples = ADMObject::TimeToSamples(obj->GetChildrenEndTime(), format->GetSampleRate()) - newclip.start;
-    }
-    newclip.channel   = obj->GetChildrenStartChannel();
-    newclip.nchannels = obj->GetChildrenChannelCount();
-
-    SetClip(newclip);
+    cursors.push_back(new ADMTrackCursor(GetStartChannel() + i));
   }
 
-  adm->CreateCursors(cursors, GetClip().channel, GetClip().nchannels);
-
-  DEBUG2(("Channels %u for %u, samples %lu for %lu (%s to %s)",
-          GetClip().channel, GetClip().nchannels,
-          (ulong_t)GetClip().start, (ulong_t)GetClip().nsamples,
-          ADMObject::GenTime(ADMObject::SamplesToTime(GetClip().start,                      format->GetSampleRate())).c_str(),
-          ADMObject::GenTime(ADMObject::SamplesToTime(GetClip().start + GetClip().nsamples, format->GetSampleRate())).c_str()));
+  if (obj) Add(obj);
 }
 
-ADMAudioFileSamples::ADMAudioFileSamples(const ADMAudioFileSamples *isamples) : SoundFileSamplesWithPosition(isamples),
-                                                                                adm(isamples->adm)
+ADMAudioFileSamples::ADMAudioFileSamples(const ADMAudioFileSamples *isamples) : SoundFileSamplesWithPosition(isamples)
 {
-  adm->CreateCursors(cursors, GetClip().channel, GetClip().nchannels);
+  uint_t i;
 
-  DEBUG2(("Channels %u for %u, samples %lu for %lu (%s to %s)",
-          GetClip().channel, GetClip().nchannels,
-          (ulong_t)GetClip().start, (ulong_t)GetClip().nsamples,
-          ADMObject::GenTime(ADMObject::SamplesToTime(GetClip().start,                      format->GetSampleRate())).c_str(),
-          ADMObject::GenTime(ADMObject::SamplesToTime(GetClip().start + GetClip().nsamples, format->GetSampleRate())).c_str()));
+  for (i = 0; i < isamples->cursors.size(); i++)
+  {
+    const ADMTrackCursor *cursor;
+
+    if ((cursor = dynamic_cast<const ADMTrackCursor *>(isamples->cursors[i])) != NULL)
+    {
+      cursors.push_back(new ADMTrackCursor(*cursor));
+    }
+  }
 }
-                                                                                                     
+
 ADMAudioFileSamples::~ADMAudioFileSamples()
 {
+}
+
+bool ADMAudioFileSamples::Add(const ADMAudioObject *obj)
+{
+  bool   added = false;
+  uint_t i;
+
+  for (i = 0; i < cursors.size(); i++)
+  {
+    ADMTrackCursor *cursor;
+
+    if ((cursor = dynamic_cast<ADMTrackCursor *>(cursors[i])) != NULL)
+    {
+      if (cursor->Add(obj))
+      {
+        Clip_t   clip      = GetClip();
+        uint64_t startTime = cursor->GetStartTime() / timebase;        // convert cursor start time from ns to samples
+        uint64_t endTime   = cursor->GetEndTime()   / timebase;        // convert cursor end   time from ns to samples
+
+        if (objects.size() == 0)
+        {
+          startTime = MAX(startTime, clip.start);
+          endTime   = MIN(endTime,   clip.start + clip.nsamples);
+        }
+        else
+        {
+          startTime = MIN(startTime, clip.start);
+          endTime   = MAX(endTime,   clip.start + clip.nsamples);
+        }
+
+        clip.start    = startTime;
+        clip.nsamples = endTime - startTime,
+
+        SetClip(clip);
+
+        objects.push_back(obj);
+
+        added = true;
+      }
+    }
+  }
+
+  return added;
+}
+
+bool ADMAudioFileSamples::Add(const ADMAudioObject *objs[], uint_t n)
+{
+  bool   added = false;
+  uint_t i;
+
+  for (i = 0; i < cursors.size(); i++)
+  {
+    ADMTrackCursor *cursor;
+
+    if ((cursor = dynamic_cast<ADMTrackCursor *>(cursors[i])) != NULL)
+    {
+      added |= cursor->Add(objs, n);
+    }
+  }
+
+  return added;
+}
+
+bool ADMAudioFileSamples::Add(const std::vector<const ADMAudioObject *>& objs)
+{
+  bool   added = false;
+  uint_t i;
+
+  for (i = 0; i < cursors.size(); i++)
+  {
+    ADMTrackCursor *cursor;
+
+    if ((cursor = dynamic_cast<ADMTrackCursor *>(cursors[i])) != NULL)
+    {
+      added |= cursor->Add(objs);
+    }
+  }
+
+  return added;
 }
 
 void ADMAudioFileSamples::UpdatePosition()

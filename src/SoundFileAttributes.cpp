@@ -115,16 +115,16 @@ void SoundFileSamples::SetFile(const EnhancedFile *file, uint64_t pos, uint64_t 
 void SoundFileSamples::SetClip(const Clip_t& newclip)
 {
   clip = newclip;
-  clip.start     = MIN(clip.start,     totalsamples - 1);
+  clip.start     = MIN(clip.start,     totalsamples);
   clip.nsamples  = MIN(clip.nsamples,  totalsamples - clip.start);
-  clip.channel   = MIN(clip.channel,   format->GetChannels() - 1);
+  clip.channel   = MIN(clip.channel,   format->GetChannels());
   clip.nchannels = MIN(clip.nchannels, format->GetChannels() - clip.channel);
 
   samplepos = MIN(samplepos, clip.nsamples);
   UpdatePosition();
 }
 
-uint_t SoundFileSamples::ReadSamples(uint8_t *buffer, SampleFormat_t type, uint_t frames, uint_t firstchannel, uint_t nchannels)
+uint_t SoundFileSamples::ReadSamples(uint8_t *buffer, SampleFormat_t type, uint_t dstchannel, uint_t ndstchannels, uint_t frames, uint_t firstchannel, uint_t nchannels)
 {
   uint_t n = 0;
 
@@ -137,54 +137,66 @@ uint_t SoundFileSamples::ReadSamples(uint8_t *buffer, SampleFormat_t type, uint_
       DEBUG3(("No sample data left (pos = %lu, nsamples = %lu)!", (ulong_t)samplepos, (ulong_t)clip.nsamples));
     }
 
-    firstchannel = MIN(firstchannel, clip.nchannels - 1);
+    firstchannel = MIN(firstchannel, clip.nchannels);
     nchannels    = MIN(nchannels,    clip.nchannels - firstchannel);
 
+    dstchannel   = MIN(dstchannel,   ndstchannels);
+    nchannels    = MIN(nchannels,    ndstchannels - dstchannel);
+
     n = 0;
-    while (frames)
+    if (nchannels)
     {
-      uint_t nframes = MIN(frames, samplebufferframes);
-      size_t res;
-
-      DEBUG4(("Seeking to %lu", filepos + (clip.start + samplepos) * format->GetBytesPerFrame()));
-      if (file->fseek(filepos + samplepos * format->GetBytesPerFrame(), SEEK_SET) == 0)
+      while (frames)
       {
-        DEBUG4(("Reading %u x %u bytes", nframes, format->GetBytesPerFrame()));
+        uint_t nframes = MIN(frames, samplebufferframes);
+        size_t res;
 
-        if ((res = file->fread(samplebuffer, format->GetBytesPerFrame(), nframes)) > 0)
+        DEBUG4(("Seeking to %lu", filepos + (clip.start + samplepos) * format->GetBytesPerFrame()));
+        if (file->fseek(filepos + samplepos * format->GetBytesPerFrame(), SEEK_SET) == 0)
         {
-          nframes = res;
+          DEBUG4(("Reading %u x %u bytes", nframes, format->GetBytesPerFrame()));
 
-          DEBUG4(("Read %u frames, extracting channels %u-%u (from 0-%u), converting and copying to destination", nframes, clip.channel + firstchannel, clip.channel + firstchannel + nchannels, format->GetChannels()));
+          if ((res = file->fread(samplebuffer, format->GetBytesPerFrame(), nframes)) > 0)
+          {
+            nframes = res;
 
-          // de-interleave, convert and transfer samples
-          TransferSamples(samplebuffer, format->GetSampleFormat(), format->GetSamplesBigEndian(), clip.channel + firstchannel, format->GetChannels(),
-                          buffer, type, MACHINE_IS_BIG_ENDIAN, 0, nchannels,
-                          nchannels,
-                          nframes);
+            DEBUG4(("Read %u frames, extracting channels %u-%u (from 0-%u), converting and copying to destination", nframes, clip.channel + firstchannel, clip.channel + firstchannel + nchannels, format->GetChannels()));
 
-          n         += nframes;
-          buffer    += nframes * nchannels * GetBytesPerSample(type);
-          frames    -= nframes;
-          samplepos += nframes;
-        }
-        else if (res <= 0)
-        {
-          ERROR("Failed to read %u frames (%u bytes) from file, error %s", nframes, nframes * format->GetBytesPerFrame(), strerror(file->ferror()));
-          break;
+            // de-interleave, convert and transfer samples
+            TransferSamples(samplebuffer, format->GetSampleFormat(), format->GetSamplesBigEndian(), clip.channel + firstchannel, format->GetChannels(),
+                            buffer, type, MACHINE_IS_BIG_ENDIAN, dstchannel, ndstchannels,
+                            nchannels,
+                            nframes);
+
+            n         += nframes;
+            buffer    += nframes * ndstchannels * GetBytesPerSample(type);
+            frames    -= nframes;
+            samplepos += nframes;
+          }
+          else if (res <= 0)
+          {
+            ERROR("Failed to read %u frames (%u bytes) from file, error %s", nframes, nframes * format->GetBytesPerFrame(), strerror(file->ferror()));
+            break;
+          }
+          else
+          {
+            DEBUG3(("No data left!"));
+            break;
+          }
         }
         else
         {
-          DEBUG3(("No data left!"));
+          ERROR("Failed to seek to correct position in file, error %s", strerror(file->ferror()));
+          n = 0;
           break;
         }
       }
-      else
-      {
-        ERROR("Failed to seek to correct position in file, error %s", strerror(file->ferror()));
-        n = 0;
-        break;
-      }
+    }
+    else
+    {
+      // no channels to transfer, just increment position and return number of requested frames
+      n          = frames;
+      samplepos += n;
     }
 
     UpdatePosition();
@@ -205,53 +217,65 @@ uint_t SoundFileSamples::WriteSamples(const uint8_t *buffer, SampleFormat_t type
     firstchannel = MIN(firstchannel, clip.nchannels);
     nchannels    = MIN(nchannels,    clip.nchannels - firstchannel);
 
+    srcchannel   = MIN(srcchannel,   nsrcchannels);
+    nchannels    = MIN(nchannels,    nsrcchannels - srcchannel);
+
     n = 0;
-    while (nsrcframes)
+    if (nchannels)
     {
-      uint_t nframes = MIN(nsrcframes, samplebufferframes);
-      size_t res;
-
-      if (nchannels < format->GetChannels())
+      while (nsrcframes)
       {
-        // read existing sample data to allow overwriting of channels
-        res = file->fread(samplebuffer, bpf, nframes);
+        uint_t nframes = MIN(nsrcframes, samplebufferframes);
+        size_t res;
 
-        // clear rest of buffer
-        if (res < (bpf * nframes)) memset(samplebuffer + res * bpf, 0, (nframes - res) * bpf);
+        if (nchannels < format->GetChannels())
+        {
+          // read existing sample data to allow overwriting of channels
+          res = file->fread(samplebuffer, bpf, nframes);
 
-        // move back in file for write
-        if (res) file->fseek(-(long)(res * bpf), SEEK_CUR);
+          // clear rest of buffer
+          if (res < (bpf * nframes)) memset(samplebuffer + res * bpf, 0, (nframes - res) * bpf);
+
+          // move back in file for write
+          if (res) file->fseek(-(long)(res * bpf), SEEK_CUR);
+        }
+
+        // copy/interleave/convert samples
+        TransferSamples(buffer, type, MACHINE_IS_BIG_ENDIAN, srcchannel, nsrcchannels,
+                        samplebuffer, format->GetSampleFormat(), format->GetSamplesBigEndian(), clip.channel + firstchannel, nchannels,
+                        ~0,       // number of channels actually transfer will be limited by nsrcchannels and nchannels above
+                        nframes);
+
+        if ((res = file->fwrite(samplebuffer, bpf, nframes)) > 0)
+        {
+          nframes     = res;
+          n          += nframes;
+          buffer     += nframes * nsrcchannels * GetBytesPerSample(type);
+          nsrcframes -= nframes;
+          samplepos  += nframes;
+
+          totalsamples  = MAX(totalsamples,  samplepos);
+          clip.nsamples = MAX(clip.nsamples, totalsamples - clip.start);
+
+          totalbytes    = totalsamples * format->GetBytesPerFrame();
+        }
+        else if (res <= 0)
+        {
+          ERROR("Failed to write %u frames (%u bytes) to file, error %s", nframes, nframes * bpf, strerror(file->ferror()));
+          break;
+        }
+        else
+        {
+          DEBUG3(("No data left!"));
+          break;
+        }
       }
-
-      // copy/interleave/convert samples
-      TransferSamples(buffer, type, MACHINE_IS_BIG_ENDIAN, srcchannel, nsrcchannels,
-                      samplebuffer, format->GetSampleFormat(), format->GetSamplesBigEndian(), clip.channel + firstchannel, nchannels,
-                      ~0,       // number of channels actually transfer will be limited by nsrcchannels and nchannels above
-                      nframes);
-
-      if ((res = file->fwrite(samplebuffer, bpf, nframes)) > 0)
-      {
-        nframes     = res;
-        n          += nframes;
-        buffer     += nframes * nsrcchannels * GetBytesPerSample(type);
-        nsrcframes -= nframes;
-        samplepos  += nframes;
-
-        totalsamples  = MAX(totalsamples,  samplepos);
-        clip.nsamples = MAX(clip.nsamples, totalsamples - clip.start);
-
-        totalbytes    = totalsamples * format->GetBytesPerFrame();
-      }
-      else if (res <= 0)
-      {
-        ERROR("Failed to write %u frames (%u bytes) to file, error %s", nframes, nframes * bpf, strerror(file->ferror()));
-        break;
-      }
-      else
-      {
-        DEBUG3(("No data left!"));
-        break;
-      }
+    }
+    else
+    {
+      // no channels to transfer, just increment position and return number of requested frames
+      n          = nsrcframes;
+      samplepos += n;
     }
 
     UpdatePosition();

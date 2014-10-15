@@ -125,7 +125,6 @@ void ADMRIFFFile::Close()
 
     adm->SortTracks();
     adm->ConnectReferences();
-    adm->UpdateLimits();
 
     // get ADM object to create chna chunk
     if ((chna = adm->GetChna(chnalen)) != NULL)
@@ -182,7 +181,7 @@ bool ADMRIFFFile::PostReadChunks()
         axml && axml->GetData())
     {
       // decode chunks
-      success = adm->Set(chna->GetData(), axml->GetData(), axml->GetLength());
+      success = adm->Set(chna->GetData(), chna->GetLength(), axml->GetData(), axml->GetLength());
 
 #if DEBUG_LEVEL >= 4
       { // dump ADM as text

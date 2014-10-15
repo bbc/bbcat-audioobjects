@@ -31,9 +31,9 @@ void FilePositionGenerator::Process()
     for (i = 0; i < n; i++)
     {
       PositionCursor *cursor = cursors[i];
-      const Position *pos = cursor->GetPosition();
+      const Position *pos;
 
-      if (pos)
+      if ((pos = cursor->GetPosition()) != NULL)
       {
         UpdatePosition(cursor->GetChannel(), *pos, cursor->GetPositionSupplement());
       }

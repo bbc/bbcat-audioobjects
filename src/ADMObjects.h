@@ -339,64 +339,6 @@ protected:
 
 /*----------------------------------------------------------------------------------------------------*/
 
-class ADMTimeObject
-{
-public:
-  ADMTimeObject() : childrenStartTime(~(uint64_t)0),
-                    childrenEndTime(0) {}
-
-  /*--------------------------------------------------------------------------------*/
-  /** Update time limits
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void UpdateLimits() {}
-
-  /*--------------------------------------------------------------------------------*/
-  /** Reset and re-calculate limits
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void Reset()
-  {
-    childrenStartTime = ~(uint64_t)0;
-    childrenEndTime   = 0;
-    UpdateLimits();
-  }
-
-  /*--------------------------------------------------------------------------------*/
-  /** Update time limits
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void Update(uint64_t t1, uint64_t t2)
-  {
-    childrenStartTime = MIN(childrenStartTime, t1);
-    childrenEndTime   = MAX(childrenEndTime, t2);
-  }
-
-  /*--------------------------------------------------------------------------------*/
-  /** Update time limits
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void Update(const ADMTimeObject *obj) {Update(obj->GetChildrenStartTime(), obj->GetChildrenEndTime());}
-
-  /*--------------------------------------------------------------------------------*/
-  /** Return first start point of all child objects
-   */
-  /*--------------------------------------------------------------------------------*/
-  uint64_t GetChildrenStartTime() const {return MIN(childrenStartTime, childrenEndTime);}
-
-  /*--------------------------------------------------------------------------------*/
-  /** Return last end point of all child objects
-   */
-  /*--------------------------------------------------------------------------------*/
-  uint64_t GetChildrenEndTime() const {return childrenEndTime;}
-
-protected:
-  uint64_t childrenStartTime;
-  uint64_t childrenEndTime;
-};
-
-/*----------------------------------------------------------------------------------------------------*/
-
 class ADMAudioProgramme : public ADMObject, public ADMLevelObject
 {
 public:
@@ -565,7 +507,7 @@ protected:
 
 /*----------------------------------------------------------------------------------------------------*/
 
-class ADMAudioObject : public ADMObject, public ADMLevelObject, public ADMTimeObject
+class ADMAudioObject : public ADMObject, public ADMLevelObject
 {
 public:
   /*--------------------------------------------------------------------------------*/
@@ -602,7 +544,7 @@ public:
   /** Set and Get startTime
    */
   /*--------------------------------------------------------------------------------*/
-  void     SetStartTime(uint64_t t) {startTime = t; childrenEndTime = MAX(childrenEndTime, startTime);}
+  void     SetStartTime(uint64_t t) {startTime = t;}
   uint64_t GetStartTime() const {return startTime;}
 
   /*--------------------------------------------------------------------------------*/
@@ -644,15 +586,6 @@ public:
   const std::vector<ADMAudioTrack *>& GetTrackRefs() const {return trackrefs;}
 
   /*--------------------------------------------------------------------------------*/
-  /** Update track and time limits after all references have been set
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void UpdateLimits();
-
-  uint_t   GetChildrenStartChannel() const {return MIN(childrenMinChannel, childrenMaxChannel);}
-  uint_t   GetChildrenChannelCount() const {return childrenMaxChannel + 1 - GetChildrenStartChannel();}
-
-  /*--------------------------------------------------------------------------------*/
   /** Return list of values/attributes from internal variables and list of referenced objects
    *
    * @param objvalues list to be populated with ADMVALUE's holding object attributes and values
@@ -664,9 +597,7 @@ public:
 
   static bool Compare(const ADMAudioObject *obj1, const ADMAudioObject *obj2)
   {
-    return ((obj1->GetChildrenStartTime() < obj2->GetChildrenStartTime()) ||
-            ((obj1->GetChildrenStartTime() == obj2->GetChildrenStartTime()) &&
-             (obj1->GetChildrenStartChannel() < obj2->GetChildrenStartChannel())));
+    return (obj1->GetStartTime() < obj2->GetStartTime());
   }
 
   /*--------------------------------------------------------------------------------*/
@@ -690,13 +621,11 @@ protected:
   std::vector<ADMAudioTrack      *> trackrefs;
   uint64_t                          startTime;
   uint64_t                          duration;
-  uint_t                            childrenMinChannel;
-  uint_t                            childrenMaxChannel;
 };
 
 /*----------------------------------------------------------------------------------------------------*/
 
-class ADMAudioTrack : public ADMObject, public ADMLevelObject, public ADMTimeObject
+class ADMAudioTrack : public ADMObject, public ADMLevelObject
 {
 public:
   /*--------------------------------------------------------------------------------*/
@@ -712,7 +641,6 @@ public:
   ADMAudioTrack(ADMData& _owner, const std::string& _id, const std::string& _name) :
     ADMObject(_owner, _id, _name),
     ADMLevelObject(),
-    ADMTimeObject(),
     trackNum(0),
     sampleRate(0),
     bitDepth(0) {Register();}
@@ -737,6 +665,8 @@ public:
 
   /*--------------------------------------------------------------------------------*/
   /** Set and Get track index
+   *
+   * @note trackNum is stored 0- based but is 1- based in CHNA chunk
    */
   /*--------------------------------------------------------------------------------*/
   void SetTrackNum(uint_t ind) {trackNum = ind;}
@@ -776,12 +706,6 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   const std::vector<ADMAudioPackFormat *>& GetPackFormatRefs() const {return packformatrefs;}
-
-  /*--------------------------------------------------------------------------------*/
-  /** Update time limits
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void UpdateLimits();
 
   /*--------------------------------------------------------------------------------*/
   /** Return list of values/attributes from internal variables and list of referenced objects
@@ -851,7 +775,7 @@ protected:
 
 /*----------------------------------------------------------------------------------------------------*/
 
-class ADMAudioPackFormat : public ADMObject, public ADMTimeObject
+class ADMAudioPackFormat : public ADMObject
 {
 public:
   /*--------------------------------------------------------------------------------*/
@@ -864,8 +788,7 @@ public:
    * @note type passed to base constructor is fixed by static member variable Type 
    */
   /*--------------------------------------------------------------------------------*/
-  ADMAudioPackFormat(ADMData& _owner, const std::string& _id, const std::string& _name) : ADMObject(_owner, _id, _name),
-                                                                                          ADMTimeObject() {Register();}
+  ADMAudioPackFormat(ADMData& _owner, const std::string& _id, const std::string& _name) : ADMObject(_owner, _id, _name) {Register();}
 
   /*--------------------------------------------------------------------------------*/
   /** Return textual type name of this object
@@ -910,12 +833,6 @@ public:
   const std::vector<ADMAudioPackFormat *>& GetPackFormatRefs() const {return packformatrefs;}
 
   /*--------------------------------------------------------------------------------*/
-  /** Update time limits
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void UpdateLimits();
-
-  /*--------------------------------------------------------------------------------*/
   /** Return list of values/attributes from internal variables and list of referenced objects
    *
    * @param objvalues list to be populated with ADMVALUE's holding object attributes and values
@@ -948,7 +865,7 @@ protected:
 
 /*----------------------------------------------------------------------------------------------------*/
 
-class ADMAudioStreamFormat : public ADMObject, public ADMTimeObject
+class ADMAudioStreamFormat : public ADMObject
 {
 public:
   /*--------------------------------------------------------------------------------*/
@@ -961,8 +878,7 @@ public:
    * @note type passed to base constructor is fixed by static member variable Type 
    */
   /*--------------------------------------------------------------------------------*/
-  ADMAudioStreamFormat(ADMData& _owner, const std::string& _id, const std::string& _name) : ADMObject(_owner, _id, _name),
-                                                                                            ADMTimeObject() {Register();}
+  ADMAudioStreamFormat(ADMData& _owner, const std::string& _id, const std::string& _name) : ADMObject(_owner, _id, _name) {Register();}
 
   /*--------------------------------------------------------------------------------*/
   /** Return textual type name of this object
@@ -1030,12 +946,6 @@ public:
   const std::vector<ADMAudioPackFormat *>& GetPackFormatRefs() const {return packformatrefs;}
 
   /*--------------------------------------------------------------------------------*/
-  /** Update time limits
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void UpdateLimits();
-
-  /*--------------------------------------------------------------------------------*/
   /** Return list of values/attributes from internal variables and list of referenced objects
    *
    * @param objvalues list to be populated with ADMVALUE's holding object attributes and values
@@ -1068,7 +978,7 @@ protected:
   std::vector<ADMAudioPackFormat *>    packformatrefs;
 };
 
-class ADMAudioChannelFormat : public ADMObject, public ADMTimeObject
+class ADMAudioChannelFormat : public ADMObject
 {
 public:
   /*--------------------------------------------------------------------------------*/
@@ -1081,8 +991,7 @@ public:
    * @note type passed to base constructor is fixed by static member variable Type 
    */
   /*--------------------------------------------------------------------------------*/
-  ADMAudioChannelFormat(ADMData& _owner, const std::string& _id, const std::string& _name) : ADMObject(_owner, _id, _name),
-                                                                                             ADMTimeObject() {Register();}
+  ADMAudioChannelFormat(ADMData& _owner, const std::string& _id, const std::string& _name) : ADMObject(_owner, _id, _name) {Register();}
 
   /*--------------------------------------------------------------------------------*/
   /** Return textual type name of this object
@@ -1119,13 +1028,6 @@ public:
   std::vector<ADMAudioBlockFormat *>& GetBlockFormatRefs() {return blockformatrefs;}
 
   /*--------------------------------------------------------------------------------*/
-  /** Empty functions (to disable parent functionality)
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void UpdateLimits() {}
-  virtual void Reset() {}
-
-  /*--------------------------------------------------------------------------------*/
   /** Return list of values/attributes from internal variables and list of referenced objects
    *
    * @param objvalues list to be populated with ADMVALUE's holding object attributes and values
@@ -1156,7 +1058,7 @@ protected:
 
 /*----------------------------------------------------------------------------------------------------*/
 
-class ADMAudioTrackFormat : public ADMObject, public ADMLevelObject, public ADMTimeObject
+class ADMAudioTrackFormat : public ADMObject, public ADMLevelObject
 {
 public:
   /*--------------------------------------------------------------------------------*/
@@ -1170,8 +1072,7 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   ADMAudioTrackFormat(ADMData& _owner, const std::string& _id, const std::string& _name) : ADMObject(_owner, _id, _name),
-                                                                                           ADMLevelObject(),
-                                                                                           ADMTimeObject() {Register();}
+                                                                                           ADMLevelObject() {Register();}
 
   /*--------------------------------------------------------------------------------*/
   /** Return textual type name of this object
@@ -1215,12 +1116,6 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   const std::vector<ADMAudioStreamFormat *>& GetStreamFormatRefs() const {return streamformatrefs;}
-
-  /*--------------------------------------------------------------------------------*/
-  /** Update time limits
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void UpdateLimits();
 
   /*--------------------------------------------------------------------------------*/
   /** Return list of values/attributes from internal variables and list of referenced objects
@@ -1271,7 +1166,6 @@ public:
   ADMAudioBlockFormat(ADMData& _owner, const std::string& _id, const std::string& _name) :
     ADMObject(_owner, _id, _name),
     ADMLevelObject(),
-    startTime(0),
     rtime(0),
     duration(0),
     position(),
@@ -1311,28 +1205,16 @@ public:
   uint64_t GetDuration() const {return duration;}
 
   /*--------------------------------------------------------------------------------*/
-  /** Set parent start time
-   */
-  /*--------------------------------------------------------------------------------*/
-  void SetStartTime(uint64_t t) {startTime = t;}
-
-  /*--------------------------------------------------------------------------------*/
-  /** Return parent start time
-   */
-  /*--------------------------------------------------------------------------------*/
-  uint64_t GetStartTime() const {return startTime;}
-
-  /*--------------------------------------------------------------------------------*/
   /** Return block start time
    */
   /*--------------------------------------------------------------------------------*/
-  uint64_t GetBlockStartTime() const {return startTime + rtime;}
+  uint64_t GetStartTime() const {return rtime;}
 
   /*--------------------------------------------------------------------------------*/
   /** Return block end time
    */
   /*--------------------------------------------------------------------------------*/
-  uint64_t GetBlockEndTime() const {return startTime + rtime + duration;}
+  uint64_t GetEndTime() const {return rtime + duration;}
 
   /*--------------------------------------------------------------------------------*/
   /** Return (modifiable) physical position of this object
@@ -1393,7 +1275,6 @@ public:
   static const std::string Reference;
 
 protected:
-  uint64_t     startTime;
   uint64_t     rtime;
   uint64_t     duration;
   Position     position;
@@ -1409,14 +1290,41 @@ protected:
 class ADMTrackCursor : public PositionCursor
 {
 public:
-  ADMTrackCursor(const ADMAudioTrack *_track = NULL);
+  ADMTrackCursor(uint_t _channel);
   ADMTrackCursor(const ADMTrackCursor& obj);
   virtual ~ADMTrackCursor();
 
-  void Setup(const ADMAudioTrack *_track);
+  /*--------------------------------------------------------------------------------*/
+  /** Add audio object to this object
+   *
+   * @return true if object added, false if object ignored
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual bool Add(const ADMAudioObject *object, bool sort = true);
 
-  ADMTrackCursor& operator = (const ADMAudioTrack *_track) {Setup(_track); return *this;}
-  ADMTrackCursor& operator = (const ADMTrackCursor& obj);
+  /*--------------------------------------------------------------------------------*/
+  /** Add audio objects to this object
+   */
+  /*--------------------------------------------------------------------------------*/
+  bool Add(const ADMAudioObject *objects[], uint_t n);
+
+  /*--------------------------------------------------------------------------------*/
+  /** Add audio objects to this object
+   */
+  /*--------------------------------------------------------------------------------*/
+  bool Add(const std::vector<const ADMAudioObject *>& objects);
+
+  /*--------------------------------------------------------------------------------*/
+  /** Return cursor start time in ns
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual uint64_t GetStartTime() const;
+
+  /*--------------------------------------------------------------------------------*/
+  /** Return cursor end time in ns
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual uint64_t GetEndTime() const;
 
   /*--------------------------------------------------------------------------------*/
   /** Get position at specified time (ns)
@@ -1428,7 +1336,7 @@ public:
   /** Return channel for this cursor
    */
   /*--------------------------------------------------------------------------------*/
-  virtual uint_t GetChannel() const {return track->GetTrackNum() - 1;}
+  virtual uint_t GetChannel() const {return channel;}
 
   /*--------------------------------------------------------------------------------*/
   /** Return position at current time
@@ -1454,19 +1362,43 @@ public:
   /*--------------------------------------------------------------------------------*/
   virtual void EndPositionChanges();
 
-protected:
   /*--------------------------------------------------------------------------------*/
-  /** Return whether blockindex points to a valid block
+  /** Sort list of objects into time order
    */
   /*--------------------------------------------------------------------------------*/
-  bool BlockIndexValid() const;
+  virtual void Sort();
 
 protected:
-  const ADMAudioTrack                *track;
-  ADMAudioChannelFormat              *channelformat;
-  std::vector<ADMAudioBlockFormat *> *blockformats;
-  uint64_t                           currenttime;
-  sint_t                             blockindex;        ///< NOTE: this can be -ve or beyond the end of the array!
+  /*--------------------------------------------------------------------------------*/
+  /** Start a blockformat at t
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual ADMAudioBlockFormat *StartBlockFormat(uint64_t t);
+
+  /*--------------------------------------------------------------------------------*/
+  /** End a blockformat at t that has previously been start
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void EndBlockFormat(uint64_t t);
+
+protected:
+  typedef struct {
+    const ADMAudioObject  *object;              ///< ADMAudioObject object
+    ADMAudioChannelFormat *channelformat;       ///< ADMAudioChannelFormat object holding block formats
+  } AUDIOOBJECT;
+
+  static bool Compare(const AUDIOOBJECT& obj1, const AUDIOOBJECT& obj2)
+  {
+    return (obj1.object->GetStartTime() < obj2.object->GetStartTime());
+  }
+
+protected:
+  uint_t                   channel;
+  std::vector<AUDIOOBJECT> objectlist;
+  uint_t                   objectindex;
+  uint_t                   blockindex;
+  uint64_t                 currenttime;
+  bool                     blockformatstarted;
 };
 
 BBC_AUDIOTOOLBOX_END

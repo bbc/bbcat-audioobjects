@@ -38,6 +38,7 @@ public:
   /** Read ADM data from the chna and axml RIFF chunks
    *
    * @param chna ptr to chna chunk data 
+   * @param chnalength length of chna data
    * @param axml ptr to axml chunk data 
    * @param axmllength length of axml data
    *
@@ -46,17 +47,18 @@ public:
    * @note this requires facilities from a derived class
    */
   /*--------------------------------------------------------------------------------*/
-  bool Set(const uint8_t *chna, const uint8_t *axml, uint_t axmllength);
+  bool Set(const uint8_t *chna, uint_t chnalength, const uint8_t *axml, uint_t axmllength);
 
   /*--------------------------------------------------------------------------------*/
   /** Read ADM data from the chna RIFF chunk
    *
    * @param data ptr to chna chunk data 
+   * @param len length of chna chunk
    *
    * @return true if data read successfully
    */
   /*--------------------------------------------------------------------------------*/
-  bool SetChna(const uint8_t *data);
+  bool SetChna(const uint8_t *data, uint_t len);
 
   /*--------------------------------------------------------------------------------*/
   /** Read ADM data from the axml RIFF chunk
@@ -84,12 +86,6 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   virtual void ConnectReferences();
-
-  /*--------------------------------------------------------------------------------*/
-  /** Update audio start and stop times once all objects have been read
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void UpdateLimits();
 
   /*--------------------------------------------------------------------------------*/
   /** Sort tracks into numerical order
@@ -402,18 +398,6 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   virtual void GenerateReferenceList(std::string& str);
-
-  /*--------------------------------------------------------------------------------*/
-  /** Create a set of cursors, one for each track, to allow tracking of position over time
-   *
-   * @param list list to be populated (items MUST be deleted by caller)
-   * @param channel start channel (defaults to first channel)
-   * @param nchannels number of channels (defaults to maximum number of channels)
-   *
-   * @note PositionCursor objects allow the list of positions within the ADM to be treated like an eventlist 
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void CreateCursors(std::vector<PositionCursor *>& list, uint_t channel = 0, uint_t nchannels = ~0) const;
 
   /*--------------------------------------------------------------------------------*/
   /** Create ADM from a simple text file

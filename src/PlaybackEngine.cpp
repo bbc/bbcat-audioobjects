@@ -59,11 +59,27 @@ bool PlaybackEngine::AddObject(const ADMRIFFFile& file, const char *name)
   {
     if (strcasecmp(name, "all") == 0)
     {
+      std::vector<const ADMObject      *> admobjects;
+      std::vector<const ADMAudioObject *> objects;
       ADMAudioFileSamples *afile;
-    
-      // play entire file
-      if ((afile = new ADMAudioFileSamples(adm, file.GetSamples())) != NULL)
+      uint_t i;
+
+      // get list of ADMAudioObjects (as list of ADMObjects)
+      adm->GetADMList(ADMAudioObject::Type, admobjects);
+
+      // generate list of ADMAudioObjects
+      for (i = 0; i < admobjects.size(); i++)
       {
+        const ADMAudioObject *object;
+
+        if ((object = dynamic_cast<const ADMAudioObject *>(admobjects[i])) != NULL) objects.push_back(object);
+      }
+
+      // play entire file
+      if ((afile = new ADMAudioFileSamples(file.GetSamples())) != NULL)
+      {
+        afile->Add(objects);
+
         DEBUG2(("Adding entire audio file (%u channels, %lu samples) to list", afile->GetChannels(), (ulong_t)afile->GetSampleLength()));
         AddFile(afile);
         success = true;
@@ -79,7 +95,7 @@ bool PlaybackEngine::AddObject(const ADMRIFFFile& file, const char *name)
       if (((obj = dynamic_cast<const ADMAudioObject *>(adm->GetObjectByID(name, ADMAudioObject::Type))) != NULL) ||
           ((obj = dynamic_cast<const ADMAudioObject *>(adm->GetObjectByName(name, ADMAudioObject::Type))) != NULL))
       {
-        if ((afile = new ADMAudioFileSamples(adm, file.GetSamples(), obj)) != NULL)
+        if ((afile = new ADMAudioFileSamples(file.GetSamples(), obj)) != NULL)
         {
           DEBUG2(("Adding audio object %s (%u channels, %lu samples) to list", obj->ToString().c_str(), afile->GetChannels(), (ulong_t)afile->GetSampleLength()));
           AddFile(afile);
@@ -178,7 +194,7 @@ uint_t PlaybackEngine::Render(const Sample_t *src, Sample_t *dst,
       if (!inputchannels) SetFileChannelsAndSampleRate();
 
       // calculate maximum number of frames that can be read and read them into a temporary buffer
-      nread = file->ReadSamples(&samplesbuffer[0], MIN(samplesbuffer.size() / inputchannels, ndstframes));
+      nread = file->ReadSamples(&samplesbuffer[0], 0, inputchannels, MIN(samplesbuffer.size() / inputchannels, ndstframes));
 
       // end of this file, move onto next one
       if (nread == 0)

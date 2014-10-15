@@ -21,6 +21,37 @@ ADMFileWriter::~ADMFileWriter()
 }
 
 /*--------------------------------------------------------------------------------*/
+/** Create a WAVE/RIFF file
+ *
+ * @param filename filename of file to create
+ * @param samplerate sample rate of audio
+ * @param nchannels number of audio channels
+ * @param format sample format of audio in file
+ *
+ * @return true if file created properly
+ */
+/*--------------------------------------------------------------------------------*/
+bool ADMFileWriter::Create(const char *filename, uint32_t samplerate, uint_t nchannels, SampleFormat_t format)
+{
+  bool success = false;
+
+  if (ADMRIFFFile::Create(filename, samplerate, nchannels, format))
+  {
+    uint_t i;
+
+    // create cursors for position tracking
+    for (i = 0; i < nchannels; i++)
+    {
+      cursors.push_back(new ADMTrackCursor(i));
+    }
+
+    success = true;
+  }
+
+  return success;
+}
+
+/*--------------------------------------------------------------------------------*/
 /** Close file - store final positions before closing file
  *
  * @note this may take some time because it copies sample data from a temporary file
@@ -91,8 +122,6 @@ void ADMFileWriter::Consume(const uint8_t *src, SampleFormat_t srcformat, uint_t
 /*--------------------------------------------------------------------------------*/
 void ADMFileWriter::UpdatePositionEx(uint_t channel, const Position& pos, const ParameterSet *supplement)
 {
-  if ((cursors.size() == 0) && GetADM()) GetADM()->CreateCursors(cursors);
-
   if (channel < cursors.size())
   {
     PositionCursor *cursor = cursors[channel];

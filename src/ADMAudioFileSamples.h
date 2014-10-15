@@ -10,9 +10,13 @@ BBC_AUDIOTOOLBOX_START
 class ADMAudioFileSamples : public SoundFileSamplesWithPosition
 {
 public:
-  ADMAudioFileSamples(const ADMData *iadm, const SoundFileSamples *isamples, const ADMAudioObject *obj = NULL);
+  ADMAudioFileSamples(const SoundFileSamples *isamples, const ADMAudioObject *obj = NULL);
   ADMAudioFileSamples(const ADMAudioFileSamples *isamples);
   virtual ~ADMAudioFileSamples();
+
+  virtual bool Add(const ADMAudioObject *obj);
+  virtual bool Add(const ADMAudioObject *objs[], uint_t n);
+  virtual bool Add(const std::vector<const ADMAudioObject *>& objs);
 
   virtual ADMAudioFileSamples *Duplicate() const {return new ADMAudioFileSamples(this);}
 
@@ -20,7 +24,7 @@ protected:
   virtual void UpdatePosition();
 
 protected:
-  const ADMData *adm;
+  std::vector<const ADMAudioObject *> objects;
 };
 
 BBC_AUDIOTOOLBOX_END

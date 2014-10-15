@@ -221,11 +221,11 @@ public:
    * @return number of frames read or -1 for an error (no open file for example)
    */
   /*--------------------------------------------------------------------------------*/
-  sint_t ReadFrames(uint8_t *buffer, SampleFormat_t type, uint_t nframes) {return filesamples ? filesamples->ReadSamples((uint8_t *)buffer, type, nframes) : -1;}
-  sint_t ReadFrames(int16_t *buffer, uint_t nframes = 1) {return ReadFrames((uint8_t *)buffer, SampleFormatOf(buffer), nframes);}
-  sint_t ReadFrames(int32_t *buffer, uint_t nframes = 1) {return ReadFrames((uint8_t *)buffer, SampleFormatOf(buffer), nframes);}
-  sint_t ReadFrames(float   *buffer, uint_t nframes = 1) {return ReadFrames((uint8_t *)buffer, SampleFormatOf(buffer), nframes);}
-  sint_t ReadFrames(double  *buffer, uint_t nframes = 1) {return ReadFrames((uint8_t *)buffer, SampleFormatOf(buffer), nframes);}
+  sint_t ReadFrames(uint8_t *buffer, SampleFormat_t type, uint_t dstchannel, uint_t ndstchannels, uint_t nframes) {return filesamples ? filesamples->ReadSamples((uint8_t *)buffer, type, dstchannel, ndstchannels, nframes) : -1;}
+  sint_t ReadFrames(int16_t *buffer, uint_t dstchannel, uint_t ndstchannels, uint_t nframes = 1) {return ReadFrames((uint8_t *)buffer, SampleFormatOf(buffer), dstchannel, ndstchannels, nframes);}
+  sint_t ReadFrames(int32_t *buffer, uint_t dstchannel, uint_t ndstchannels, uint_t nframes = 1) {return ReadFrames((uint8_t *)buffer, SampleFormatOf(buffer), dstchannel, ndstchannels, nframes);}
+  sint_t ReadFrames(float   *buffer, uint_t dstchannel, uint_t ndstchannels, uint_t nframes = 1) {return ReadFrames((uint8_t *)buffer, SampleFormatOf(buffer), dstchannel, ndstchannels, nframes);}
+  sint_t ReadFrames(double  *buffer, uint_t dstchannel, uint_t ndstchannels, uint_t nframes = 1) {return ReadFrames((uint8_t *)buffer, SampleFormatOf(buffer), dstchannel, ndstchannels, nframes);}
 
   /*--------------------------------------------------------------------------------*/
   /** Write sample frames

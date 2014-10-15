@@ -8,7 +8,7 @@
 #include <map>
 #include <algorithm>
 
-#define DEBUG_LEVEL 1
+#define DEBUG_LEVEL 2
 #include <bbcat-base/ByteSwap.h>
 
 #include "ADMObjects.h"
@@ -803,11 +803,8 @@ const std::string ADMAudioObject::Reference = Type + "IDRef";
 ADMAudioObject::ADMAudioObject(ADMData& _owner, const std::string& _id, const std::string& _name) :
   ADMObject(_owner, _id, _name),
   ADMLevelObject(),
-  ADMTimeObject(),
   startTime(0),
-  duration(0),
-  childrenMinChannel(~0),
-  childrenMaxChannel(0)
+  duration(0)
 {
   Register();
 }
@@ -853,46 +850,11 @@ bool ADMAudioObject::Add(ADMAudioTrack *obj)
   if (std::find(trackrefs.begin(), trackrefs.end(), obj) == trackrefs.end())
   {
     trackrefs.push_back(obj);
-    childrenMinChannel = MIN(childrenMinChannel, obj->GetTrackNum() - 1);
-    childrenMaxChannel = MAX(childrenMaxChannel, obj->GetTrackNum() - 1);
     return true;
   }
 
   // reference is already in the list
   return true;
-}
-
-void ADMAudioObject::UpdateLimits()
-{
-  uint_t i;
-
-  for (i = 0; i < trackrefs.size(); i++)
-  {
-    uint_t t = trackrefs[i]->GetTrackNum() - 1;
-    childrenMinChannel = MIN(childrenMinChannel, t);
-    childrenMaxChannel = MAX(childrenMaxChannel, t);
-  }
-
-  for (i = 0; i < packformatrefs.size(); i++)
-  {
-    ADMAudioPackFormat *obj = packformatrefs[i];
-
-    obj->UpdateLimits();
-    Update(obj);
-  }
-
-  for (i = 0; i < trackrefs.size(); i++)
-  {
-    ADMAudioTrack *obj = trackrefs[i];
-
-    obj->UpdateLimits();
-    Update(obj);
-  }
-
-  DEBUG4(("%s start %s end %s",
-          ToString().c_str(),
-          GenTime(GetChildrenStartTime()).c_str(),
-          GenTime(GetChildrenEndTime()).c_str()));
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -917,22 +879,6 @@ void ADMAudioObject::GetValuesAndReferences(ADMVALUES& objvalues, std::vector<RE
   if (duration)
   {
     SetAttribute(value, "duration",  duration);
-    objvalues.push_back(value);
-  }
-
-  if (full)
-  {
-    // full (non-XML) list
-    SetAttribute(value, "blockChannelStart", GetChildrenStartChannel());
-    objvalues.push_back(value);
-
-    SetAttribute(value, "blockChannelCount", GetChildrenChannelCount());
-    objvalues.push_back(value);
-
-    SetAttribute(value, "blockStartTime",    GetChildrenStartTime());
-    objvalues.push_back(value);
-
-    SetAttribute(value, "blockEndTime",      GetChildrenEndTime());
     objvalues.push_back(value);
   }
 
@@ -988,7 +934,8 @@ void ADMAudioTrack::SetValues()
 {
   ADMObject::SetValues();
 
-  SetValue(trackNum,   "trackNum");
+  // trackNum is 1- based in XML, 0- based in object
+  if (SetValue(trackNum, "trackNum")) trackNum--;
   SetValue(sampleRate, "sampleRate");
   SetValue(bitDepth,   "bitDepth");
 }
@@ -1009,7 +956,7 @@ void ADMAudioTrack::GetValuesAndReferences(ADMVALUES& objvalues, std::vector<REF
   // add values/attributes not held in 'values' to list
   if (full)
   {
-    SetAttribute(value, "trackNum", trackNum); objvalues.push_back(value);
+    SetAttribute(value, "trackNum", trackNum + 1); objvalues.push_back(value);
   }
   SetAttribute(value, "sampleRate", sampleRate); objvalues.push_back(value);
   SetAttribute(value, "bitDepth",   bitDepth);   objvalues.push_back(value);
@@ -1053,31 +1000,6 @@ bool ADMAudioTrack::Add(ADMAudioPackFormat *obj)
 
   // reference is already in the list
   return true;
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Update time limits
- */
-/*--------------------------------------------------------------------------------*/
-void ADMAudioTrack::UpdateLimits()
-{
-  uint_t i;
-
-  for (i = 0; i < trackformatrefs.size(); i++)
-  {
-    ADMAudioTrackFormat *obj = trackformatrefs[i];
-
-    obj->UpdateLimits();
-    Update(obj);
-  }
-
-  for (i = 0; i < packformatrefs.size(); i++)
-  {
-    ADMAudioPackFormat *obj = packformatrefs[i];
-
-    obj->UpdateLimits();
-    Update(obj);
-  }
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -1138,15 +1060,6 @@ void ADMAudioPackFormat::GetValuesAndReferences(ADMVALUES& objvalues, std::vecto
   // populate list from parent object
   ADMObject::GetValuesAndReferences(objvalues, objects, full);
 
-  if (full)
-  {
-    SetAttribute(value, "startTime", GetChildrenStartTime());
-    objvalues.push_back(value);
-
-    SetAttribute(value, "endTime",   GetChildrenEndTime());
-    objvalues.push_back(value);
-  }
-
   // generate references only
   object.genref  = true;
   object.gendata = false;
@@ -1175,23 +1088,6 @@ bool ADMAudioPackFormat::Add(ADMAudioPackFormat *obj)
 
   // reference is already in the list
   return true;
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Update time limits
- */
-/*--------------------------------------------------------------------------------*/
-void ADMAudioPackFormat::UpdateLimits()
-{
-  uint_t i;
-
-  for (i = 0; i < channelformatrefs.size(); i++)
-  {
-    ADMAudioChannelFormat *obj = channelformatrefs[i];
-
-    obj->UpdateLimits();
-    Update(obj);
-  }
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -1276,31 +1172,6 @@ bool ADMAudioStreamFormat::Add(ADMAudioPackFormat *obj)
 }
 
 /*--------------------------------------------------------------------------------*/
-/** Update time limits
- */
-/*--------------------------------------------------------------------------------*/
-void ADMAudioStreamFormat::UpdateLimits()
-{
-  uint_t i;
-
-  for (i = 0; i < channelformatrefs.size(); i++)
-  {
-    ADMAudioChannelFormat *obj = channelformatrefs[i];
-
-    obj->UpdateLimits();
-    Update(obj);
-  }
-
-  for (i = 0; i < packformatrefs.size(); i++)
-  {
-    ADMAudioPackFormat *obj = packformatrefs[i];
-
-    obj->UpdateLimits();
-    Update(obj);
-  }
-}
-
-/*--------------------------------------------------------------------------------*/
 /** Return list of values/attributes from internal variables and list of referenced objects
  */
 /*--------------------------------------------------------------------------------*/
@@ -1322,15 +1193,6 @@ void ADMAudioStreamFormat::GetValuesAndReferences(ADMVALUES& objvalues, std::vec
   if (full || (formatDefinition != ""))
   {
     SetAttribute(value, "formatDefinition", formatDefinition);
-    objvalues.push_back(value);
-  }
-
-  if (full)
-  {
-    SetAttribute(value, "startTime", GetChildrenStartTime());
-    objvalues.push_back(value);
-
-    SetAttribute(value, "endTime",   GetChildrenEndTime());
     objvalues.push_back(value);
   }
 
@@ -1433,23 +1295,6 @@ bool ADMAudioTrackFormat::Add(ADMAudioStreamFormat *obj)
 }
 
 /*--------------------------------------------------------------------------------*/
-/** Update time limits
- */
-/*--------------------------------------------------------------------------------*/
-void ADMAudioTrackFormat::UpdateLimits()
-{
-  uint_t i;
-
-  for (i = 0; i < streamformatrefs.size(); i++)
-  {
-    ADMAudioStreamFormat *obj = streamformatrefs[i];
-
-    obj->UpdateLimits();
-    Update(obj);
-  }
-}
-
-/*--------------------------------------------------------------------------------*/
 /** Generate a textual list of references 
  *
  * @param str string to be modified
@@ -1489,8 +1334,6 @@ bool ADMAudioChannelFormat::Add(ADMAudioBlockFormat *obj)
     //obj->SetStartTime();
     blockformatrefs.push_back(obj);
     sort(blockformatrefs.begin(), blockformatrefs.end(), ADMAudioBlockFormat::Compare);
-
-    Update(obj->GetBlockStartTime(), obj->GetBlockEndTime());
     return true;
   }
 
@@ -1510,15 +1353,6 @@ void ADMAudioChannelFormat::GetValuesAndReferences(ADMVALUES& objvalues, std::ve
 
   // populate list from parent object
   ADMObject::GetValuesAndReferences(objvalues, objects, full);
-
-  if (full)
-  {
-    SetAttribute(value, "startTime", GetChildrenStartTime());
-    objvalues.push_back(value);
-
-    SetAttribute(value, "endTime",   GetChildrenEndTime());
-    objvalues.push_back(value);
-  }
 
   // generate contained data entries
   object.genref  = false;
@@ -1685,75 +1519,171 @@ void ADMAudioBlockFormat::GenerateReferenceList(std::string& str) const
 
 /*----------------------------------------------------------------------------------------------------*/
 
-ADMTrackCursor::ADMTrackCursor(const ADMAudioTrack *_track) : PositionCursor(),
-                                                              track(NULL),
-                                                              channelformat(NULL),
-                                                              blockformats(NULL),
-                                                              currenttime(0),
-                                                              blockindex(-1)
+ADMTrackCursor::ADMTrackCursor(uint_t _channel) : PositionCursor(),
+                                                  channel(_channel),
+                                                  objectindex(0),
+                                                  blockindex(0),
+                                                  currenttime(0),
+                                                  blockformatstarted(false)
 {
-  if (_track) Setup(_track);
 }
 
 ADMTrackCursor::ADMTrackCursor(const ADMTrackCursor& obj) : PositionCursor(),
-                                                            track(obj.track),
-                                                            channelformat(obj.channelformat),
-                                                            blockformats(obj.blockformats),
-                                                            currenttime(obj.currenttime),
-                                                            blockindex(obj.blockindex)
+                                                            channel(obj.channel),
+                                                            objectindex(0),
+                                                            blockindex(0),
+                                                            currenttime(0),
+                                                            blockformatstarted(false)
 {
+  uint_t i;
+
+  for (i = 0; i < obj.objectlist.size(); i++) Add(obj.objectlist[i].object, false);
+
+  Sort();
 }
 
 ADMTrackCursor::~ADMTrackCursor()
 {
 }
 
-void ADMTrackCursor::Setup(const ADMAudioTrack *_track)
-{
-  blockformats = NULL;
-  blockindex   = -1;
-
-  if ((track = _track) != NULL)
-  {
-    const ADMAudioTrackFormat *trackformat;
-
-    if ((track->GetTrackFormatRefs().size() > 0) && ((trackformat = track->GetTrackFormatRefs().front()) != NULL))
-    {
-      const ADMAudioStreamFormat *streamformat;
-
-      if ((trackformat->GetStreamFormatRefs().size() > 0) && ((streamformat = trackformat->GetStreamFormatRefs().front()) != NULL))
-      {
-        if ((streamformat->GetChannelFormatRefs().size() > 0) && ((channelformat = const_cast<ADMAudioChannelFormat *>(streamformat->GetChannelFormatRefs().front())) != NULL))
-        {
-          blockformats = &channelformat->GetBlockFormatRefs();
-        }
-        else ERROR("Failed to find channel format for '%s' (track '%s')", streamformat->ToString().c_str(), track->ToString().c_str());
-      }
-      else ERROR("Failed to find stream format for '%s' (track '%s')", trackformat->ToString().c_str(), track->ToString().c_str());
-    }
-    else ERROR("Failed to find track format for track '%s'", track->ToString().c_str());
-  }
-}
-
-ADMTrackCursor& ADMTrackCursor::operator = (const ADMTrackCursor& obj)
-{
-  track         = obj.track;
-  channelformat = obj.channelformat;
-  blockformats  = obj.blockformats;
-  currenttime   = obj.currenttime;
-  blockindex    = obj.blockindex;
-  return *this;
-}
-
 /*--------------------------------------------------------------------------------*/
-/** Return whether blockindex points to a valid block
+/** Add audio object to this object
+ *
+ * @return true if object added, false if object ignored
  */
 /*--------------------------------------------------------------------------------*/
-bool ADMTrackCursor::BlockIndexValid() const
+bool ADMTrackCursor::Add(const ADMAudioObject *object, bool sort)
 {
-  return (blockformats &&
-          (blockindex >= 0) &&
-          (blockindex < (sint_t)blockformats->size()));
+  uint_t i;
+  bool   added = false;
+
+  // look for this object in the list
+  for (i = 0; i < objectlist.size(); i++)
+  {
+    // if object is already in list, exit now
+    if (objectlist[i].object == object) return false;
+  }
+
+  const std::vector<ADMAudioTrack *>& trackrefs = object->GetTrackRefs();
+  for (i = 0; (i < trackrefs.size()) && !added; i++)
+  {
+    if (trackrefs[i]->GetTrackNum() == channel)
+    {
+      const std::vector<ADMAudioTrackFormat *>& trackformatrefs = trackrefs[i]->GetTrackFormatRefs();
+
+      if (trackformatrefs.size() == 1)
+      {
+        const std::vector<ADMAudioStreamFormat *>& streamformatrefs = trackformatrefs[0]->GetStreamFormatRefs();
+
+        if (streamformatrefs.size() == 1)
+        {
+          const std::vector<ADMAudioChannelFormat *>& channelformatrefs = streamformatrefs[0]->GetChannelFormatRefs();
+
+          if (channelformatrefs.size() == 1)
+          {
+            AUDIOOBJECT obj =
+            {
+              object,
+              channelformatrefs[0],
+            };
+
+            objectlist.push_back(obj);
+
+            added = true;
+          }
+          else ERROR("Incorrect channelformatrefs in '%s' (%u)!", streamformatrefs[0]->ToString().c_str(), (uint_t)channelformatrefs.size());
+        }
+        else ERROR("Incorrect streamformatrefs in '%s' (%u)!", trackformatrefs[0]->ToString().c_str(), (uint_t)streamformatrefs.size());
+      }
+      else ERROR("Incorrect trackformatrefs in '%s' (%u)!", trackrefs[0]->ToString().c_str(), (uint_t)trackformatrefs.size());
+    }
+  }
+
+  if (added && sort) Sort();
+
+  return added;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Add audio objects to this object
+ */
+/*--------------------------------------------------------------------------------*/
+bool ADMTrackCursor::Add(const ADMAudioObject *objects[], uint_t n)
+{
+  bool   added = false;
+  uint_t i;
+
+  for (i = 0; i < n; i++) added |= Add(objects[i], false);
+
+  if (added) Sort();
+
+  return added;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Add audio objects to this object
+ */
+/*--------------------------------------------------------------------------------*/
+bool ADMTrackCursor::Add(const std::vector<const ADMAudioObject *>& objects)
+{
+  bool   added = false;
+  uint_t i;
+
+  for (i = 0; i < objects.size(); i++) added |= Add(objects[i], false);
+
+  if (added) Sort();
+
+  return added;
+}
+
+
+/*--------------------------------------------------------------------------------*/
+/** Sort list of objects into time order
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMTrackCursor::Sort()
+{
+  std::sort(objectlist.begin(), objectlist.end(), &Compare);
+
+  Seek(currenttime);
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Return cursor start time in ns
+ */
+/*--------------------------------------------------------------------------------*/
+uint64_t ADMTrackCursor::GetStartTime() const
+{
+  uint64_t t = 0;
+
+  if (objectlist.size() > 0)
+  {
+    const AUDIOOBJECT&                        object       = objectlist[0];
+    const std::vector<ADMAudioBlockFormat *>& blockformats = objectlist[objectindex].channelformat->GetBlockFormatRefs();
+
+    if (blockformats.size() > 0) t = object.object->GetStartTime() + blockformats[0]->GetStartTime();
+  }
+
+  return t;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Return cursor end time in ns
+ */
+/*--------------------------------------------------------------------------------*/
+uint64_t ADMTrackCursor::GetEndTime() const
+{
+  uint64_t t = 0;
+
+  if (objectlist.size() > 0)
+  {
+    const AUDIOOBJECT&                        object       = objectlist[0];
+    const std::vector<ADMAudioBlockFormat *>& blockformats = objectlist[objectindex].channelformat->GetBlockFormatRefs();
+
+    if (blockformats.size() > 0) t = object.object->GetStartTime() + blockformats[blockformats.size() - 1]->GetStartTime();
+  }
+
+  return t;
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -1762,14 +1692,16 @@ bool ADMTrackCursor::BlockIndexValid() const
 /*--------------------------------------------------------------------------------*/
 const Position *ADMTrackCursor::GetPosition() const
 {
-  const Position *res = NULL;
+  const Position *pos = NULL;
 
-  if (BlockIndexValid())
+  if (objectindex < objectlist.size())
   {
-    res = &(*blockformats)[blockindex]->GetPosition();
+    const std::vector<ADMAudioBlockFormat *>& blockformats = objectlist[objectindex].channelformat->GetBlockFormatRefs();
+
+    if (blockindex < blockformats.size()) pos = &blockformats[blockindex]->GetPosition();
   }
 
-  return res;
+  return pos;
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -1778,14 +1710,57 @@ const Position *ADMTrackCursor::GetPosition() const
 /*--------------------------------------------------------------------------------*/
 const ParameterSet *ADMTrackCursor::GetPositionSupplement() const
 {
-  const ParameterSet *res = NULL;
+  const ParameterSet *supplement = NULL;
 
-  if (BlockIndexValid())
+  if (objectindex < objectlist.size())
   {
-    res = &(*blockformats)[blockindex]->GetPositionSupplement();
+    const std::vector<ADMAudioBlockFormat *>& blockformats = objectlist[objectindex].channelformat->GetBlockFormatRefs();
+
+    if (blockindex < blockformats.size()) supplement = &blockformats[blockindex]->GetPositionSupplement();
   }
 
-  return res;
+  return supplement;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Start a blockformat at t
+ */
+/*--------------------------------------------------------------------------------*/
+ADMAudioBlockFormat *ADMTrackCursor::StartBlockFormat(uint64_t t)
+{
+  AUDIOOBJECT&        object       = objectlist[objectindex];
+  ADMData&            adm          = object.channelformat->GetOwner();
+  ADMAudioBlockFormat *blockformat;
+  uint64_t            relativetime = t - object.object->GetStartTime();
+
+  if ((blockformat = new ADMAudioBlockFormat(adm, adm.CreateID(ADMAudioBlockFormat::Type, object.channelformat), "")) != NULL)
+  {
+    blockformat->SetRTime(relativetime);
+    object.channelformat->Add(blockformat);
+    
+    blockindex         = object.channelformat->GetBlockFormatRefs().size() - 1;
+    blockformatstarted = true;
+  }
+
+  return blockformat;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** End a blockformat at t that has previously been start
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMTrackCursor::EndBlockFormat(uint64_t t)
+{
+  if (blockformatstarted)
+  {
+    AUDIOOBJECT&        object       = objectlist[objectindex];
+    ADMAudioBlockFormat *blockformat = object.channelformat->GetBlockFormatRefs()[blockindex];
+    uint64_t            relativetime = t - object.object->GetStartTime();
+  
+    blockformat->SetDuration(relativetime - blockformat->GetStartTime());
+
+    blockformatstarted = false;
+  }
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -1794,10 +1769,12 @@ const ParameterSet *ADMTrackCursor::GetPositionSupplement() const
 /*--------------------------------------------------------------------------------*/
 void ADMTrackCursor::SetPosition(const Position& pos, const ParameterSet *supplement)
 {
-  if (blockformats)
+  if ((objectindex < objectlist.size()) && (currenttime >= objectlist[objectindex].object->GetStartTime()))
   {
-    const Position     *current_pos        = GetPosition();
-    const ParameterSet *current_supplement = GetPositionSupplement();
+    AUDIOOBJECT&                        object              = objectlist[objectindex];
+    std::vector<ADMAudioBlockFormat *>& blockformats        = object.channelformat->GetBlockFormatRefs();
+    const Position                      *current_pos        = GetPosition();
+    const ParameterSet                  *current_supplement = GetPositionSupplement();
 
     // decide whether a new blockformat is required
     if (!current_pos                                                                || // if no existing entries; or
@@ -1806,35 +1783,24 @@ void ADMTrackCursor::SetPosition(const Position& pos, const ParameterSet *supple
         (!supplement && current_supplement)                                         || // no supplement is suppled when current one does exist; or
         (supplement  && current_supplement && (*supplement != *current_supplement)))   // supplement has changed
     {
-      ADMData&            adm = channelformat->GetOwner();
-      ADMAudioBlockFormat *blockformat     = NULL;
-      bool                newblockrequired = true;
+      ADMAudioBlockFormat *blockformat;
+      uint64_t            relativetime = currenttime - object.object->GetStartTime();
 
-      // close current one off by setting end time
-      if (BlockIndexValid())
+      if ((blockindex < blockformats.size()) && (blockformats[blockindex]->GetStartTime() == relativetime))
       {
-        blockformat = (*blockformats)[blockindex];
+        // new position at same time as original -> just update this position
+        blockformats[blockindex]->SetPosition(pos, supplement);
+      }
+      else
+      {
+        // new position requires new block format
+        EndBlockFormat(currenttime);
 
-        if (blockformat->GetBlockStartTime() == currenttime)
+        if ((blockformat = StartBlockFormat(currenttime)) != NULL)
         {
-          // new position at same time as original -> just update this position
           blockformat->SetPosition(pos, supplement);
-          // no need to create new blockformat
-          newblockrequired = false;
         }
-        else blockformat->SetDuration(currenttime - blockformat->GetBlockStartTime());
       }
-
-      // create new blockformat if required
-      if (newblockrequired && ((blockformat = new ADMAudioBlockFormat(adm, adm.CreateID(ADMAudioBlockFormat::Type, channelformat), "")) != NULL))
-      {
-        blockformat->SetRTime(currenttime - blockformat->GetStartTime());
-        blockformat->SetPosition(pos, supplement);
-        channelformat->Add(blockformat);
-        Seek(currenttime);
-      }
-
-      if (blockformat) DEBUG2(("Set position to %s at %lu", blockformat->GetPosition().ToString().c_str(), (ulong_t)currenttime));
     }
   }
 }
@@ -1845,29 +1811,16 @@ void ADMTrackCursor::SetPosition(const Position& pos, const ParameterSet *supple
 /*--------------------------------------------------------------------------------*/
 void ADMTrackCursor::EndPositionChanges()
 {
-  // close last block format off by setting end time
-  if (blockformats)
+  if ((objectindex < objectlist.size()) &&
+      (currenttime >= objectlist[objectindex].object->GetStartTime()) &&
+      (objectlist[objectindex].channelformat->GetBlockFormatRefs().size() == 0))
   {
-    if (blockformats->size() > 0)
-    {
-      ADMAudioBlockFormat *blockformat = blockformats->back();
-
-      blockformat->SetDuration(currenttime - blockformat->GetRTime());
-
-      DEBUG2(("Set duration of last block at %lu to %lu", (ulong_t)currenttime, (ulong_t)blockformat->GetDuration()));
-    }
-    else
-    {
-      ADMData&            adm = channelformat->GetOwner();
-      ADMAudioBlockFormat *blockformat;
-
-      if ((blockformat = adm.CreateBlockFormat("", channelformat)) != NULL)
-      {
-        blockformat->SetDuration(currenttime - blockformat->GetRTime());
-        DEBUG2(("Created empty block with duration at %lu of %lu", (ulong_t)currenttime, (ulong_t)blockformat->GetDuration()));
-      }
-    }
+    // no blockformats for the current object, create one from start of object
+    StartBlockFormat(objectlist[objectindex].object->GetStartTime());
   }
+
+  // close last blockformat off by setting end time
+  EndBlockFormat(currenttime);
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -1876,27 +1829,49 @@ void ADMTrackCursor::EndPositionChanges()
 /*--------------------------------------------------------------------------------*/
 bool ADMTrackCursor::Seek(uint64_t t)
 {
-  sint_t oldindex = blockindex;
+  uint_t oldobjectindex = objectindex;
+  uint_t oldblockindex  = blockindex;
 
-  if (blockformats)
+  if (objectindex < objectlist.size())
   {
-    sint_t n = blockformats->size();
+    // find right object in list
+    while ((objectindex > 0) && (t < objectlist[objectindex].object->GetStartTime()))
+    {
+      // close last blockformat of this object off by setting end time
+      EndBlockFormat(currenttime);
 
-    // move blockindex to point to the correct index
-    // blockindex is ALLOWED to be off either end, indicating there are no valid positions for this block at the specified time
-    // move back if necessary
-    while ((blockindex >= 0) && (t <  (*blockformats)[blockindex]->GetBlockStartTime())) blockindex--;
+      // move back
+      objectindex--;
+      blockindex = 0;
 
-    // handle case where blockindex is -ve but can move to the start of the array
-    if    ((blockindex <  0) && (t >= (*blockformats)[0]->GetBlockStartTime())) blockindex++;
+      const std::vector<ADMAudioBlockFormat *>& blockformats = objectlist[objectindex].channelformat->GetBlockFormatRefs();
+      if (blockformats.size() > 0) blockindex = blockformats.size() - 1;
+    }
+    while (((objectindex + 1) < objectlist.size()) && (t >= objectlist[objectindex + 1].object->GetStartTime()))
+    {
+      // close last blockformat of this object off by setting end time at start of next object
+      EndBlockFormat(objectlist[objectindex + 1].object->GetStartTime());
 
-    // move forward if necessary
-    while ((blockindex >= 0) && (blockindex < n) && (t >= (*blockformats)[blockindex]->GetBlockEndTime())) blockindex++;
+      // move forward
+      objectindex++;
+      blockindex = 0;
+    }
+
+    // move blockindex as needed
+    const std::vector<ADMAudioBlockFormat *>& blockformats = objectlist[objectindex].channelformat->GetBlockFormatRefs();
+    if ((t >= objectlist[objectindex].object->GetStartTime()) && (blockindex < blockformats.size()))
+    {
+      uint64_t rtime = t - objectlist[objectindex].object->GetStartTime();
+
+      // find right blockformat within object
+      while ((blockindex       > 0)                   && (rtime <  blockformats[blockindex]->GetStartTime()))     blockindex--;
+      while (((blockindex + 1) < blockformats.size()) && (rtime >= blockformats[blockindex + 1]->GetStartTime())) blockindex++;
+    }
   }
 
   currenttime = t;
 
-  return (blockindex != oldindex);
+  return ((objectindex != oldobjectindex) || (blockindex != oldblockindex));
 }
 
 BBC_AUDIOTOOLBOX_END
