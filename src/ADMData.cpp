@@ -877,6 +877,23 @@ ADMObject *ADMData::GetWritableObjectByName(const std::string& name, const std::
   return NULL;
 }
 
+
+/*--------------------------------------------------------------------------------*/
+/** Return a list of all ADM Audio Objects
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMData::GetAudioObjectList(std::vector<const ADMAudioObject *>& list) const
+{
+  ADMOBJECTS_CIT it;
+
+  for (it = admobjects.begin(); it != admobjects.end(); ++it)
+  {
+    const ADMAudioObject *obj;
+
+    if ((obj = dynamic_cast<const ADMAudioObject *>(it->second)) != NULL) list.push_back(obj);
+  }
+}
+
 /*--------------------------------------------------------------------------------*/
 /** Dump ADM or part of ADM as textual description
  *

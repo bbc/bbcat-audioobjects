@@ -327,6 +327,12 @@ public:
   ADMObject *GetWritableObjectByName(const std::string& name, const std::string& type = "");
 
   /*--------------------------------------------------------------------------------*/
+  /** Return a list of all ADM Audio Objects
+   */
+  /*--------------------------------------------------------------------------------*/
+  void GetAudioObjectList(std::vector<const ADMAudioObject *>& list) const;
+
+  /*--------------------------------------------------------------------------------*/
   /** Return track list (list of ADMAudioTrack objects)
    */
   /*--------------------------------------------------------------------------------*/

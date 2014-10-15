@@ -74,6 +74,51 @@ void ADMFileWriter::Close()
 }
 
 /*--------------------------------------------------------------------------------*/
+/** Create ADM from text file
+ *
+ * @param filename text filename (see below for format)
+ *
+ * @return true if successful
+ *
+ * The file MUST be of the following format with each entry on its own line:
+ * <ADM programme name>[:<ADM content name>]
+ *
+ * then for each track:
+ * <track>:<trackname>:<objectname>
+ *
+ * Where <track> is 1..number of tracks available within ADM
+ */
+/*--------------------------------------------------------------------------------*/
+bool ADMFileWriter::CreateADM(const char *filename)
+{
+  bool success = false;
+
+  if (ADMRIFFFile::CreateADM(filename))
+  {
+    std::vector<const ADMAudioObject *> objects;
+    uint_t i;
+
+    // get list of ADMAudioObjects
+    adm->GetAudioObjectList(objects);
+
+    // add all objects to all cursors
+    for (i = 0; i < cursors.size(); i++)
+    {
+      ADMTrackCursor *cursor;
+
+      if ((cursor = dynamic_cast<ADMTrackCursor *>(cursors[i])) != NULL)
+      {
+        cursor->Add(objects);
+      }
+    }
+
+    success = true;
+  }
+
+  return success;
+}
+
+/*--------------------------------------------------------------------------------*/
 /** Consume audio
  *
  * @param src source buffer

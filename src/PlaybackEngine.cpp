@@ -59,21 +59,11 @@ bool PlaybackEngine::AddObject(const ADMRIFFFile& file, const char *name)
   {
     if (strcasecmp(name, "all") == 0)
     {
-      std::vector<const ADMObject      *> admobjects;
       std::vector<const ADMAudioObject *> objects;
       ADMAudioFileSamples *afile;
-      uint_t i;
 
-      // get list of ADMAudioObjects (as list of ADMObjects)
-      adm->GetADMList(ADMAudioObject::Type, admobjects);
-
-      // generate list of ADMAudioObjects
-      for (i = 0; i < admobjects.size(); i++)
-      {
-        const ADMAudioObject *object;
-
-        if ((object = dynamic_cast<const ADMAudioObject *>(admobjects[i])) != NULL) objects.push_back(object);
-      }
+      // get list of ADMAudioObjects
+      adm->GetAudioObjectList(objects);
 
       // play entire file
       if ((afile = new ADMAudioFileSamples(file.GetSamples())) != NULL)

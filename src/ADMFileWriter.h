@@ -35,6 +35,24 @@ public:
   virtual void Close();
 
   /*--------------------------------------------------------------------------------*/
+  /** Create ADM from text file
+   *
+   * @param filename text filename (see below for format)
+   *
+   * @return true if successful
+   *
+   * The file MUST be of the following format with each entry on its own line:
+   * <ADM programme name>[:<ADM content name>]
+   *
+   * then for each track:
+   * <track>:<trackname>:<objectname>
+   *
+   * Where <track> is 1..number of tracks available within ADM
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual bool CreateADM(const char *filename);
+
+  /*--------------------------------------------------------------------------------*/
   /** Return desired output channels
    *
    * @return number of desired output channels (0 == no limit / not restricted)
