@@ -1571,6 +1571,8 @@ bool ADMTrackCursor::Add(const ADMAudioObject *object, bool sort)
     {
       const std::vector<ADMAudioTrackFormat *>& trackformatrefs = trackrefs[i]->GetTrackFormatRefs();
 
+      DEBUG5(("Cursor<%016lx:%u>: Object '%s' uses this track", (ulong_t)this, channel, object->ToString().c_str()));
+
       if (trackformatrefs.size() == 1)
       {
         const std::vector<ADMAudioStreamFormat *>& streamformatrefs = trackformatrefs[0]->GetStreamFormatRefs();
@@ -1588,6 +1590,8 @@ bool ADMTrackCursor::Add(const ADMAudioObject *object, bool sort)
             };
 
             objectlist.push_back(obj);
+
+            DEBUG3(("Cursor<%016lx:%u>: Added object '%s', %u blocks", (ulong_t)this, channel, object->ToString().c_str(), (uint_t)obj.channelformat->GetBlockFormatRefs().size()));
 
             added = true;
           }
@@ -1740,6 +1744,8 @@ ADMAudioBlockFormat *ADMTrackCursor::StartBlockFormat(uint64_t t)
     
     blockindex         = object.channelformat->GetBlockFormatRefs().size() - 1;
     blockformatstarted = true;
+
+    DEBUG3(("Cursor<%016lx:%u>: Created new blockformat %u at %0.3lfs for object '%s', channelformat '%s'", (ulong_t)this, channel, blockindex, (double)t * 1.0e-9, object.object->ToString().c_str(), object.channelformat->ToString().c_str()));
   }
 
   return blockformat;
@@ -1758,6 +1764,8 @@ void ADMTrackCursor::EndBlockFormat(uint64_t t)
     uint64_t            relativetime = t - object.object->GetStartTime();
   
     blockformat->SetDuration(relativetime - blockformat->GetStartTime());
+
+    DEBUG3(("Cursor<%016lx:%u>: Completed blockformat %u at %0.3lfs (duration %0.3lfs) for object '%s', channelformat '%s'", (ulong_t)this, channel, blockindex, (double)t * 1.0e-9, (double)blockformat->GetDuration() * 1.0e-9, object.object->ToString().c_str(), object.channelformat->ToString().c_str()));
 
     blockformatstarted = false;
   }
@@ -1842,8 +1850,11 @@ bool ADMTrackCursor::Seek(uint64_t t)
 
       // move back
       objectindex--;
+
+      // reset blockindex
       blockindex = 0;
 
+      // if the blockformat list is not empty, set the bockindex to the last one
       const std::vector<ADMAudioBlockFormat *>& blockformats = objectlist[objectindex].channelformat->GetBlockFormatRefs();
       if (blockformats.size() > 0) blockindex = blockformats.size() - 1;
     }
@@ -1866,6 +1877,11 @@ bool ADMTrackCursor::Seek(uint64_t t)
       // find right blockformat within object
       while ((blockindex       > 0)                   && (rtime <  blockformats[blockindex]->GetStartTime()))     blockindex--;
       while (((blockindex + 1) < blockformats.size()) && (rtime >= blockformats[blockindex + 1]->GetStartTime())) blockindex++;
+    }
+
+    if ((objectindex != oldobjectindex) || (blockindex != oldblockindex))
+    {
+      DEBUG4(("Cursor<%016lx:%u>: Moved to object %u/%u ('%s'), block %u/%u at %0.3lfs", (ulong_t)this, channel, objectindex, (uint_t)objectlist.size(), objectlist[objectindex].object->ToString().c_str(), blockindex, (uint_t)objectlist[objectindex].channelformat->GetBlockFormatRefs().size(), (double)t * 1.0e-9));
     }
   }
 

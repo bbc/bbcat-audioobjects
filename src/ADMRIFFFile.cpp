@@ -69,7 +69,7 @@ bool ADMRIFFFile::CreateADM()
 
         if ((track = adm->CreateTrack(name)) != NULL)
         {
-          track->SetTrackNum(i + 1);
+          track->SetTrackNum(i);
           track->SetSampleRate(GetSampleRate());
           track->SetBitDepth(GetBitsPerSample());
         }
