@@ -63,10 +63,20 @@ public:
 
   /*--------------------------------------------------------------------------------*/
   /** Set and Get object ID
+   *
+   * @param id new ID
+   *
+   * @note setting the ID updates the map held within the ADMData object
    */
   /*--------------------------------------------------------------------------------*/
-  void SetID(const std::string& _id) {id= _id;}
+  void SetID(const std::string& _id);
   const std::string& GetID()   const {return id;}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Return ID prefix string
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual const std::string& GetIDPrefix() const = 0;
 
   /*--------------------------------------------------------------------------------*/
   /** Set and Get object name (human-friendly)
@@ -76,11 +86,19 @@ public:
   const std::string& GetName() const {return name;}
 
   /*--------------------------------------------------------------------------------*/
-  /** Set and Get object typeLabel
+  /** Get map entry
    */
   /*--------------------------------------------------------------------------------*/
-  void SetTypeLabel(const std::string& str) {typeLabel = str;}
-  const std::string& GetTypeLabel() const {return typeLabel;}
+  std::string GetMapEntryID() const {return GetType() + "/" + id;}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Set and Get object typeLabel
+   *
+   * @note if type is a recognized typeLabel, typeDefinition will automatically be set!
+   */
+  /*--------------------------------------------------------------------------------*/
+  void   SetTypeLabel(uint_t type);
+  uint_t GetTypeLabel() const {return typeLabel;}
 
   /*--------------------------------------------------------------------------------*/
   /** Set and Get object typeDefinition
@@ -128,27 +146,27 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   static void SetAttribute(ADMVALUE& obj, const std::string& name, const std::string& value) {SetValue(obj, name, value, true);}
-  static void SetAttribute(ADMVALUE& obj, const std::string& name, uint_t             value) {SetValue(obj, name, value, true);}
+  static void SetAttribute(ADMVALUE& obj, const std::string& name, uint_t             value, const char *format = "%u")     {SetValue(obj, name, value, true, format);}
   static void SetAttribute(ADMVALUE& obj, const std::string& name, uint64_t           value) {SetValue(obj, name, value, true);}
-  static void SetAttribute(ADMVALUE& obj, const std::string& name, double             value) {SetValue(obj, name, value, true);}
+  static void SetAttribute(ADMVALUE& obj, const std::string& name, double             value, const char *format = "%0.6lf") {SetValue(obj, name, value, true, format);}
 
   /*--------------------------------------------------------------------------------*/
   /** Set ADMVALUE object as a XML value (name/value pair) with optional attributes
    */
   /*--------------------------------------------------------------------------------*/
   static void SetValue(ADMVALUE& obj, const std::string& name, const std::string& value, bool attr = false);
-  static void SetValue(ADMVALUE& obj, const std::string& name, uint_t             value, bool attr = false);
+  static void SetValue(ADMVALUE& obj, const std::string& name, uint_t             value, bool attr = false, const char *format = "%u");
   static void SetValue(ADMVALUE& obj, const std::string& name, uint64_t           value, bool attr = false);
-  static void SetValue(ADMVALUE& obj, const std::string& name, double             value, bool attr = false);
+  static void SetValue(ADMVALUE& obj, const std::string& name, double             value, bool attr = false, const char *format = "%0.6lf");
 
   /*--------------------------------------------------------------------------------*/
   /** Set attribute of ADMVALUE value object (initialised above)
    */
   /*--------------------------------------------------------------------------------*/
   static void SetValueAttribute(ADMVALUE& obj, const std::string& name, const std::string& value);
-  static void SetValueAttribute(ADMVALUE& obj, const std::string& name, uint_t             value);
+  static void SetValueAttribute(ADMVALUE& obj, const std::string& name, uint_t             value, const char *format = "%u");
   static void SetValueAttribute(ADMVALUE& obj, const std::string& name, uint64_t           value);
-  static void SetValueAttribute(ADMVALUE& obj, const std::string& name, double             value);
+  static void SetValueAttribute(ADMVALUE& obj, const std::string& name, double             value, const char *format = "%0.6lf");
 
   /*--------------------------------------------------------------------------------*/
   /** Add a value to the internal list
@@ -210,31 +228,40 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   static std::string GenTime(uint64_t t);
+  
+  enum {
+    TypeLabel_DirectSpeakers = 1,
+    TypeLabel_Matrix,
+    TypeLabel_Objects,
+    TypeLabel_HOA,
+    TypeLabel_Binaural,
 
-  /*--------------------------------------------------------------------------------*/
-  /** Convert ns time to samples
-   */
-  /*--------------------------------------------------------------------------------*/
-  static uint64_t TimeToSamples(uint64_t t, uint32_t sr)
-  {
-    return (uint64_t)(((ullong_t)t * (ullong_t)sr) / 1000000000ull);
-  }
+    TypeLabel_Custom = 0x1000,
+  };
 
-  /*--------------------------------------------------------------------------------*/
-  /** Convert samples to ns time
-   */
-  /*--------------------------------------------------------------------------------*/
-  static uint64_t SamplesToTime(uint64_t s, uint32_t sr)
-  {
-    return (uint64_t)(((ullong_t)s * 1000000000ull) / sr);
-  }
+  static void SetTypeDefinition(uint_t type, const std::string& definition)     {typeLabelMap[type]     = definition;}
+  static void SetFormatDefinition(uint_t format, const std::string& definition) {formatLabelMap[format] = definition;}
 
 protected:
+  friend class ADMData;
+
   /*--------------------------------------------------------------------------------*/
   /** Register this object with the owner
    */
   /*--------------------------------------------------------------------------------*/
   void Register();
+
+  /*--------------------------------------------------------------------------------*/
+  /** Set updated ID (called from ADMData object only)
+   */
+  /*--------------------------------------------------------------------------------*/
+  void SetUpdatedID(const std::string& _id) {id = _id;}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Update object's ID
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void UpdateID();
 
   /*--------------------------------------------------------------------------------*/
   /** Return ptr to value with specified name or NULL
@@ -263,6 +290,7 @@ protected:
    *
    * @param res internal variable to be modified
    * @param name value name
+   * @param hex true if value is expected to be hexidecimal
    *
    * @return true if value found and variable set
    *
@@ -271,10 +299,10 @@ protected:
   /*--------------------------------------------------------------------------------*/
   bool SetValue(std::string& res, const std::string& name);
   bool SetValue(double& res, const std::string& name);
-  bool SetValue(uint_t& res, const std::string& name);
-  bool SetValue(ulong_t& res, const std::string& name);
-  bool SetValue(sint_t& res, const std::string& name);
-  bool SetValue(slong_t& res, const std::string& name);
+  bool SetValue(uint_t& res, const std::string& name, bool hex = false);
+  bool SetValue(ulong_t& res, const std::string& name, bool hex = false);
+  bool SetValue(sint_t& res, const std::string& name, bool hex = false);
+  bool SetValue(slong_t& res, const std::string& name, bool hex = false);
   bool SetValue(bool& res, const std::string& name);
   bool SetValueTime(uint64_t& res, const std::string& name);
 
@@ -314,9 +342,12 @@ protected:
   ADMData&    owner;
   std::string id;
   std::string name;
-  std::string typeLabel;
+  uint_t      typeLabel;
   std::string typeDefinition;
   ADMVALUES   values;
+
+  static std::map<uint_t,std::string> typeLabelMap;
+  static std::map<uint_t,std::string> formatLabelMap;
 };
 
 /*----------------------------------------------------------------------------------------------------*/
@@ -368,6 +399,12 @@ public:
   virtual const std::string& GetReference() const {return Reference;}
 
   /*--------------------------------------------------------------------------------*/
+  /** Return ID prefix string
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual const std::string& GetIDPrefix() const {return IDPrefix;}
+
+  /*--------------------------------------------------------------------------------*/
   /** Set internal variables from values added to internal list (e.g. from XML)
    */
   /*--------------------------------------------------------------------------------*/
@@ -416,6 +453,9 @@ public:
   // static type reference name
   static const std::string Reference;
 
+  // static type id prefix
+  static const std::string IDPrefix;
+
 protected:
   std::vector<ADMAudioContent *> contentrefs;
   std::string                    language;
@@ -450,6 +490,12 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   virtual const std::string& GetReference() const {return Reference;}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Return ID prefix string
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual const std::string& GetIDPrefix() const {return IDPrefix;}
 
   /*--------------------------------------------------------------------------------*/
   /** Set internal variables from values added to internal list (e.g. from XML)
@@ -500,6 +546,9 @@ public:
   // static type reference name
   static const std::string Reference;
 
+  // static type id prefix
+  static const std::string IDPrefix;
+
 protected:
   std::string                   language;
   std::vector<ADMAudioObject *> objectrefs;
@@ -533,6 +582,12 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   virtual const std::string& GetReference() const {return Reference;}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Return ID prefix string
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual const std::string& GetIDPrefix() const {return IDPrefix;}
 
   /*--------------------------------------------------------------------------------*/
   /** Set internal variables from values added to internal list (e.g. from XML)
@@ -615,6 +670,9 @@ public:
   // static type reference name
   static const std::string Reference;
 
+  // static type id prefix
+  static const std::string IDPrefix;
+
 protected:
   std::vector<ADMAudioObject     *> objectrefs;
   std::vector<ADMAudioPackFormat *> packformatrefs;
@@ -656,6 +714,12 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   virtual const std::string& GetReference() const {return Reference;}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Return ID prefix string
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual const std::string& GetIDPrefix() const {return IDPrefix;}
 
   /*--------------------------------------------------------------------------------*/
   /** Set internal variables from values added to internal list (e.g. from XML)
@@ -717,24 +781,6 @@ public:
   /*--------------------------------------------------------------------------------*/
   virtual void GetValuesAndReferences(ADMVALUES& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full = false) const;
 
-  /*--------------------------------------------------------------------------------*/
-  /** Convert ns time to samples
-   */
-  /*--------------------------------------------------------------------------------*/
-  uint64_t TimeToSamples(uint64_t t) const
-  {
-    return (uint64_t)(((ullong_t)t * (ullong_t)sampleRate) / 1000000000ull);
-  }
-
-  /*--------------------------------------------------------------------------------*/
-  /** Convert samples to ns time
-   */
-  /*--------------------------------------------------------------------------------*/
-  uint64_t SamplesToTime(uint64_t s) const
-  {
-    return (uint64_t)(((ullong_t)s * 1000000000ull) / sampleRate);
-  }
-
   static bool Compare(const ADMAudioTrack *track1, const ADMAudioTrack *track2)
   {
     return (track1->trackNum < track2->trackNum);
@@ -754,6 +800,9 @@ public:
 
   // static type reference name
   static const std::string Reference;
+
+  // static type id prefix
+  static const std::string IDPrefix;
 
 protected:
   /*--------------------------------------------------------------------------------*/
@@ -801,6 +850,12 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   virtual const std::string& GetReference() const {return Reference;}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Return ID prefix string
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual const std::string& GetIDPrefix() const {return IDPrefix;}
 
   /*--------------------------------------------------------------------------------*/
   /** Set internal variables from values added to internal list (e.g. from XML)
@@ -857,6 +912,16 @@ public:
   // static type reference name
   static const std::string Reference;
 
+  // static type id prefix
+  static const std::string IDPrefix;
+
+protected:
+  /*--------------------------------------------------------------------------------*/
+  /** Update object's ID
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void UpdateID();
+
 protected:
   std::vector<ADMAudioChannelFormat *> channelformatrefs;
   std::vector<ADMAudioPackFormat    *> packformatrefs;
@@ -878,7 +943,8 @@ public:
    * @note type passed to base constructor is fixed by static member variable Type 
    */
   /*--------------------------------------------------------------------------------*/
-  ADMAudioStreamFormat(ADMData& _owner, const std::string& _id, const std::string& _name) : ADMObject(_owner, _id, _name) {Register();}
+  ADMAudioStreamFormat(ADMData& _owner, const std::string& _id, const std::string& _name) : ADMObject(_owner, _id, _name),
+                                                                                            formatLabel(0) {Register();}
 
   /*--------------------------------------------------------------------------------*/
   /** Return textual type name of this object
@@ -893,11 +959,17 @@ public:
   virtual const std::string& GetReference() const {return Reference;}
 
   /*--------------------------------------------------------------------------------*/
+  /** Return ID prefix string
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual const std::string& GetIDPrefix() const {return IDPrefix;}
+
+  /*--------------------------------------------------------------------------------*/
   /** Set and Get formatLabel
    */
   /*--------------------------------------------------------------------------------*/
-  void SetFormatLabel(const std::string& str) {formatLabel = str;}
-  const std::string& GetFormatLabel() const {return formatLabel;}
+  void SetFormatLabel(uint_t format) {formatLabel = format; UpdateID();}
+  uint_t GetFormatLabel() const {return formatLabel;}
 
   /*--------------------------------------------------------------------------------*/
   /** Set and Get formatDefinition
@@ -970,8 +1042,18 @@ public:
   // static type reference name
   static const std::string Reference;
 
+  // static type id prefix
+  static const std::string IDPrefix;
+
 protected:
-  std::string                          formatLabel;
+  /*--------------------------------------------------------------------------------*/
+  /** Update object's ID
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void UpdateID();
+
+protected:
+  uint_t                               formatLabel;
   std::string                          formatDefinition;
   std::vector<ADMAudioChannelFormat *> channelformatrefs;
   std::vector<ADMAudioTrackFormat *>   trackformatrefs;
@@ -1004,6 +1086,12 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   virtual const std::string& GetReference() const {return Reference;}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Return ID prefix string
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual const std::string& GetIDPrefix() const {return IDPrefix;}
 
   /*--------------------------------------------------------------------------------*/
   /** Set internal variables from values added to internal list (e.g. from XML)
@@ -1052,6 +1140,16 @@ public:
   // static type reference name
   static const std::string Reference;
 
+  // static type id prefix
+  static const std::string IDPrefix;
+
+protected:
+  /*--------------------------------------------------------------------------------*/
+  /** Update object's ID
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void UpdateID();
+
 protected:
   std::vector<ADMAudioBlockFormat *> blockformatrefs;
 };
@@ -1072,7 +1170,8 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   ADMAudioTrackFormat(ADMData& _owner, const std::string& _id, const std::string& _name) : ADMObject(_owner, _id, _name),
-                                                                                           ADMLevelObject() {Register();}
+                                                                                           ADMLevelObject(),
+                                                                                           formatLabel(0) {Register();}
 
   /*--------------------------------------------------------------------------------*/
   /** Return textual type name of this object
@@ -1087,6 +1186,12 @@ public:
   virtual const std::string& GetReference() const {return Reference;}
 
   /*--------------------------------------------------------------------------------*/
+  /** Return ID prefix string
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual const std::string& GetIDPrefix() const {return IDPrefix;}
+
+  /*--------------------------------------------------------------------------------*/
   /** Set internal variables from values added to internal list (e.g. from XML)
    */
   /*--------------------------------------------------------------------------------*/
@@ -1096,8 +1201,8 @@ public:
   /** Set and Get formatLabel
    */
   /*--------------------------------------------------------------------------------*/
-  void SetFormatLabel(const std::string& str) {formatLabel = str;}
-  const std::string& GetFormatLabel() const {return formatLabel;}
+  void SetFormatLabel(uint_t format) {formatLabel = format; UpdateID();}
+  uint_t GetFormatLabel() const {return formatLabel;}
 
   /*--------------------------------------------------------------------------------*/
   /** Set and Get formatDefinition
@@ -1142,8 +1247,18 @@ public:
   // static type reference name
   static const std::string Reference;
 
+  // static type id prefix
+  static const std::string IDPrefix;
+
 protected:
-  std::string formatLabel;
+  /*--------------------------------------------------------------------------------*/
+  /** Update object's ID
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void UpdateID();
+
+protected:
+  uint_t      formatLabel;
   std::string formatDefinition;
   std::vector<ADMAudioStreamFormat *> streamformatrefs;
 };
@@ -1184,11 +1299,16 @@ public:
   virtual const std::string& GetReference() const {return Reference;}
 
   /*--------------------------------------------------------------------------------*/
+  /** Return ID prefix string
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual const std::string& GetIDPrefix() const {return IDPrefix;}
+
+  /*--------------------------------------------------------------------------------*/
   /** Set internal variables from values added to internal list (e.g. from XML)
    */
   /*--------------------------------------------------------------------------------*/
   virtual void SetValues();
-
 
   /*--------------------------------------------------------------------------------*/
   /** Set and Get rtime
@@ -1273,6 +1393,9 @@ public:
 
   // static type reference name
   static const std::string Reference;
+
+  // static type id prefix
+  static const std::string IDPrefix;
 
 protected:
   uint64_t     rtime;

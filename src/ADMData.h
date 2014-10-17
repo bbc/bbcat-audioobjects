@@ -119,24 +119,35 @@ public:
   /** Create an ADM sub-object within this ADM object
    *
    * @param type object type - should always be the static 'Type' member of the object to be created (e.g. ADMAudioProgramme::Type)
-   * @param id unique ID for the object (or empty string to create one using CreateID())
+   * @param id unique ID for the object (or empty string to have one created)
    * @param name human-readable name of the object
    *
    * @return ptr to object or NULL if type unrecognized or the object already exists
    */
   /*--------------------------------------------------------------------------------*/
-  virtual ADMObject *Create(const std::string& type, const std::string& id, const std::string& name, const ADMAudioChannelFormat *channelformat = NULL);
+  virtual ADMObject *Create(const std::string& type, const std::string& id, const std::string& name);
 
   /*--------------------------------------------------------------------------------*/
-  /** Create an unique ID for the specified type
+  /** Create an unique ID (temporary) for the specified object
    *
-   * @param type object type - should always be the static 'Type' member of the object to be created (e.g. ADMAudioProgramme::Type)
-   * @param channelformat ptr to channelformat object if type is ADMAudioBlockFormat::Type
+   * @param type object type string
    *
    * @return unique ID
+   *
+   * @note in some cases, this ID is TEMPORARY and will be updated by the object itself
    */
   /*--------------------------------------------------------------------------------*/
-  std::string CreateID(const std::string& type, const ADMAudioChannelFormat *channelformat = NULL) const;
+  std::string CreateID(const std::string& type) const;
+
+  /*--------------------------------------------------------------------------------*/
+  /** Change the ID of the specified object
+   *
+   * @param obj ADMObject to change ID of
+   * @param id new ID
+   * @param start starting index used for search
+   */
+  /*--------------------------------------------------------------------------------*/
+  void ChangeID(ADMObject *obj, const std::string& id, uint_t start = 0);
 
   /*--------------------------------------------------------------------------------*/
   /** Create audioProgramme object
@@ -433,6 +444,19 @@ protected:
     std::string id;
     std::string name;
   } ADMHEADER;
+
+
+  /*--------------------------------------------------------------------------------*/
+  /** Find an unique ID given the specified format string
+   *
+   * @param type object type
+   * @param format C-style format string
+   * @param start starting index
+   * 
+   * @return unique ID
+   */
+  /*--------------------------------------------------------------------------------*/
+  std::string FindUniqueID(const std::string& type, const std::string& format, uint_t start) const;
 
   virtual bool TranslateXML(const std::string& data) = 0;
 

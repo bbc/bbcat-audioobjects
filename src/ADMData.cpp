@@ -188,7 +188,7 @@ uint8_t *ADMData::GetChna(uint32_t& len) const
     p->TrackCount = 0;
     p->UIDCount   = 0;
     
-    for (i = 0; i < p->UIDCount; i++)
+    for (i = 0; i < tracklist.size(); i++)
     {
       const ADMAudioTrack *track = tracklist[i];
       uint_t tr = track->GetTrackNum();
@@ -314,10 +314,9 @@ void ADMData::RegisterProvider(CREATOR fn, void *context)
 /*--------------------------------------------------------------------------------*/
 void ADMData::Register(ADMObject *obj)
 {
-  std::string uuid = obj->GetType() + "/" + obj->GetID();
   const ADMAudioTrack *track;
 
-  admobjects[uuid] = obj;
+  admobjects[obj->GetMapEntryID()] = obj;
 
   // if object is an audioTrack object, add it to the tracklist (list will be sorted later)
   if ((track = dynamic_cast<const ADMAudioTrack *>(obj)) != NULL)
@@ -351,15 +350,15 @@ bool ADMData::ValidType(const std::string& type) const
  * @return ptr to object or NULL if type unrecognized or the object already exists
  */
 /*--------------------------------------------------------------------------------*/
-ADMObject *ADMData::Create(const std::string& type, const std::string& id, const std::string& name, const ADMAudioChannelFormat *channelformat)
+ADMObject *ADMData::Create(const std::string& type, const std::string& id, const std::string& name)
 {
   ADMObject *obj = NULL;
 
   if (ValidType(type))
   {
-    ADMOBJECTS_MAP::const_iterator it;
+    ADMOBJECTS_CIT it;
     // if id is empty, create one
-    std::string uuid = type + "/" + ((id != "") ? id : CreateID(type, channelformat));
+    std::string uuid = type + "/" + ((id != "") ? id : CreateID(type));
 
     // ensure the id doesn't already exist
     if ((it = admobjects.find(uuid)) == admobjects.end())
@@ -381,86 +380,108 @@ ADMObject *ADMData::Create(const std::string& type, const std::string& id, const
 }
 
 /*--------------------------------------------------------------------------------*/
-/** Create an unique ID for the specified type
+/** Find an unique ID given the specified format string
  *
- * @param type object type - should always be the static 'Type' member of the object to be created (e.g. ADMAudioProgramme::Type)
- * @param channelformat ptr to channelformat object if type is ADMAudioBlockFormat::Type
- *
+ * @param type object type
+ * @param format C-style format string
+ * @param start starting index
+ * 
  * @return unique ID
  */
 /*--------------------------------------------------------------------------------*/
-std::string ADMData::CreateID(const std::string& type, const ADMAudioChannelFormat *channelformat) const
+std::string ADMData::FindUniqueID(const std::string& type, const std::string& format, uint_t start) const
+{
+  ADMOBJECTS_CIT it;
+  std::string id;
+  uint_t n = start;
+
+  // increment test value until ID is unique
+  while (true)
+  {
+    std::string testid;
+      
+    Printf(testid, format.c_str(), ++n);
+
+    // test this ID
+    if ((it = admobjects.find(type + "/" + testid)) == admobjects.end())
+    {
+      // ID not already in list -> must be unique
+      id = testid;
+      break;
+    }
+  }
+
+  return id;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Create an unique ID (temporary) for the specified object
+ *
+ * @param type object type string
+ *
+ * @return unique ID
+ *
+ * @note in some cases, this ID is TEMPORARY and will be updated by the object itself
+ */
+/*--------------------------------------------------------------------------------*/
+std::string ADMData::CreateID(const std::string& type) const
 {
   std::string id;
 
   if (ValidType(type))
   {
-    // create type dependant prefix
-    if      (type == ADMAudioProgramme::Type)     id = "APR_";
-    else if (type == ADMAudioContent::Type)       id = "ACO_";
-    else if (type == ADMAudioObject::Type)        id = "AO_";
-    else if (type == ADMAudioPackFormat::Type)    id = "AP_";
-    else if (type == ADMAudioBlockFormat::Type)   id = "AB_";
-    else if (type == ADMAudioChannelFormat::Type) id = "AC_";
-    else if (type == ADMAudioStreamFormat::Type)  id = "AS_";
-    else if (type == ADMAudioTrackFormat::Type)   id = "AT_";
-    else if (type == ADMAudioTrack::Type)         id = "ATU_";
-
-    // if type is an audioBlockFormat type (and a channel format is specified), append channel format's ID onto ID
-    if ((type == ADMAudioBlockFormat::Type) && channelformat && (channelformat->GetID().substr(0, 3) == "AC_"))
-    {
-      id += channelformat->GetID().substr(3) + "_";
-    }
-
-    // find unique ID using existing map
-    ADMOBJECTS_MAP::const_iterator it;
-    uint_t n = 0;
-
-    // for audioBlockFormat, the supplied channelformat object can give a good initial test value
-    if ((type == ADMAudioBlockFormat::Type) && channelformat) n = channelformat->GetBlockFormatRefs().size();
-    else
-    {
-      // count up objects of this type in admobjects
-      for (it = admobjects.begin(); it != admobjects.end(); ++it)
-      {
-        // if object of same type, increment initial test value
-        if (it->second->GetType() == type) n++;
-      }
-    }
-
     std::string format;
-    // format for audioProgrammes, audioContents and audioObjects are slightly different (four digit ID vs eight digit ID)
-    if ((type == ADMAudioProgramme::Type) ||
-        (type == ADMAudioContent::Type)   ||
-        (type == ADMAudioObject::Type))
-    {
-      format = "%s%04u";     // id_<num>
-    }
-    else
-    {
-      format = "%s%08u";     // id_<num>
-    }
+    uint_t start = 0;
 
-    // increment test value until ID is unique
-    while (true)
-    {
-      std::string testid;
-      
-      Printf(testid, format.c_str(), id.c_str(), ++n);
+    if      (type == ADMAudioProgramme::Type)     {format = ADMAudioProgramme::IDPrefix    + "%04x"; start = 0x1000;}
+    else if (type == ADMAudioContent::Type)       {format = ADMAudioContent::IDPrefix      + "%04x"; start = 0x1000;}
+    else if (type == ADMAudioObject::Type)        {format = ADMAudioObject::IDPrefix       + "%04x"; start = 0x1000;}
+    else if (type == ADMAudioPackFormat::Type)    format = ADMAudioPackFormat::IDPrefix    + "%08u_T";    // temporary
+    else if (type == ADMAudioBlockFormat::Type)   format = ADMAudioBlockFormat::IDPrefix   + "%08u_T";    // temporary
+    else if (type == ADMAudioChannelFormat::Type) format = ADMAudioChannelFormat::IDPrefix + "%08u_T";    // temporary
+    else if (type == ADMAudioStreamFormat::Type)  format = ADMAudioStreamFormat::IDPrefix  + "%08u_T";    // temporary
+    else if (type == ADMAudioTrackFormat::Type)   format = ADMAudioTrackFormat::IDPrefix   + "%08u_T";    // temporary
+    else if (type == ADMAudioTrack::Type)         format = ADMAudioTrack::IDPrefix         + "%08u_T";    // temporary
 
-      // test this ID
-      if ((it = admobjects.find(type + "/" + testid)) == admobjects.end())
-      {
-        // ID not already in list -> must be unique
-        id = testid;
-        break;
-      }
-    }
+    id = FindUniqueID(type, format, start);
   }
 
-  DEBUG3(("Unique ID for type '%s' (channelformat '%s'): %s", type.c_str(), channelformat ? channelformat->ToString().c_str() : "", id.c_str()));
-
   return id;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Change the ID of the specified object
+ *
+ * @param obj ADMObject to change ID of
+ * @param id new ID
+ * @param start starting index used for search
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMData::ChangeID(ADMObject *obj, const std::string& id, uint_t start)
+{
+  // detect format characters in id
+  bool format = (id.find("%") != std::string::npos);
+
+  // if ID is to be updated, remove existing object from map
+  // and re-enter with its new ID
+  if (format || (id != obj->GetID()))
+  {
+    ADMOBJECTS_IT it;
+  
+    // find object in map and delete it
+    if ((it = admobjects.find(obj->GetMapEntryID())) != admobjects.end())
+    {
+      admobjects.erase(it);
+    }
+
+    // if id is a format string, find unique ID
+    if (format) obj->SetUpdatedID(FindUniqueID(obj->GetType(), id, start));
+    // else just update object's ID
+    else        obj->SetUpdatedID(id);
+
+    // put object back into map with new ID
+    admobjects[obj->GetMapEntryID()] = obj;
+  }
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -1435,8 +1456,7 @@ bool ADMData::CreateObjects(const OBJECTNAMES& names)
     {
       // set pack type
       DEBUG2(("Created pack format '%s'", names.packFormatName.c_str()));
-      packFormat->SetTypeLabel("0003");
-      packFormat->SetTypeDefinition("Objects");
+      packFormat->SetTypeLabel(ADMObject::TypeLabel_Objects);
     }
     else
     {
@@ -1451,8 +1471,7 @@ bool ADMData::CreateObjects(const OBJECTNAMES& names)
     {
       // set channel type
       DEBUG2(("Created channel format '%s'", names.channelFormatName.c_str()));
-      channelFormat->SetTypeLabel("0003");
-      channelFormat->SetTypeDefinition("Objects");
+      channelFormat->SetTypeLabel(ADMObject::TypeLabel_Objects);
     }
     else
     {
@@ -1467,7 +1486,8 @@ bool ADMData::CreateObjects(const OBJECTNAMES& names)
     {
       // set stream type (PCM)
       DEBUG2(("Created stream format '%s'", names.streamFormatName.c_str()));
-      streamFormat->SetFormatLabel("0001");
+      streamFormat->SetTypeLabel(ADMObject::TypeLabel_Objects);
+      streamFormat->SetFormatLabel(1);
       streamFormat->SetFormatDefinition("PCM");
     }
     else
@@ -1483,7 +1503,7 @@ bool ADMData::CreateObjects(const OBJECTNAMES& names)
     {
       // set track type (PCM)
       DEBUG2(("Created track format '%s'", names.trackFormatName.c_str()));
-      trackFormat->SetFormatLabel("0001");
+      trackFormat->SetFormatLabel(1);
       trackFormat->SetFormatDefinition("PCM");
     }
     else
@@ -1541,6 +1561,10 @@ bool ADMData::CreateObjects(const OBJECTNAMES& names)
   LINK(object, packFormat);
   // add the track to the object
   LINK(object, audioTrack);
+
+  LINK(content, object);
+
+  LINK(programme, content);
   
   return success;
 }

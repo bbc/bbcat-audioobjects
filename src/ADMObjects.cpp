@@ -8,13 +8,16 @@
 #include <map>
 #include <algorithm>
 
-#define DEBUG_LEVEL 2
+#define DEBUG_LEVEL 1
 #include <bbcat-base/ByteSwap.h>
 
 #include "ADMObjects.h"
 #include "ADMData.h"
 
 BBC_AUDIOTOOLBOX_START
+
+std::map<uint_t,std::string> ADMObject::typeLabelMap;
+std::map<uint_t,std::string> ADMObject::formatLabelMap;
 
 /*--------------------------------------------------------------------------------*/
 /** Base constructor for all objects
@@ -27,8 +30,34 @@ BBC_AUDIOTOOLBOX_START
 /*--------------------------------------------------------------------------------*/
 ADMObject::ADMObject(ADMData& _owner, const std::string& _id, const std::string& _name) : owner(_owner),
                                                                                           id(_id),
-                                                                                          name(_name)
+                                                                                          name(_name),
+                                                                                          typeLabel(0)
 {
+  if (typeLabelMap.size() == 0)
+  {
+    // populate typeLabel map
+    SetTypeDefinition(TypeLabel_DirectSpeakers, "DirectSpeakers");
+    SetTypeDefinition(TypeLabel_Matrix,         "Matrix");
+    SetTypeDefinition(TypeLabel_Objects,        "Object");
+    SetTypeDefinition(TypeLabel_HOA,            "HOA");
+    SetTypeDefinition(TypeLabel_Binaural,       "Binaural");
+  }
+
+  SetTypeLabel(TypeLabel_DirectSpeakers);
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Set and Get object ID
+ *
+ * @param id new ID
+ *
+ * @note setting the ID updates the map held within the ADMData object
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMObject::SetID(const std::string& _id)
+{
+  // get owner to change it and update its map of objects in the process
+  owner.ChangeID(this, _id);
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -38,6 +67,29 @@ ADMObject::ADMObject(ADMData& _owner, const std::string& _id, const std::string&
 void ADMObject::Register()
 {
   owner.Register(this);
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Set object typeLabel
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMObject::SetTypeLabel(uint_t type)
+{
+  typeLabel = type;
+
+  // update typeDefinition if possible
+  if (typeLabelMap.find(typeLabel) != typeLabelMap.end()) SetTypeDefinition(typeLabelMap[typeLabel]);
+
+  UpdateID();
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Update object's ID
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMObject::UpdateID()
+{
+  // do nothing
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -51,20 +103,20 @@ void ADMObject::SetValue(ADMVALUE& obj, const std::string& name, const std::stri
   obj.value = value;
   obj.attrs.clear();
 }
-void ADMObject::SetValue(ADMVALUE& obj, const std::string& name, uint_t value, bool attr)
+void ADMObject::SetValue(ADMVALUE& obj, const std::string& name, uint_t value, bool attr, const char *format)
 {
   std::string valuestr;
-  Printf(valuestr, "%u", value);
+  Printf(valuestr, format, value);
   SetValue(obj, name, valuestr, attr);
 }
 void ADMObject::SetValue(ADMVALUE& obj, const std::string& name, uint64_t value, bool attr)
 {
   SetValue(obj, name, GenTime(value), attr);
 }
-void ADMObject::SetValue(ADMVALUE& obj, const std::string& name, double value, bool attr)
+void ADMObject::SetValue(ADMVALUE& obj, const std::string& name, double value, bool attr, const char *format)
 {
   std::string valuestr;
-  Printf(valuestr, "%0.6lf", value);
+  Printf(valuestr, format, value);
   SetValue(obj, name, valuestr, attr);
 }
 
@@ -76,20 +128,20 @@ void ADMObject::SetValueAttribute(ADMVALUE& obj, const std::string& name, const 
 {
   obj.attrs[name] = value;
 }
-void ADMObject::SetValueAttribute(ADMVALUE& obj, const std::string& name, uint_t value)
+void ADMObject::SetValueAttribute(ADMVALUE& obj, const std::string& name, uint_t value, const char *format)
 {
   std::string valuestr;
-  Printf(valuestr, "%u", value);
+  Printf(valuestr, format, value);
   obj.attrs[name] = valuestr;
 }
 void ADMObject::SetValueAttribute(ADMVALUE& obj, const std::string& name, uint64_t value)
 {
   obj.attrs[name] = GenTime(value);
 }
-void ADMObject::SetValueAttribute(ADMVALUE& obj, const std::string& name, double value)
+void ADMObject::SetValueAttribute(ADMVALUE& obj, const std::string& name, double value, const char *format)
 {
   std::string valuestr;
-  Printf(valuestr, "%0.6lf", value);
+  Printf(valuestr, format, value);
   obj.attrs[name] = valuestr;
 }
 
@@ -99,8 +151,11 @@ void ADMObject::SetValueAttribute(ADMVALUE& obj, const std::string& name, double
 /*--------------------------------------------------------------------------------*/
 void ADMObject::SetValues()
 {
-  SetValue(typeLabel, "typeLabel");
-  SetValue(typeDefinition, "typeDefinition");
+  uint_t      _typeLabel;
+  std::string _typeDefinition;
+
+  if (SetValue(_typeLabel,      "typeLabel", true)) SetTypeLabel(_typeLabel);
+  if (SetValue(_typeDefinition, "typeDefinition"))  SetTypeDefinition(_typeDefinition);
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -296,9 +351,9 @@ void ADMObject::GetValuesAndReferences(ADMVALUES& objvalues, std::vector<REFEREN
   }
 
   // add values/attributes not held in 'values' to list
-  if (full || (typeLabel != ""))
+  if (full || (typeLabel != 0))
   {
-    SetAttribute(value, "typeLabel", typeLabel);
+    SetAttribute(value, "typeLabel", typeLabel, "%04x");
     objvalues.push_back(value);
   }
   if (full || (typeDefinition != ""))
@@ -440,20 +495,23 @@ bool ADMObject::SetValue(double& res, const std::string& name)
  *
  * @param res internal variable to be modified
  * @param name value name
+ * @param hex true if value is expected to be hexidecimal
  *
  * @return true if value found and variable set
  *
  * @note the value, if found, is REMOVED from the list
  */
 /*--------------------------------------------------------------------------------*/
-bool ADMObject::SetValue(uint_t& res, const std::string& name)
+bool ADMObject::SetValue(uint_t& res, const std::string& name, bool hex)
 {
   const ADMVALUE *value;
   bool success = false;
 
   if ((value = GetValue(name)) != NULL)
   {
-    success = (sscanf(value->value.c_str(), "%u", &res) > 0);
+    if (hex) success = (sscanf(value->value.c_str(), "%x", &res) > 0);
+    else     success = (sscanf(value->value.c_str(), "%u", &res) > 0);
+
     EraseValue(value);
   }
 
@@ -471,14 +529,15 @@ bool ADMObject::SetValue(uint_t& res, const std::string& name)
  * @note the value, if found, is REMOVED from the list
  */
 /*--------------------------------------------------------------------------------*/
-bool ADMObject::SetValue(ulong_t& res, const std::string& name)
+bool ADMObject::SetValue(ulong_t& res, const std::string& name, bool hex)
 {
   const ADMVALUE *value;
   bool success = false;
 
   if ((value = GetValue(name)) != NULL)
   {
-    success = (sscanf(value->value.c_str(), "%lu", &res) > 0);
+    if (hex) success = (sscanf(value->value.c_str(), "%lx", &res) > 0);
+    else     success = (sscanf(value->value.c_str(), "%lu", &res) > 0);
     EraseValue(value);
   }
 
@@ -490,20 +549,22 @@ bool ADMObject::SetValue(ulong_t& res, const std::string& name)
  *
  * @param res internal variable to be modified
  * @param name value name
+ * @param hex true if value is expected to be hexidecimal
  *
  * @return true if value found and variable set
  *
  * @note the value, if found, is REMOVED from the list
  */
 /*--------------------------------------------------------------------------------*/
-bool ADMObject::SetValue(sint_t& res, const std::string& name)
+bool ADMObject::SetValue(sint_t& res, const std::string& name, bool hex)
 {
   const ADMVALUE *value;
   bool success = false;
 
   if ((value = GetValue(name)) != NULL)
   {
-    success = (sscanf(value->value.c_str(), "%d", &res) > 0);
+    if (hex) success = (sscanf(value->value.c_str(), "%x", (uint_t *)&res) > 0);
+    else     success = (sscanf(value->value.c_str(), "%d", &res) > 0);
     EraseValue(value);
   }
 
@@ -515,20 +576,22 @@ bool ADMObject::SetValue(sint_t& res, const std::string& name)
  *
  * @param res internal variable to be modified
  * @param name value name
+ * @param hex true if value is expected to be hexidecimal
  *
  * @return true if value found and variable set
  *
  * @note the value, if found, is REMOVED from the list
  */
 /*--------------------------------------------------------------------------------*/
-bool ADMObject::SetValue(slong_t& res, const std::string& name)
+bool ADMObject::SetValue(slong_t& res, const std::string& name, bool hex)
 {
   const ADMVALUE *value;
   bool success = false;
 
   if ((value = GetValue(name)) != NULL)
   {
-    success = (sscanf(value->value.c_str(), "%ld", &res) > 0);
+    if (hex) success = (sscanf(value->value.c_str(), "%lx", (ulong_t *)&res) > 0);
+    else     success = (sscanf(value->value.c_str(), "%ld", &res) > 0);
     EraseValue(value);
   }
 
@@ -643,6 +706,7 @@ std::string ADMObject::GenTime(uint64_t t)
 
 const std::string ADMAudioProgramme::Type      = "audioProgramme";
 const std::string ADMAudioProgramme::Reference = Type + "IDRef";
+const std::string ADMAudioProgramme::IDPrefix  = "APR_";
 
 /*--------------------------------------------------------------------------------*/
 /** Set internal variables from values added to internal list (e.g. from XML)
@@ -716,6 +780,7 @@ void ADMAudioProgramme::GenerateReferenceList(std::string& str) const
 
 const std::string ADMAudioContent::Type      = "audioContent";
 const std::string ADMAudioContent::Reference = Type + "IDRef";
+const std::string ADMAudioContent::IDPrefix  = "ACO_";
 
 /*--------------------------------------------------------------------------------*/
 /** Set internal variables from values added to internal list (e.g. from XML)
@@ -789,6 +854,7 @@ void ADMAudioContent::GenerateReferenceList(std::string& str) const
 
 const std::string ADMAudioObject::Type      = "audioObject";
 const std::string ADMAudioObject::Reference = Type + "IDRef";
+const std::string ADMAudioObject::IDPrefix  = "AO_";
 
 /*--------------------------------------------------------------------------------*/
 /** ADM AudioObject object
@@ -925,6 +991,7 @@ void ADMAudioObject::GenerateReferenceList(std::string& str) const
 
 const std::string ADMAudioTrack::Type      = "audioTrackUID";
 const std::string ADMAudioTrack::Reference = Type + "Ref";
+const std::string ADMAudioTrack::IDPrefix  = "ATU_";
 
 /*--------------------------------------------------------------------------------*/
 /** Set internal variables from values added to internal list (e.g. from XML)
@@ -1021,6 +1088,7 @@ void ADMAudioTrack::GenerateReferenceList(std::string& str) const
 
 const std::string ADMAudioPackFormat::Type      = "audioPackFormat";
 const std::string ADMAudioPackFormat::Reference = Type + "IDRef";
+const std::string ADMAudioPackFormat::IDPrefix  = "AP_";
 
 /*--------------------------------------------------------------------------------*/
 /** Set internal variables from values added to internal list (e.g. from XML)
@@ -1029,6 +1097,20 @@ const std::string ADMAudioPackFormat::Reference = Type + "IDRef";
 void ADMAudioPackFormat::SetValues()
 {
   ADMObject::SetValues();
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Update object's ID
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMAudioPackFormat::UpdateID()
+{
+  // call SetID() with new ID
+  std::string _id;
+
+  Printf(_id, "%04x%%04x", typeLabel);
+
+  SetID(GetIDPrefix() + _id);
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -1109,6 +1191,7 @@ void ADMAudioPackFormat::GenerateReferenceList(std::string& str) const
 
 const std::string ADMAudioStreamFormat::Type      = "audioStreamFormat";
 const std::string ADMAudioStreamFormat::Reference = Type + "IDRef";
+const std::string ADMAudioStreamFormat::IDPrefix  = "AS_";
 
 /*--------------------------------------------------------------------------------*/
 /** Set internal variables from values added to internal list (e.g. from XML)
@@ -1116,10 +1199,28 @@ const std::string ADMAudioStreamFormat::Reference = Type + "IDRef";
 /*--------------------------------------------------------------------------------*/
 void ADMAudioStreamFormat::SetValues()
 {
+  uint_t      _formatLabel;
+  std::string _formatDefinition;
+
   ADMObject::SetValues();
 
-  SetValue(formatLabel,      "formatLabel");
-  SetValue(formatDefinition, "formatDefinition");
+  if (SetValue(_formatLabel,      "formatLabel", true)) SetFormatLabel(_formatLabel);
+  if (SetValue(_formatDefinition, "formatDefinition"))  SetFormatDefinition(_formatDefinition);
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Update object's ID
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMAudioStreamFormat::UpdateID()
+{
+  // call SetID() with new ID
+  std::string _id;
+
+  if (formatLabel) Printf(_id, "%04x%04x", typeLabel, formatLabel);
+  else             Printf(_id, "%04x%%04x", typeLabel);
+
+  SetID(GetIDPrefix() + _id);
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -1185,9 +1286,9 @@ void ADMAudioStreamFormat::GetValuesAndReferences(ADMVALUES& objvalues, std::vec
   ADMObject::GetValuesAndReferences(objvalues, objects, full);
 
   // add values/attributes not held in 'values' to list
-  if (full || (formatLabel != ""))
+  if (full || (formatLabel != 0))
   {
-    SetAttribute(value, "formatLabel", formatLabel);
+    SetAttribute(value, "formatLabel", formatLabel, "%04x");
     objvalues.push_back(value);
   }
   if (full || (formatDefinition != ""))
@@ -1232,6 +1333,7 @@ void ADMAudioStreamFormat::GenerateReferenceList(std::string& str) const
 
 const std::string ADMAudioTrackFormat::Type      = "audioTrackFormat";
 const std::string ADMAudioTrackFormat::Reference = Type + "IDRef";
+const std::string ADMAudioTrackFormat::IDPrefix  = "AT_";
 
 /*--------------------------------------------------------------------------------*/
 /** Set internal variables from values added to internal list (e.g. from XML)
@@ -1241,8 +1343,23 @@ void ADMAudioTrackFormat::SetValues()
 {
   ADMObject::SetValues();
 
-  SetValue(formatLabel,      "formatLabel");
+  SetValue(formatLabel,      "formatLabel", true);
   SetValue(formatDefinition, "formatDefinition");
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Update object's ID
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMAudioTrackFormat::UpdateID()
+{
+  // call SetID() with new ID
+  std::string _id;
+
+  if (formatLabel) Printf(_id, "%04x%04x", typeLabel, formatLabel);
+  else             Printf(_id, "%04x%%04x", typeLabel);
+
+  SetID(GetIDPrefix() + _id);
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -1259,9 +1376,9 @@ void ADMAudioTrackFormat::GetValuesAndReferences(ADMVALUES& objvalues, std::vect
   ADMObject::GetValuesAndReferences(objvalues, objects, full);
 
   // add values/attributes not held in 'values' to list
-  if (full || (formatLabel != ""))
+  if (full || (formatLabel != 0))
   {
-    SetAttribute(value, "formatLabel", formatLabel);
+    SetAttribute(value, "formatLabel", formatLabel, "%04x");
     objvalues.push_back(value);
   }
   if (full || (formatDefinition != ""))
@@ -1312,6 +1429,7 @@ void ADMAudioTrackFormat::GenerateReferenceList(std::string& str) const
 
 const std::string ADMAudioChannelFormat::Type      = "audioChannelFormat";
 const std::string ADMAudioChannelFormat::Reference = Type + "IDRef";
+const std::string ADMAudioChannelFormat::IDPrefix  = "AC_";
 
 /*--------------------------------------------------------------------------------*/
 /** Set internal variables from values added to internal list (e.g. from XML)
@@ -1323,6 +1441,20 @@ void ADMAudioChannelFormat::SetValues()
 }
 
 /*--------------------------------------------------------------------------------*/
+/** Update object's ID
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMAudioChannelFormat::UpdateID()
+{
+  // call SetID() with new ID
+  std::string _id;
+
+  Printf(_id, "%04x%%04x", typeLabel);
+
+  SetID(GetIDPrefix() + _id);
+}
+
+/*--------------------------------------------------------------------------------*/
 /** Add reference to an AudioBlockFormat object and ensures blocks are sorted by time
  */
 /*--------------------------------------------------------------------------------*/
@@ -1330,10 +1462,10 @@ bool ADMAudioChannelFormat::Add(ADMAudioBlockFormat *obj)
 {
   if (std::find(blockformatrefs.begin(), blockformatrefs.end(), obj) == blockformatrefs.end())
   {
-    // set offset?
-    //obj->SetStartTime();
     blockformatrefs.push_back(obj);
     sort(blockformatrefs.begin(), blockformatrefs.end(), ADMAudioBlockFormat::Compare);
+    // change audioBlockFormat's ID to AB_yyyyxxxx_zzzzzzzz where yyyy and xxxx are taken from this object's ID and zzzzzzzz is auto-generated
+    owner.ChangeID(obj, obj->GetIDPrefix() + GetID().substr(GetIDPrefix().length()) + "_%08x");
     return true;
   }
 
@@ -1381,6 +1513,7 @@ void ADMAudioChannelFormat::GenerateReferenceList(std::string& str) const
 
 const std::string ADMAudioBlockFormat::Type      = "audioBlockFormat";
 const std::string ADMAudioBlockFormat::Reference = Type + "IDRef";
+const std::string ADMAudioBlockFormat::IDPrefix  = "AB_";
 
 /*--------------------------------------------------------------------------------*/
 /** Set internal variables from values added to internal list (e.g. from XML)
@@ -1737,7 +1870,7 @@ ADMAudioBlockFormat *ADMTrackCursor::StartBlockFormat(uint64_t t)
   ADMAudioBlockFormat *blockformat;
   uint64_t            relativetime = t - object.object->GetStartTime();
 
-  if ((blockformat = new ADMAudioBlockFormat(adm, adm.CreateID(ADMAudioBlockFormat::Type, object.channelformat), "")) != NULL)
+  if ((blockformat = new ADMAudioBlockFormat(adm, adm.CreateID(ADMAudioBlockFormat::Type), "")) != NULL)
   {
     blockformat->SetRTime(relativetime);
     object.channelformat->Add(blockformat);
