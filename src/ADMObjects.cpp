@@ -151,11 +151,8 @@ void ADMObject::SetValueAttribute(ADMVALUE& obj, const std::string& name, double
 /*--------------------------------------------------------------------------------*/
 void ADMObject::SetValues()
 {
-  uint_t      _typeLabel;
-  std::string _typeDefinition;
-
-  if (SetValue(_typeLabel,      "typeLabel", true)) SetTypeLabel(_typeLabel);
-  if (SetValue(_typeDefinition, "typeDefinition"))  SetTypeDefinition(_typeDefinition);
+  SetValue(typeLabel,      "typeLabel", true);
+  SetValue(typeDefinition, "typeDefinition");
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -1199,13 +1196,10 @@ const std::string ADMAudioStreamFormat::IDPrefix  = "AS_";
 /*--------------------------------------------------------------------------------*/
 void ADMAudioStreamFormat::SetValues()
 {
-  uint_t      _formatLabel;
-  std::string _formatDefinition;
-
   ADMObject::SetValues();
 
-  if (SetValue(_formatLabel,      "formatLabel", true)) SetFormatLabel(_formatLabel);
-  if (SetValue(_formatDefinition, "formatDefinition"))  SetFormatDefinition(_formatDefinition);
+  SetValue(formatLabel,      "formatLabel", true);
+  SetValue(formatDefinition, "formatDefinition");
 }
 
 /*--------------------------------------------------------------------------------*/

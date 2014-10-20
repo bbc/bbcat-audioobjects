@@ -467,7 +467,8 @@ void ADMData::ChangeID(ADMObject *obj, const std::string& id, uint_t start)
   if (format || (id != obj->GetID()))
   {
     ADMOBJECTS_IT it;
-  
+    std::string   newid;
+
     // find object in map and delete it
     if ((it = admobjects.find(obj->GetMapEntryID())) != admobjects.end())
     {
@@ -475,9 +476,13 @@ void ADMData::ChangeID(ADMObject *obj, const std::string& id, uint_t start)
     }
 
     // if id is a format string, find unique ID
-    if (format) obj->SetUpdatedID(FindUniqueID(obj->GetType(), id, start));
+    if (format) newid = FindUniqueID(obj->GetType(), id, start);
     // else just update object's ID
-    else        obj->SetUpdatedID(id);
+    else        newid = id;
+
+    DEBUG1(("Change object<%016lx>'s ID from '%s' to '%s' (name '%s')", (ulong_t)obj, obj->GetID().c_str(), newid.c_str(), obj->GetName().c_str()));
+
+    obj->SetUpdatedID(newid);
 
     // put object back into map with new ID
     admobjects[obj->GetMapEntryID()] = obj;
