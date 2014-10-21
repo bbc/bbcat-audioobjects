@@ -79,8 +79,6 @@ void ADMObject::SetTypeLabel(uint_t type)
 
   // update typeDefinition if possible
   if (typeLabelMap.find(typeLabel) != typeLabelMap.end()) SetTypeDefinition(typeLabelMap[typeLabel]);
-
-  UpdateID();
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -1211,8 +1209,7 @@ void ADMAudioStreamFormat::UpdateID()
   // call SetID() with new ID
   std::string _id;
 
-  if (formatLabel) Printf(_id, "%04x%04x", typeLabel, formatLabel);
-  else             Printf(_id, "%04x%%04x", typeLabel);
+  Printf(_id, "%04x%%04x", formatLabel);
 
   SetID(GetIDPrefix() + _id);
 }
@@ -1350,8 +1347,8 @@ void ADMAudioTrackFormat::UpdateID()
   // call SetID() with new ID
   std::string _id;
 
-  if (formatLabel) Printf(_id, "%04x%04x", typeLabel, formatLabel);
-  else             Printf(_id, "%04x%%04x", typeLabel);
+  if (formatLabel) Printf(_id, "%04x%04x_%%02x", typeLabel, formatLabel);
+  else             Printf(_id, "%04x0001_%%02x", typeLabel);
 
   SetID(GetIDPrefix() + _id);
 }
@@ -1456,10 +1453,10 @@ bool ADMAudioChannelFormat::Add(ADMAudioBlockFormat *obj)
 {
   if (std::find(blockformatrefs.begin(), blockformatrefs.end(), obj) == blockformatrefs.end())
   {
+    obj->SetChannelFormat(this);
     blockformatrefs.push_back(obj);
     sort(blockformatrefs.begin(), blockformatrefs.end(), ADMAudioBlockFormat::Compare);
-    // change audioBlockFormat's ID to AB_yyyyxxxx_zzzzzzzz where yyyy and xxxx are taken from this object's ID and zzzzzzzz is auto-generated
-    owner.ChangeID(obj, obj->GetIDPrefix() + GetID().substr(GetIDPrefix().length()) + "_%08x");
+
     return true;
   }
 
@@ -1508,6 +1505,20 @@ void ADMAudioChannelFormat::GenerateReferenceList(std::string& str) const
 const std::string ADMAudioBlockFormat::Type      = "audioBlockFormat";
 const std::string ADMAudioBlockFormat::Reference = Type + "IDRef";
 const std::string ADMAudioBlockFormat::IDPrefix  = "AB_";
+
+
+/*--------------------------------------------------------------------------------*/
+/** Update object's ID
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMAudioBlockFormat::UpdateID()
+{
+  if (channelformat)
+  {
+    // change ID to AB_yyyyxxxx_zzzzzzzz where yyyy and xxxx are taken from the owning channelcformat  object's ID and zzzzzzzz is auto-generated
+    owner.ChangeID(this, GetIDPrefix() + channelformat->GetID().substr(channelformat->GetIDPrefix().length()) + "_%08x");
+  }
+}
 
 /*--------------------------------------------------------------------------------*/
 /** Set internal variables from values added to internal list (e.g. from XML)
@@ -1558,7 +1569,6 @@ void ADMAudioBlockFormat::SetValues()
     else ++it;
   }
 }
-
 
 /*--------------------------------------------------------------------------------*/
 /** Set position for this blockformat

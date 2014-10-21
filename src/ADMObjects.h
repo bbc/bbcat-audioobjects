@@ -183,9 +183,9 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   typedef struct {
-    const ADMObject *obj;
-    bool            genref;     // generate reference to object from this object
-    bool            gendata;    // output object within this object
+    ADMObject *obj;
+    bool      genref;     // generate reference to object from this object
+    bool      gendata;    // output object within this object
   } REFERENCEDOBJECT;
   virtual void GetValuesAndReferences(ADMVALUES& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full = false) const;
 
@@ -968,7 +968,7 @@ public:
   /** Set and Get formatLabel
    */
   /*--------------------------------------------------------------------------------*/
-  void SetFormatLabel(uint_t format) {formatLabel = format; UpdateID();}
+  void SetFormatLabel(uint_t format) {formatLabel = format;}
   uint_t GetFormatLabel() const {return formatLabel;}
 
   /*--------------------------------------------------------------------------------*/
@@ -1201,7 +1201,7 @@ public:
   /** Set and Get formatLabel
    */
   /*--------------------------------------------------------------------------------*/
-  void SetFormatLabel(uint_t format) {formatLabel = format; UpdateID();}
+  void SetFormatLabel(uint_t format) {formatLabel = format;}
   uint_t GetFormatLabel() const {return formatLabel;}
 
   /*--------------------------------------------------------------------------------*/
@@ -1284,7 +1284,8 @@ public:
     rtime(0),
     duration(0),
     position(),
-    supplement() {Register();}
+    supplement(),
+    channelformat(NULL) {Register();}
 
   /*--------------------------------------------------------------------------------*/
   /** Return textual type name of this object
@@ -1309,6 +1310,12 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   virtual void SetValues();
+
+  /*--------------------------------------------------------------------------------*/
+  /** Set owning audioChannelFormat
+   */
+  /*--------------------------------------------------------------------------------*/
+  void SetChannelFormat(const ADMAudioChannelFormat *obj) {channelformat = obj;}
 
   /*--------------------------------------------------------------------------------*/
   /** Set and Get rtime
@@ -1398,10 +1405,18 @@ public:
   static const std::string IDPrefix;
 
 protected:
-  uint64_t     rtime;
-  uint64_t     duration;
-  Position     position;
-  ParameterSet supplement;
+  /*--------------------------------------------------------------------------------*/
+  /** Update object's ID
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void UpdateID();
+
+protected:
+  uint64_t                    rtime;
+  uint64_t                    duration;
+  Position                    position;
+  ParameterSet                supplement;
+  const ADMAudioChannelFormat *channelformat;
 };
 
 /*----------------------------------------------------------------------------------------------------*/

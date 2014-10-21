@@ -291,7 +291,7 @@ public:
    * @param list list to be populated
    */
   /*--------------------------------------------------------------------------------*/
-  void GetADMList(const std::string& type, std::vector<const ADMObject *>& list) const;
+  void GetObjects(const std::string& type, std::vector<const ADMObject *>& list) const;
 
   /*--------------------------------------------------------------------------------*/
   /** Get ADM object by ID (with optional object type specified)
@@ -382,6 +382,12 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   bool CreateObjects(const OBJECTNAMES& names);
+
+  /*--------------------------------------------------------------------------------*/
+  /** Change temporary IDs to full valid ones based on a set of rules
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void ChangeTemporaryIDs();
 
   /*--------------------------------------------------------------------------------*/
   /** Dump ADM or part of ADM as textual description
@@ -586,6 +592,12 @@ protected:
   /*--------------------------------------------------------------------------------*/
   virtual void Dump(const ADMObject *obj, std::map<const ADMObject *,bool>& map, DUMPCONTEXT& context) const;
 
+  /*--------------------------------------------------------------------------------*/
+  /** Change temporary ID of object and all its referenced objects
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void ChangeTemporaryID(ADMObject *obj, std::map<ADMObject *,bool>& map);
+
 protected:
   typedef struct
   {
@@ -602,6 +614,7 @@ protected:
   TRACKLIST      tracklist;
 
   static std::vector<PROVIDER> providerlist;
+  static const std::string tempidsuffix;
 };
 
 BBC_AUDIOTOOLBOX_END

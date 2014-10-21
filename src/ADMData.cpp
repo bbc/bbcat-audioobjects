@@ -11,9 +11,16 @@
 #include "ADMData.h"
 #include "RIFFChunk_Definitions.h"
 
+// currently the chna chunk is specified as having either 32 or 2048 entries for tracks
+// define CHNA_FIXED_UIDS_LOWER as 0 to disable this behaviour
+#define CHNA_FIXED_UIDS_LOWER 32
+#define CHNA_FIXED_UIDS_UPPER 2048
+
 BBC_AUDIOTOOLBOX_START
 
 std::vector<ADMData::PROVIDER> ADMData::providerlist;
+
+const std::string ADMData::tempidsuffix = "_T";
 
 ADMData::ADMData()
 {
@@ -173,9 +180,14 @@ bool ADMData::Set(const uint8_t *chna, uint_t chnalength, const uint8_t *axml, u
 uint8_t *ADMData::GetChna(uint32_t& len) const
 {
   CHNA_CHUNK *p = NULL;
+  uint_t nuids = tracklist.size();
+
+#if CHNA_FIXED_UIDS_LOWER > 0
+  nuids = (nuids <= CHNA_FIXED_UIDS_LOWER) ? CHNA_FIXED_UIDS_LOWER : CHNA_FIXED_UIDS_UPPER;
+#endif
 
   // calculate size of chna chunk
-  len = sizeof(*p) + tracklist.size() * sizeof(p->UIDs[0]);
+  len = sizeof(*p) + nuids * sizeof(p->UIDs[0]);
   if ((p = (CHNA_CHUNK *)calloc(1, len)) != NULL)
   {
     std::vector<bool> uniquetracks; // list of unique tracks
@@ -188,7 +200,7 @@ uint8_t *ADMData::GetChna(uint32_t& len) const
     p->TrackCount = 0;
     p->UIDCount   = 0;
     
-    for (i = 0; i < tracklist.size(); i++)
+    for (i = 0; (i < tracklist.size()) && (p->UIDCount < nuids); i++)
     {
       const ADMAudioTrack *track = tracklist[i];
       uint_t tr = track->GetTrackNum();
@@ -227,7 +239,7 @@ uint8_t *ADMData::GetChna(uint32_t& len) const
 
       DEBUG2(("Track %u/%u: Index %u UID '%s' TrackFormatRef '%s' PackFormatRef '%s'",
               i, (uint_t)tracklist.size(),
-              track->GetTrackNum(),
+              track->GetTrackNum() + 1,
               track->GetID().c_str(),
               trackref ? trackref->GetID().c_str() : "<none>",
               packref  ? packref->GetID().c_str()  : "<none>"));
@@ -405,10 +417,12 @@ std::string ADMData::FindUniqueID(const std::string& type, const std::string& fo
     // test this ID
     if ((it = admobjects.find(type + "/" + testid)) == admobjects.end())
     {
+      DEBUG4(("ID '%s' is unique", (type + "/" + testid).c_str()));
       // ID not already in list -> must be unique
       id = testid;
       break;
     }
+    else DEBUG4(("ID '%s' is *not* unique", (type + "/" + testid).c_str()));
   }
 
   return id;
@@ -436,12 +450,12 @@ std::string ADMData::CreateID(const std::string& type) const
     if      (type == ADMAudioProgramme::Type)     {format = ADMAudioProgramme::IDPrefix    + "%04x"; start = 0x1000;}
     else if (type == ADMAudioContent::Type)       {format = ADMAudioContent::IDPrefix      + "%04x"; start = 0x1000;}
     else if (type == ADMAudioObject::Type)        {format = ADMAudioObject::IDPrefix       + "%04x"; start = 0x1000;}
-    else if (type == ADMAudioPackFormat::Type)    format = ADMAudioPackFormat::IDPrefix    + "%08u_T";    // temporary
-    else if (type == ADMAudioBlockFormat::Type)   format = ADMAudioBlockFormat::IDPrefix   + "%08u_T";    // temporary
-    else if (type == ADMAudioChannelFormat::Type) format = ADMAudioChannelFormat::IDPrefix + "%08u_T";    // temporary
-    else if (type == ADMAudioStreamFormat::Type)  format = ADMAudioStreamFormat::IDPrefix  + "%08u_T";    // temporary
-    else if (type == ADMAudioTrackFormat::Type)   format = ADMAudioTrackFormat::IDPrefix   + "%08u_T";    // temporary
-    else if (type == ADMAudioTrack::Type)         format = ADMAudioTrack::IDPrefix         + "%08u_T";    // temporary
+    else if (type == ADMAudioPackFormat::Type)    format = ADMAudioPackFormat::IDPrefix    + "%08u" + tempidsuffix;    // temporary
+    else if (type == ADMAudioBlockFormat::Type)   format = ADMAudioBlockFormat::IDPrefix   + "%08u" + tempidsuffix;    // temporary
+    else if (type == ADMAudioChannelFormat::Type) format = ADMAudioChannelFormat::IDPrefix + "%08u" + tempidsuffix;    // temporary
+    else if (type == ADMAudioStreamFormat::Type)  format = ADMAudioStreamFormat::IDPrefix  + "%08u" + tempidsuffix;    // temporary
+    else if (type == ADMAudioTrackFormat::Type)   format = ADMAudioTrackFormat::IDPrefix   + "%08u" + tempidsuffix;    // temporary
+    else if (type == ADMAudioTrack::Type)         format = ADMAudioTrack::IDPrefix         + "%08u" + tempidsuffix;    // temporary
 
     id = FindUniqueID(type, format, start);
   }
@@ -477,15 +491,78 @@ void ADMData::ChangeID(ADMObject *obj, const std::string& id, uint_t start)
 
     // if id is a format string, find unique ID
     if (format) newid = FindUniqueID(obj->GetType(), id, start);
+    // test to ensure explicit ID is not already used
+    else if (admobjects.find(obj->GetType() + "/" + id) != admobjects.end())
+    {
+      DEBUG1(("ID '%s' already exists for type '%s'!", id.c_str(), obj->GetType().c_str()));
+      newid = FindUniqueID(obj->GetType(), id + "_%02x", 0);
+    }
     // else just update object's ID
-    else        newid = id;
+    else newid = id;
 
-    DEBUG1(("Change object<%016lx>'s ID from '%s' to '%s' (name '%s')", (ulong_t)obj, obj->GetID().c_str(), newid.c_str(), obj->GetName().c_str()));
+    DEBUG3(("Change object<%016lx>'s ID from '%s' to '%s' (from '%s') (name '%s')", (ulong_t)obj, obj->GetID().c_str(), newid.c_str(), id.c_str(), obj->GetName().c_str()));
 
     obj->SetUpdatedID(newid);
 
     // put object back into map with new ID
     admobjects[obj->GetMapEntryID()] = obj;
+  }
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Change temporary ID of object and all its referenced objects
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMData::ChangeTemporaryID(ADMObject *obj, std::map<ADMObject *,bool>& map)
+{
+  // only process objects once!
+  if (map.find(obj) == map.end())
+  {
+    std::vector<ADMObject::REFERENCEDOBJECT> objects;
+    ADMObject::ADMVALUES values;
+    const std::string& id = obj->GetID();
+    uint_t i;
+
+    // mark this object is generated
+    map[obj] = true;
+
+    if ((id.length() >= tempidsuffix.length()) && (id.substr(id.length() - tempidsuffix.length()) == tempidsuffix))
+    {
+      // this object has a temporary ID -> change it
+      obj->UpdateID();
+    }
+
+    // get list of referenced objects and recurse
+    obj->GetValuesAndReferences(values, objects, true);
+
+    // don't care about values
+    (void)values;
+
+    for (i = 0; i < objects.size(); i++)
+    {
+      ChangeTemporaryID(objects[i].obj, map);
+    }
+  }  
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Change temporary IDs to full valid ones based on a set of rules
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMData::ChangeTemporaryIDs()
+{
+  std::map<ADMObject *,bool> map;
+  ADMOBJECTS_IT it;
+
+  for (it = admobjects.begin(); it != admobjects.end(); ++it)
+  {
+    ADMObject *obj = it->second;
+    
+    if (obj->GetType() == ADMAudioProgramme::Type)
+    {
+      // start with audioProgrammes
+      ChangeTemporaryID(obj, map);
+    }
   }
 }
 
@@ -808,7 +885,7 @@ void ADMData::ConnectReferences()
  * @param list list to be populated
  */
 /*--------------------------------------------------------------------------------*/
-void ADMData::GetADMList(const std::string& type, std::vector<const ADMObject *>& list) const
+void ADMData::GetObjects(const std::string& type, std::vector<const ADMObject *>& list) const
 {
   ADMOBJECTS_CIT it;
 
@@ -1640,8 +1717,8 @@ bool ADMData::CreateFromFile(const char *filename)
 
               // derive channel and stream names from track name
               names.channelFormatName = trackname;
-              names.streamFormatName  = "PCM_" + trackname;
-              names.trackFormatName   = "PCM_" + trackname;
+              names.streamFormatName  = trackname;
+              names.trackFormatName   = trackname;
 
               // set object name
               names.objectName.assign(p2 + 1);

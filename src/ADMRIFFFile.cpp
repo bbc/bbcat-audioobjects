@@ -125,6 +125,7 @@ void ADMRIFFFile::Close()
 
     adm->SortTracks();
     adm->ConnectReferences();
+    adm->ChangeTemporaryIDs();
 
     // get ADM object to create chna chunk
     if ((chna = adm->GetChna(chnalen)) != NULL)
