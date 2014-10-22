@@ -99,8 +99,28 @@ typedef PACKEDSTRUCT
   uint16_t     BitsPerSample;
 } WAVEFORMAT_CHUNK;
 
-#define WAVE_FORMAT_PCM 0x0001
-#define fmt_ID IFFID("fmt ")
+typedef PACKEDSTRUCT
+{
+  uint16_t     Format;
+  uint16_t     Channels;
+  uint32_t     SampleRate;
+  uint32_t     BytesPerSecond;
+  uint16_t     BlockAlign;
+  uint16_t     BitsPerSample;
+  uint16_t     ExtensionSize;
+  union {
+    uint16_t   ValidBitsPerSample;
+    uint16_t   SamplesPerBlock;
+    uint16_t   Reserved;
+  } Samples;
+  uint32_t     ChannelMask;
+  uint8_t      GUID[16];
+} WAVEFORMAT_EXTENSIBLE_CHUNK;
+
+#define WAVE_FORMAT_PCM        0x0001
+#define WAVE_FORMAT_IEEE       0x0003
+#define WAVE_FORMAT_EXTENSIBLE 0xfffe
+#define fmt_ID                 IFFID("fmt ")
 
 #define data_ID IFFID("data")
 

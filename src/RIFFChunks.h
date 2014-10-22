@@ -170,7 +170,7 @@ protected:
   // chunk processing
   virtual bool ProcessChunkData();
   // delete data after processing
-  virtual bool DeleteDataAfterProcessing() const {return true;}
+  virtual bool DeleteDataAfterProcessing() const {return false;}
 };
 
 /*--------------------------------------------------------------------------------*/

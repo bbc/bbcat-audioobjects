@@ -317,22 +317,39 @@ bool RIFFfmtChunk::ProcessChunkData()
   const WAVEFORMAT_CHUNK& chunk = *(const WAVEFORMAT_CHUNK *)data;
   bool success = false;
 
-  if (chunk.Format == WAVE_FORMAT_PCM)
+  if ((chunk.Format == WAVE_FORMAT_PCM)  ||
+      (chunk.Format == WAVE_FORMAT_IEEE) ||
+      (chunk.Format == WAVE_FORMAT_EXTENSIBLE))
   {
     // cannot handle anything other that PCM samples
+    const WAVEFORMAT_EXTENSIBLE_CHUNK& exchunk = *(const WAVEFORMAT_EXTENSIBLE_CHUNK *)data;
+    uint_t _bitspersample = chunk.BitsPerSample;
 
     DEBUG2(("Reading format data"));
+
+    if ((chunk.Format == WAVE_FORMAT_EXTENSIBLE) &&
+        (length >= sizeof(exchunk))   &&
+        (exchunk.ExtensionSize >= 22) &&
+        (exchunk.Samples.ValidBitsPerSample > 0))
+    {
+      // explicit bits per sample specified by exchunk
+      _bitspersample = MIN(_bitspersample, exchunk.Samples.ValidBitsPerSample);
+    }
 
     // set parameters within SoundFormat according to data from this chunk
     SetSampleRate(chunk.SampleRate);
     SetChannels(chunk.Channels);
 
     // best guess at sample data format
-    if (chunk.BitsPerSample <= 16)
+    if (chunk.Format == WAVE_FORMAT_IEEE)
+    {
+      SetSampleFormat((_bitspersample == 32) ? SampleFormat_Float : SampleFormat_Double);
+    }
+    else if (_bitspersample <= 16)
     {
       SetSampleFormat(SampleFormat_16bit);
     }
-    else if (chunk.BitsPerSample <= 24)
+    else if (_bitspersample <= 24)
     {
       SetSampleFormat(SampleFormat_24bit);
     }
@@ -346,7 +363,7 @@ bool RIFFfmtChunk::ProcessChunkData()
 
     success = true;
   }
-  else ERROR("Format is %04x, not PCM", chunk.Format);
+  else ERROR("Format is 0x%04x, not PCM", chunk.Format);
 
   return success;
 }
@@ -362,7 +379,7 @@ bool RIFFfmtChunk::CreateWriteData()
 
     memset(&chunk, 0, sizeof(chunk));
 
-    chunk.Format         = WAVE_FORMAT_PCM;
+    chunk.Format         = RANGE(format, _SampleFormat_Float_First, _SampleFormat_Float_Last) ? WAVE_FORMAT_IEEE : WAVE_FORMAT_PCM;
     chunk.SampleRate     = samplerate;
     chunk.Channels       = channels;
     chunk.BytesPerSecond = samplerate * channels * bytespersample;
@@ -371,6 +388,14 @@ bool RIFFfmtChunk::CreateWriteData()
       case SampleFormat_16bit:
         // ONLY use 16 bit samples if sample format is explicitly 16 bit
         chunk.BitsPerSample = 16;
+        break;
+
+      case SampleFormat_Float:
+        chunk.BitsPerSample = 32;
+        break;
+
+      case SampleFormat_Double:
+        chunk.BitsPerSample = 64;
         break;
 
       default:
