@@ -1821,7 +1821,7 @@ uint64_t ADMTrackCursor::GetEndTime() const
     const AUDIOOBJECT&                        object       = objectlist[0];
     const std::vector<ADMAudioBlockFormat *>& blockformats = objectlist[objectindex].channelformat->GetBlockFormatRefs();
 
-    if (blockformats.size() > 0) t = object.object->GetStartTime() + blockformats[blockformats.size() - 1]->GetStartTime();
+    if (blockformats.size() > 0) t = object.object->GetStartTime() + blockformats[blockformats.size() - 1]->GetStartTime() + blockformats[blockformats.size() - 1]->GetDuration();
   }
 
   return t;

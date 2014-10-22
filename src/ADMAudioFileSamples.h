@@ -24,6 +24,7 @@ protected:
   virtual void UpdatePosition();
 
 protected:
+  Clip_t                              initialclip;
   std::vector<const ADMAudioObject *> objects;
 };
 

@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
       uint_t k;
 
       // get list of objects of specified type
-      adm->GetADMList(type, list);
+      adm->GetObjects(type, list);
 
       if (list.size() > 0)
       {
@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
       std::vector<const ADMObject *>list;
         
       // get a list of audioObjects
-      adm->GetADMList("audioObject", list);
+      adm->GetObjects("audioObject", list);
 
       if (list.size() > 0)
       {
@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
         if ((obj = dynamic_cast<const ADMAudioObject *>(list.back())) != NULL)
         {
           // create audio samples handler for the audio object
-          ADMAudioFileSamples   handler(adm, file.GetSamples(), obj);
+          ADMAudioFileSamples   handler(file.GetSamples(), obj);
           std::vector<Sample_t> samples;
           uint_t n, nsamples = 1024;
 
@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
           samples.resize(handler.GetChannels() * nsamples);
 
           // read samples (start channel and interleaving are handled by handler)
-          while ((handler.GetSamplePosition() < 16384) && ((n = handler.ReadSamples(&samples[0], nsamples)) > 0))     // arbitrary stop point of 16384!
+          while ((handler.GetSamplePosition() < 16384) && ((n = handler.ReadSamples(&samples[0], 0, handler.GetChannels(), nsamples)) > 0))     // arbitrary stop point of 16384!
           {
             printf("%u/%u sample frames read, sample position %lu/%lu\n", n, nsamples, (ulong_t)handler.GetSamplePosition(), (ulong_t)handler.GetSampleLength());
           }

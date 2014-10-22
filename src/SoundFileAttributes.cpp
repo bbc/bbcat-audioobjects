@@ -151,7 +151,7 @@ uint_t SoundFileSamples::ReadSamples(uint8_t *buffer, SampleFormat_t type, uint_
         uint_t nframes = MIN(frames, samplebufferframes);
         size_t res;
 
-        DEBUG4(("Seeking to %lu", filepos + (clip.start + samplepos) * format->GetBytesPerFrame()));
+        DEBUG4(("Seeking to %lu", (ulong_t)(filepos + (clip.start + samplepos) * format->GetBytesPerFrame())));
         if (file->fseek(filepos + samplepos * format->GetBytesPerFrame(), SEEK_SET) == 0)
         {
           DEBUG4(("Reading %u x %u bytes", nframes, format->GetBytesPerFrame()));

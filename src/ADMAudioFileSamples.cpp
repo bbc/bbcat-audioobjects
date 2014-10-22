@@ -12,6 +12,9 @@ ADMAudioFileSamples::ADMAudioFileSamples(const SoundFileSamples *isamples, const
 {
   uint_t i, n = GetChannels();
 
+  // save initial limits of channels and time
+  initialclip = GetClip();
+
   for (i = 0; i < n; i++)
   {
     cursors.push_back(new ADMTrackCursor(GetStartChannel() + i));
@@ -23,6 +26,9 @@ ADMAudioFileSamples::ADMAudioFileSamples(const SoundFileSamples *isamples, const
 ADMAudioFileSamples::ADMAudioFileSamples(const ADMAudioFileSamples *isamples) : SoundFileSamplesWithPosition(isamples)
 {
   uint_t i;
+
+  // save initial limits of channels and time
+  initialclip = GetClip();
 
   for (i = 0; i < isamples->cursors.size(); i++)
   {
@@ -56,19 +62,25 @@ bool ADMAudioFileSamples::Add(const ADMAudioObject *obj)
         uint64_t startTime = cursor->GetStartTime() / timebase;        // convert cursor start time from ns to samples
         uint64_t endTime   = cursor->GetEndTime()   / timebase;        // convert cursor end   time from ns to samples
 
+        DEBUG2(("Add object from %lu to %lu on track %u...", (ulong_t)startTime, (ulong_t)endTime, cursor->GetChannel() + 1));
+
         if (objects.size() == 0)
         {
-          startTime = MAX(startTime, clip.start);
-          endTime   = MIN(endTime,   clip.start + clip.nsamples);
+          // first object brings the audio time limits INWARDS to that of the object
+          startTime = MAX(startTime, initialclip.start);
+          endTime   = MIN(endTime,   initialclip.start + initialclip.nsamples);
         }
         else
         {
-          startTime = MIN(startTime, clip.start);
-          endTime   = MAX(endTime,   clip.start + clip.nsamples);
+          // subsequent objects push the audio time limits OUTWARDS to that of the object (keeping within the original clip)
+          startTime = MIN(startTime, MAX(clip.start, initialclip.start));
+          endTime   = MAX(endTime,   MIN(clip.start + clip.nsamples, initialclip.start + initialclip.nsamples));
         }
 
         clip.start    = startTime;
         clip.nsamples = endTime - startTime,
+
+        DEBUG2(("...clip now from %lu to %lu", (ulong_t)startTime, (ulong_t)endTime));
 
         SetClip(clip);
 
