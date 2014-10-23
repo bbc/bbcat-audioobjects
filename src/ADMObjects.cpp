@@ -1560,13 +1560,12 @@ void ADMAudioBlockFormat::SetValues()
 
       it = values.erase(it);
     }
-    else if (value.name == "diffuse")
+    else // any other parameters -> assume they are part of the supplement information
     {
-      supplement.Set(value.name, (value.value == "true"));
+      supplement.Set(value.name, value.value);
 
       it = values.erase(it);
     }
-    else ++it;
   }
 }
 
@@ -1634,10 +1633,11 @@ void ADMAudioBlockFormat::GetValuesAndReferences(ADMVALUES& objvalues, std::vect
     objvalues.push_back(value);
   }
 
-  bool diffuse;
-  if (supplement.Get("diffuse", diffuse))
+  // add all parameters from the supplement information
+  ParameterSet::Iterator it;
+  for (it = supplement.GetBegin(); it != supplement.GetEnd(); ++it)
   {
-    SetValue(value, "diffuse", diffuse ? "true" : "false");
+    SetValue(value, it->first, it->second);
     objvalues.push_back(value);
   }
 }
