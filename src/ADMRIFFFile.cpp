@@ -133,7 +133,7 @@ void ADMRIFFFile::Close()
       // and add it to the RIFF file
       if ((chunk = AddChunk(chna_ID)) != NULL)
       {
-        chunk->CreateWriteData(chna, chnalen);
+        chunk->CreateChunkData(chna, chnalen);
       }
       else ERROR("Failed to add chna chunk");
 
@@ -149,7 +149,7 @@ void ADMRIFFFile::Close()
       std::string str = adm->GetAxml();
 
       // set chunk data
-      chunk->CreateWriteData(str.c_str(), str.size());
+      chunk->CreateChunkData(str.c_str(), str.size());
 
       DEBUG3(("AXML: %s", str.c_str()));
     }

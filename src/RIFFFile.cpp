@@ -265,7 +265,7 @@ void RIFFFile::Close()
       DEBUG3(("Total size %lu bytes", (ulong_t)totalbytes));
 
       // set total length of RIFF chunk
-      chunkmap[RIFF_ID]->CreateWriteData(NULL, totalbytes);
+      chunkmap[RIFF_ID]->CreateChunkData(NULL, totalbytes);
 
       // actually write the chunks' data
       for (i = 0; i < chunklist.size(); i++)

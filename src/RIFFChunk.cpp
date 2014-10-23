@@ -207,7 +207,7 @@ bool RIFFChunk::WriteChunk(EnhancedFile *file)
 /** Supply chunk data for writing
  */
 /*--------------------------------------------------------------------------------*/
-bool RIFFChunk::CreateWriteData(const void *_data, uint64_t _length)
+bool RIFFChunk::CreateChunkData(const void *_data, uint64_t _length)
 {
   bool success = false;
 
@@ -228,25 +228,42 @@ bool RIFFChunk::CreateWriteData(const void *_data, uint64_t _length)
 }
 
 /*--------------------------------------------------------------------------------*/
-/** Create blank data of the right size
+/** Create/update data to the specified size
+ *
+ * @note if a data block already exists it will be copied to the new block
+ * @note this functions allows expansion of but *not* shrinking of the data block
  */
 /*--------------------------------------------------------------------------------*/
-bool RIFFChunk::CreateWriteData(uint64_t _length)
+bool RIFFChunk::CreateChunkData(uint64_t _length)
 {
   bool success = false;
 
-  if (data)
+  if (!data || (_length > length))
   {
-    delete[] data;
-    data = NULL;
-  }
+    uint8_t  *olddata  = data;
+    uint64_t oldlength = length;
 
-  length = _length;
-  if ((data = new uint8_t[length]) != NULL)
-  {
-    memset(data, 0, length);
-    success = true;
+    length = _length;
+
+    if ((data = new uint8_t[length]) != NULL)
+    {
+      // if old data exists, copy it and then clear the remainder
+      if (olddata && oldlength)
+      {
+        memcpy(data, olddata, oldlength);
+
+        // clear any remainder
+        if (length > oldlength) memset(data + oldlength, 0, length - oldlength);
+      }
+      // else just clear entire data
+      else memset(data, 0, length);
+      success = true;
+    }
+
+    if (olddata) delete[] olddata;
   }
+  // no need to do anything, block isn't changing
+  else success = true;
 
   return success;
 }
@@ -266,7 +283,7 @@ bool RIFFChunk::WriteChunkData(EnhancedFile *file)
   if (data)
   {
     // byte swap JUST before writing!
-    ByteSwapData();
+    ByteSwapData(true);
     success = (file->fwrite(data, 1, length) == length);
   }
 

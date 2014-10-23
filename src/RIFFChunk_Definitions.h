@@ -83,7 +83,13 @@ typedef PACKEDSTRUCT
   uint32_t     TimeReferenceLow;                      /* First sample count since midnight, low word */
   uint32_t     TimeReferenceHigh;                     /* First sample count since midnight, high word */
   uint16_t     Version;                               /* Version of the BWF; unsigned binary number */
-  char         Reserved[254];                         /* Reserved for future use, set to 'NULL' */
+  uint8_t      UMID[64];                              /* Binary bytes of SMPTE UMID */ 
+  uint16_t     LoudnessValue;                         /* uint16_t : «Integrated Loudness Value of the file in LUFS (multiplied by 100) » */ 
+  uint16_t     LoudnessRange;                         /* uint16_t : «Loudness Range of the file in LU (multiplied by 100) » */ 
+  uint16_t     MaxTruePeakLevel;                      /* uint16_t : «Maximum True Peak Level of the file expressed as dBTP (multiplied by 100) » */ 
+  uint16_t     MaxMomentaryLoudness;                  /* uint16_t : «Highest value of the Momentary Loudness Level of the file in LUFS (multiplied by 100) » */ 
+  uint16_t     MaxShortTermLoudness;                  /* uint16_t : «Highest value of the Short-Term Loudness Level of the file in LUFS (multiplied by 100) » */ 
+  uint8_t      Reserved[180];                         /* 180 bytes, reserved for future use, set to "NULL" */ 
   char         CodingHistory[0];                      /* ASCII : «History coding » */
 } BROADCAST_CHUNK;
 

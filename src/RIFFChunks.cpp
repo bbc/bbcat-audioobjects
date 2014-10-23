@@ -97,12 +97,23 @@ void RIFFds64Chunk::Register()
   RIFFChunk::RegisterProvider("ds64", &Create);
 }
 
-void RIFFds64Chunk::ByteSwapData()
+void RIFFds64Chunk::ByteSwapData(bool writing)
 {
-  ds64_CHUNK& chunk = *(ds64_CHUNK *)data;
-
-  if (SwapLittleEndian())
+  if (SwapLittleEndian() && data && (length >= sizeof(ds64_CHUNK)))
   {
+    ds64_CHUNK& chunk = *(ds64_CHUNK *)data;
+    uint32_t i;
+
+    if (writing)
+    {
+      // when writing, byte-swap these BEFORE chunk.TableEntryCount gets byte-swapped
+      for (i = 0; i < chunk.TableEntryCount; i++)
+      {
+        BYTESWAP_VAR(chunk.Table[i].ChunkSizeLow);
+        BYTESWAP_VAR(chunk.Table[i].ChunkSizeHigh);
+      }
+    }
+
     BYTESWAP_VAR(chunk.RIFFSizeLow);
     BYTESWAP_VAR(chunk.RIFFSizeHigh);
     BYTESWAP_VAR(chunk.dataSizeLow);
@@ -111,11 +122,14 @@ void RIFFds64Chunk::ByteSwapData()
     BYTESWAP_VAR(chunk.SampleCountHigh);
     BYTESWAP_VAR(chunk.TableEntryCount);
 
-    uint32_t i;
-    for (i = 0; i < chunk.TableEntryCount; i++)
+    if (!writing)
     {
-      BYTESWAP_VAR(chunk.Table[i].ChunkSizeLow);
-      BYTESWAP_VAR(chunk.Table[i].ChunkSizeHigh);
+      // when reading, byte-swap these AFTER chunk.TableEntryCount gets byte-swapped
+      for (i = 0; i < chunk.TableEntryCount; i++)
+      {
+        BYTESWAP_VAR(chunk.Table[i].ChunkSizeLow);
+        BYTESWAP_VAR(chunk.Table[i].ChunkSizeHigh);
+      }
     }
   }
 }
@@ -297,9 +311,11 @@ void RIFFfmtChunk::Register()
   RIFFChunk::RegisterProvider("fmt ", &Create);
 }
 
-void RIFFfmtChunk::ByteSwapData()
+void RIFFfmtChunk::ByteSwapData(bool writing)
 {
-  if (SwapLittleEndian())
+  UNUSED_PARAMETER(writing);
+
+  if (SwapLittleEndian() && data && (length >= sizeof(WAVEFORMAT_CHUNK)))
   {
     WAVEFORMAT_CHUNK& chunk = *(WAVEFORMAT_CHUNK *)data;
   
@@ -441,16 +457,173 @@ void RIFFbextChunk::Register()
   RIFFChunk::RegisterProvider("bext", &Create);
 }
 
-void RIFFbextChunk::ByteSwapData()
+void RIFFbextChunk::ByteSwapData(bool writing)
 {
-  BROADCAST_CHUNK& chunk = *(BROADCAST_CHUNK *)data;
+  UNUSED_PARAMETER(writing);
 
-  if (SwapLittleEndian())
+  if (SwapLittleEndian() && data && (length >= sizeof(BROADCAST_CHUNK)))
   {
+    BROADCAST_CHUNK& chunk = *(BROADCAST_CHUNK *)data;
+  
     BYTESWAP_VAR(chunk.TimeReferenceLow);
     BYTESWAP_VAR(chunk.TimeReferenceHigh);
     BYTESWAP_VAR(chunk.Version);
+    BYTESWAP_VAR(chunk.LoudnessValue);
+    BYTESWAP_VAR(chunk.LoudnessRange);
+    BYTESWAP_VAR(chunk.MaxTruePeakLevel);
+    BYTESWAP_VAR(chunk.MaxMomentaryLoudness);
+    BYTESWAP_VAR(chunk.MaxShortTermLoudness);
   }
+}
+
+
+/*--------------------------------------------------------------------------------*/
+/** Assign a length-limited, possibly unterminated, string to a std::string
+ */
+/*--------------------------------------------------------------------------------*/
+void RIFFbextChunk::GetUnterminatedString(std::string& res, const char *str, size_t maxlen)
+{
+  size_t i;
+
+  // find length of string whilst being limited to a specified length
+  // (this may seem contrived but strlen() will keep searching for a nul, way off the end of the array)
+  for (i = 0; (i < maxlen) && str[i]; i++) ;
+
+  res.assign(str, i);
+}
+
+#define GET_BEXT_STRING(name)                                           \
+std::string RIFFbextChunk::Get##name() const                            \
+{                                                                       \
+  const BROADCAST_CHUNK *chunk = (const BROADCAST_CHUNK *)data;         \
+  std::string res;                                                      \
+                                                                        \
+  if (chunk && (length >= sizeof(*chunk))) GetUnterminatedString(res, chunk->name, sizeof(chunk->name)); \
+                                                                        \
+  return res;                                                           \
+}
+
+#define GET_BEXT_VALUE(type, name)                              \
+type RIFFbextChunk::Get##name() const                           \
+{                                                               \
+  const BROADCAST_CHUNK *chunk = (const BROADCAST_CHUNK *)data; \
+  type value = 0;                                               \
+                                                                \
+  if (chunk && (length >= sizeof(*chunk))) value = chunk->name; \
+                                                                \
+  return value;                                                 \
+}
+
+GET_BEXT_STRING(Description);
+GET_BEXT_STRING(Originator);
+GET_BEXT_STRING(OriginatorReference);
+GET_BEXT_STRING(OriginationDate);
+GET_BEXT_STRING(OriginationTime);
+
+uint64_t RIFFbextChunk::GetTimeReference() const
+{
+  const BROADCAST_CHUNK *chunk = (const BROADCAST_CHUNK *)data;
+  uint64_t value = 0;
+
+  // coding history is an arbitary length string on the end of the structure
+  if (chunk && (length >= sizeof(*chunk))) value = ((uint64_t)chunk->TimeReferenceHigh << 32) | (uint64_t)chunk->TimeReferenceLow;
+
+  return value;
+}
+
+GET_BEXT_VALUE(uint_t, Version);
+
+const uint8_t *RIFFbextChunk::GetUMID() const
+{
+  const BROADCAST_CHUNK *chunk = (const BROADCAST_CHUNK *)data;
+  const uint8_t *umid = NULL;
+
+  if (chunk && (length >= sizeof(*chunk))) umid = chunk->UMID;
+  
+  return umid;
+}
+
+GET_BEXT_VALUE(uint_t, LoudnessValue);
+GET_BEXT_VALUE(uint_t, LoudnessRange);
+GET_BEXT_VALUE(uint_t, MaxTruePeakLevel);
+GET_BEXT_VALUE(uint_t, MaxMomentaryLoudness);
+GET_BEXT_VALUE(uint_t, MaxShortTermLoudness);
+
+std::string RIFFbextChunk::GetCodingHistory() const
+{
+  const BROADCAST_CHUNK *chunk = (const BROADCAST_CHUNK *)data;
+  std::string res;
+  
+  // coding history is an arbitary length string on the end of the structure
+  if (chunk && (length >= sizeof(*chunk))) GetUnterminatedString(res, chunk->CodingHistory, length - sizeof(*chunk));
+  
+  return res;
+}
+
+#define SET_BEXT_STRING(name)                                           \
+void RIFFbextChunk::Set##name(const char *str)                          \
+{                                                                       \
+  /* ensure data block is big enough */                                 \
+  CreateChunkData(sizeof(BROADCAST_CHUNK));                             \
+                                                                        \
+  BROADCAST_CHUNK *chunk = (BROADCAST_CHUNK *)data;                     \
+  if (chunk && (length >= sizeof(*chunk))) strncpy(chunk->name, str, sizeof(chunk->name)); \
+}
+
+#define SET_BEXT_VALUE(type, name)                              \
+void RIFFbextChunk::Set##name(type value)                       \
+{                                                               \
+  /* ensure data block is big enough */                         \
+  CreateChunkData(sizeof(BROADCAST_CHUNK));                     \
+                                                                \
+  BROADCAST_CHUNK *chunk = (BROADCAST_CHUNK *)data;             \
+  if (chunk && (length >= sizeof(*chunk))) chunk->name = value; \
+}
+
+SET_BEXT_STRING(Description);
+SET_BEXT_STRING(Originator);
+SET_BEXT_STRING(OriginatorReference);
+SET_BEXT_STRING(OriginationDate);
+SET_BEXT_STRING(OriginationTime);
+
+void RIFFbextChunk::SetTimeReference(uint64_t value)
+{
+  /* ensure data block is big enough */
+  CreateChunkData(sizeof(BROADCAST_CHUNK));
+
+  BROADCAST_CHUNK *chunk = (BROADCAST_CHUNK *)data;
+  if (chunk && (length >= sizeof(*chunk)))
+  {
+    chunk->TimeReferenceHigh = (uint32_t)(value >> 32);
+    chunk->TimeReferenceLow  = (uint32_t)value;
+  }
+}
+
+SET_BEXT_VALUE(uint_t, Version);
+void RIFFbextChunk::SetUMID(const uint8_t umid[64])
+{
+  /* ensure data block is big enough */
+  CreateChunkData(sizeof(BROADCAST_CHUNK));
+
+  BROADCAST_CHUNK *chunk = (BROADCAST_CHUNK *)data;
+  if (chunk && (length >= sizeof(*chunk))) memcpy(chunk->UMID, umid, sizeof(chunk->UMID));
+}
+
+SET_BEXT_VALUE(uint_t, LoudnessValue);
+SET_BEXT_VALUE(uint_t, LoudnessRange);
+SET_BEXT_VALUE(uint_t, MaxTruePeakLevel);
+SET_BEXT_VALUE(uint_t, MaxMomentaryLoudness);
+SET_BEXT_VALUE(uint_t, MaxShortTermLoudness);
+
+void RIFFbextChunk::SetCodingHistory(const char *str)
+{
+  size_t len = strlen(str);
+
+  /* ensure data block is big enough - it is likely to be expanded by this function */
+  CreateChunkData(sizeof(BROADCAST_CHUNK) + len);
+
+  BROADCAST_CHUNK *chunk = (BROADCAST_CHUNK *)data;
+  if (chunk && (length >= (sizeof(*chunk) + len))) memcpy(chunk->CodingHistory, str, len);       // note terminator is NOT copied
 }
 
 // create write data
@@ -460,17 +633,8 @@ bool RIFFbextChunk::CreateWriteData()
 
   if (!success)
   {
-    BROADCAST_CHUNK chunk;
-
-    memset(&chunk, 0, sizeof(chunk));
-
-    length = sizeof(chunk);
-    if ((data = new uint8_t[length]) != NULL)
-    {
-      memcpy(data, &chunk, length);
-
-      success = true;
-    }
+    // this should never be called unless nothing has already created the chunk and populated it!
+    success = CreateChunkData(sizeof(BROADCAST_CHUNK));
   }
   
   return success;
@@ -490,19 +654,32 @@ void RIFFchnaChunk::Register()
   RIFFChunk::RegisterProvider("chna", &Create);
 }
 
-void RIFFchnaChunk::ByteSwapData()
+void RIFFchnaChunk::ByteSwapData(bool writing)
 {
-  CHNA_CHUNK& chunk = *(CHNA_CHUNK *)data;
-
-  if (SwapLittleEndian())
+  if (SwapLittleEndian() && data && (length >= sizeof(CHNA_CHUNK)))
   {
+    CHNA_CHUNK& chunk = *(CHNA_CHUNK *)data;  
+    uint16_t i;
+
+    if (writing)
+    {
+      // when writing, swap these BEFORE chunk.UIDCount is byte-swapped
+      for (i = 0; i < chunk.UIDCount; i++)
+      {
+        BYTESWAP_VAR(chunk.UIDs[i].TrackNum);
+      }
+    }
+
     BYTESWAP_VAR(chunk.TrackCount);
     BYTESWAP_VAR(chunk.UIDCount);
 
-    uint16_t i;
-    for (i = 0; i < chunk.UIDCount; i++)
+    if (!writing)
     {
-      BYTESWAP_VAR(chunk.UIDs[i].TrackNum);
+      // when reading, swap these AFTER chunk.UIDCount is byte-swapped
+      for (i = 0; i < chunk.UIDCount; i++)
+      {
+        BYTESWAP_VAR(chunk.UIDs[i].TrackNum);
+      }
     }
   }
 }

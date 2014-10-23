@@ -116,15 +116,18 @@ public:
 
   /*--------------------------------------------------------------------------------*/
   /** Supply chunk data for writing
-  */
+   */
   /*--------------------------------------------------------------------------------*/
-  virtual bool CreateWriteData(const void *_data, uint64_t _length);
+  virtual bool CreateChunkData(const void *_data, uint64_t _length);
 
   /*--------------------------------------------------------------------------------*/
-  /** Create blank data of the right size
-  */
+  /** Create/update data to the specified size
+   *
+   * @note if a data block already exists it will be copied to the new block
+   * @note this functions allows expansion of but *not* shrinking of the data block
+   */
   /*--------------------------------------------------------------------------------*/
-  virtual bool CreateWriteData(uint64_t _length);
+  virtual bool CreateChunkData(uint64_t _length);
 
   /*--------------------------------------------------------------------------------*/
   /** Create data for writing to chunk
@@ -230,9 +233,11 @@ protected:
 
   /*--------------------------------------------------------------------------------*/
   /** placeholder for byte swapping function provided by derived objects
+   *
+   * @param writing true if data is about to be written (i.e. byte swap is possibly away from native order)
    */
   /*--------------------------------------------------------------------------------*/
-  virtual void ByteSwapData() {}
+  virtual void ByteSwapData(bool writing = false) {UNUSED_PARAMETER(writing);}
 
   /*--------------------------------------------------------------------------------*/
   /** Write chunk data

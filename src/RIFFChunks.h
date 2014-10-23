@@ -2,6 +2,8 @@
 #ifndef __RIFF_CHUNKS__
 #define __RIFF_CHUNKS__
 
+#include <string>
+
 #include "RIFFChunk.h"
 #include "SoundFileAttributes.h"
 
@@ -127,7 +129,7 @@ protected:
 
 protected:
   // data will need byte swapping on certain machines
-  virtual void ByteSwapData();
+  virtual void ByteSwapData(bool writing);
   // always read and process his kind of chunk
   virtual ChunkHandling_t GetChunkHandling() const {return ChunkHandling_ReadChunk;}
 };
@@ -164,13 +166,11 @@ protected:
 
 protected:
   // data will need byte swapping on certain machines
-  virtual void ByteSwapData();
+  virtual void ByteSwapData(bool writing);
   // always read and process his kind of chunk
   virtual ChunkHandling_t GetChunkHandling() const {return ChunkHandling_ReadChunk;}
   // chunk processing
   virtual bool ProcessChunkData();
-  // delete data after processing
-  virtual bool DeleteDataAfterProcessing() const {return false;}
 };
 
 /*--------------------------------------------------------------------------------*/
@@ -186,6 +186,36 @@ public:
   RIFFbextChunk(uint32_t chunk_id) : RIFFChunk(chunk_id) {}
   virtual ~RIFFbextChunk() {}
 
+  std::string   GetDescription() const;
+  std::string   GetOriginator() const;
+  std::string   GetOriginatorReference() const;
+  std::string   GetOriginationDate() const;
+  std::string   GetOriginationTime() const;
+  uint64_t      GetTimeReference() const;
+  uint_t        GetVersion() const;
+  const uint8_t *GetUMID() const;
+  uint_t        GetLoudnessValue() const;
+  uint_t        GetLoudnessRange() const;
+  uint_t        GetMaxTruePeakLevel() const;
+  uint_t        GetMaxMomentaryLoudness() const;
+  uint_t        GetMaxShortTermLoudness() const;
+  std::string   GetCodingHistory() const;
+
+  virtual void  SetDescription(const char *str);
+  virtual void  SetOriginator(const char *str);
+  virtual void  SetOriginatorReference(const char *str);
+  virtual void  SetOriginationDate(const char *str);
+  virtual void  SetOriginationTime(const char *str);
+  virtual void  SetTimeReference(uint64_t value);
+  virtual void  SetVersion(uint_t value);
+  virtual void  SetUMID(const uint8_t umid[64]);
+  virtual void  SetLoudnessValue(uint_t value);
+  virtual void  SetLoudnessRange(uint_t value);
+  virtual void  SetMaxTruePeakLevel(uint_t value);
+  virtual void  SetMaxMomentaryLoudness(uint_t value);
+  virtual void  SetMaxShortTermLoudness(uint_t value);
+  virtual void  SetCodingHistory(const char *str);
+
   // create write data
   virtual bool CreateWriteData();
 
@@ -200,9 +230,15 @@ protected:
     return new RIFFbextChunk(id);
   }
 
+  /*--------------------------------------------------------------------------------*/
+  /** Assign a length-limited, possibly unterminated, string to a std::string
+   */
+  /*--------------------------------------------------------------------------------*/
+  static void GetUnterminatedString(std::string& res, const char *str, size_t maxlen);
+
 protected:
   // data will need byte swapping on certain machines
-  virtual void ByteSwapData();
+  virtual void ByteSwapData(bool writing);
   // data should be read
   virtual ChunkHandling_t GetChunkHandling() const {return ChunkHandling_ReadChunk;}
 };
@@ -233,7 +269,7 @@ protected:
 
 protected:
   // byte swapping required
-  virtual void ByteSwapData();
+  virtual void ByteSwapData(bool writing);
   // data should be read
   virtual ChunkHandling_t GetChunkHandling() const {return ChunkHandling_ReadChunk;}
 };

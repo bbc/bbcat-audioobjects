@@ -42,8 +42,6 @@ ADMObject::ADMObject(ADMData& _owner, const std::string& _id, const std::string&
     SetTypeDefinition(TypeLabel_HOA,            "HOA");
     SetTypeDefinition(TypeLabel_Binaural,       "Binaural");
   }
-
-  SetTypeLabel(TypeLabel_DirectSpeakers);
 }
 
 /*--------------------------------------------------------------------------------*/
