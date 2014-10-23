@@ -299,16 +299,25 @@ void RIFFfmtChunk::Register()
 
 void RIFFfmtChunk::ByteSwapData()
 {
-  WAVEFORMAT_CHUNK& chunk = *(WAVEFORMAT_CHUNK *)data;
-
   if (SwapLittleEndian())
   {
+    WAVEFORMAT_CHUNK& chunk = *(WAVEFORMAT_CHUNK *)data;
+  
     BYTESWAP_VAR(chunk.Format);
     BYTESWAP_VAR(chunk.Channels);
     BYTESWAP_VAR(chunk.SampleRate);
     BYTESWAP_VAR(chunk.BytesPerSecond);
     BYTESWAP_VAR(chunk.BlockAlign);
     BYTESWAP_VAR(chunk.BitsPerSample);
+
+    if ((chunk.Format == WAVE_FORMAT_EXTENSIBLE) && (length >= sizeof(WAVEFORMAT_EXTENSIBLE_CHUNK)))
+    {
+      WAVEFORMAT_EXTENSIBLE_CHUNK& exchunk = *(WAVEFORMAT_EXTENSIBLE_CHUNK *)data;
+
+      BYTESWAP_VAR(exchunk.ExtensionSize);
+      BYTESWAP_VAR(exchunk.Samples.Reserved);
+      BYTESWAP_VAR(exchunk.ChannelMask);
+    }
   }
 }
 
