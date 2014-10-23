@@ -28,9 +28,11 @@ int main(void)
       printf("Created '%s' okay, %u channels at %luHz (%u bytes per sample)\n", filename, file.GetChannels(), (ulong_t)file.GetSampleRate(), (uint_t)file.GetBytesPerSample());
 
       // set programme name
+      // if an audioProgramme object of this name doesn't exist, one will be created
       names.programmeName = "ADM Test Programme";
 
       // set content name
+      // if an audioContent object of this name doesn't exist, one will be created
       names.contentName   = "ADM Test Content";
     
       // create tracks, channels and streams
@@ -63,6 +65,9 @@ int main(void)
         Printf(names.packFormatName, "Pack %u", 1 + (t / 4));
 
         adm->CreateObjects(names);
+
+        // note how the programme and content names are left in place in 'names'
+        // this is necessary to ensure that things are linked up properly
       }
     }
     else fprintf(stderr, "Failed to create ADM for file '%s'!\n", filename);
