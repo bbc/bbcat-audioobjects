@@ -77,7 +77,6 @@ public:
    * @param ndstchannels number channels desired in destination buffer
    * @param nsrcframes number of sample frames in source buffer
    * @param ndstframes maximum number of sample frames that can be put in destination
-   * @param level level to mix output to destination
    *
    * @return number of frames written to destination
    *
@@ -87,7 +86,7 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   virtual uint_t Render(const Sample_t *src, Sample_t *dst,
-                        uint_t nsrcchannels, uint_t ndstchannels, uint_t nsrcframes, uint_t ndstframes, Sample_t level = 1.0);
+                        uint_t nsrcchannels, uint_t ndstchannels, uint_t nsrcframes, uint_t ndstframes);
 
   /*--------------------------------------------------------------------------------*/
   /** Return max number of audio channels of playlist
