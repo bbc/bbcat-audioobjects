@@ -156,7 +156,7 @@ void PlaybackEngine::UpdateAllPositions(bool force)
  * @return number of frames written to destination
  *
  * @note samples may be LOST if nsrcframes > ndstframes
- * @note ASSUMES destination is BLANKED out!
+ * @note audio will be ADDED to the destination
  *
  */
 /*--------------------------------------------------------------------------------*/
@@ -166,46 +166,50 @@ uint_t PlaybackEngine::Render(const Sample_t *src, Sample_t *dst,
   ThreadLock lock(tlock);
   uint_t frames = 0;
 
-  UNUSED_PARAMETER(src);
-  UNUSED_PARAMETER(nsrcchannels);
-  UNUSED_PARAMETER(nsrcframes);
-
-  while (ndstframes)
+  if (playlist.Empty())
   {
-    ThreadLock       lock(tlock);
-    SoundFileSamples *file;
-    uint_t           nread = 0;
-
-    // if not at the end of the play list, try and read out samples
-    if ((file = playlist.GetFile()) != NULL)
+    // no files to play, revert to processing input
+    frames = AudioPositionProcessor::Render(src, dst, nsrcchannels, ndstchannels, nsrcframes, ndstframes);
+  }
+  else
+  {
+    while (ndstframes)
     {
-      // if inputchannels = 0 then renderer has changed so set up channels and sample rate again
-      if (!inputchannels) SetFileChannelsAndSampleRate();
+      ThreadLock       lock(tlock);
+      SoundFileSamples *file;
+      uint_t           nread = 0;
 
-      // calculate maximum number of frames that can be read and read them into a temporary buffer
-      nread = file->ReadSamples(&samplesbuffer[0], 0, inputchannels, MIN(samplesbuffer.size() / inputchannels, ndstframes));
-
-      // end of this file, move onto next one
-      if (nread == 0)
+      // if not at the end of the play list, try and read out samples
+      if ((file = playlist.GetFile()) != NULL)
       {
-        playlist.Next();
-        SetFileChannelsAndSampleRate();
-        continue;
+        // if inputchannels = 0 then renderer has changed so set up channels and sample rate again
+        if (!inputchannels) SetFileChannelsAndSampleRate();
+
+        // calculate maximum number of frames that can be read and read them into a temporary buffer
+        nread = file->ReadSamples(&samplesbuffer[0], 0, inputchannels, MIN(samplesbuffer.size() / inputchannels, ndstframes));
+
+        // end of this file, move onto next one
+        if (nread == 0)
+        {
+          playlist.Next();
+          SetFileChannelsAndSampleRate();
+          continue;
+        }
       }
+
+      // allow LESS samples to be written to output than sent to renderer (for non-unity time rendering processes)
+      uint_t nwritten = AudioPositionProcessor::Render(&samplesbuffer[0], dst,
+                                                       inputchannels, ndstchannels,
+                                                       nread, ndstframes);
+
+      // if the renderer has finished outputting, break out
+      if ((nread == 0) && (nwritten == 0)) break;
+
+      // move output pointer on by resultant number of frames
+      dst        += nwritten * ndstchannels;
+      ndstframes -= nwritten;
+      frames     += nwritten;
     }
-
-    // allow LESS samples to be written to output than sent to renderer (for non-unity time rendering processes)
-    uint_t nwritten = AudioPositionProcessor::Render(&samplesbuffer[0], dst,
-                                                     inputchannels, ndstchannels,
-                                                     nread, ndstframes);
-
-    // if the renderer has finished outputting, break out
-    if ((nread == 0) && (nwritten == 0)) break;
-
-    // move output pointer on by resultant number of frames
-    dst        += nwritten * ndstchannels;
-    ndstframes -= nwritten;
-    frames     += nwritten;
   }
 
   // if no frames written, notify renderer that processing has finished
