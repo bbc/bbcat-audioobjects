@@ -15,7 +15,6 @@ BBC_AUDIOTOOLBOX_START
 PlaybackEngine::PlaybackEngine() : AudioPositionProcessor()
 {
   samplesbuffer.resize(4096);
-  SetGenerator(new FilePositionGenerator(this, playlist));
 }
 
 PlaybackEngine::~PlaybackEngine()
@@ -39,6 +38,8 @@ void PlaybackEngine::AddFile(SoundFileSamples *file)
   {
     // first file added, set up renderer
     SetFileChannelsAndSampleRate();
+    // configure positions to come from playlist
+    SetGenerator(new FilePositionGenerator(this, playlist));
   }
 }
 
@@ -101,10 +102,19 @@ bool PlaybackEngine::AddObject(const ADMRIFFFile& file, const char *name)
   return success;
 }
 
+bool PlaybackEngine::Empty()
+{
+  ThreadLock lock(tlock);
+  return playlist.Empty();
+}
+
 void PlaybackEngine::Clear()
 {
   ThreadLock lock(tlock);
+  // clear playlist
   playlist.Clear();
+  // remove file based position source
+  SetGenerator(NULL);
 }
 
 void PlaybackEngine::Reset()
@@ -168,8 +178,13 @@ uint_t PlaybackEngine::Render(const Sample_t *src, Sample_t *dst,
 
   if (playlist.Empty())
   {
-    // no files to play, revert to processing input
-    frames = AudioPositionProcessor::Render(src, dst, nsrcchannels, ndstchannels, nsrcframes, ndstframes);
+    // abort if there's no audio input
+    if (nsrcchannels)
+    {
+      // no files to play, revert to processing input
+      frames = AudioPositionProcessor::Render(src, dst, nsrcchannels, ndstchannels, nsrcframes, ndstframes);
+    }
+    else ERROR("No audio source data for renderer");
   }
   else
   {
