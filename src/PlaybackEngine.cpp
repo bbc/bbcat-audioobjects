@@ -113,6 +113,8 @@ void PlaybackEngine::Clear()
   ThreadLock lock(tlock);
   // clear playlist
   playlist.Clear();
+  // reset inputchannels (so that the renderers get set up again with the correct number of input channels)
+  inputchannels = 0;
   // remove file based position source
   SetGenerator(NULL);
 }

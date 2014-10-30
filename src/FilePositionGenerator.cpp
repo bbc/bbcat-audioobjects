@@ -28,6 +28,8 @@ void FilePositionGenerator::Process()
     const std::vector<PositionCursor *>& cursors = file->GetCursors();
     uint_t i, n = cursors.size();
 
+    if (n > positions.size()) SetChannels(n);
+
     for (i = 0; i < n; i++)
     {
       PositionCursor *cursor = cursors[i];
