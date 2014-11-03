@@ -240,4 +240,18 @@ void ADMRIFFFile::UpdateSamplePosition()
 {
 }
 
+/*----------------------------------------------------------------------------------------------------*/
+
+SELF_REGISTER(ADMFileReader, TYPE_RIFFFILE ".reader");
+
+ADMFileReader::ADMFileReader(const ParameterSet& parameters) : ADMRIFFFile()
+{
+  std::string filename;
+
+  if (parameters.Get("filename", filename))
+  {
+    Open(filename.c_str());
+  }
+}
+
 BBC_AUDIOTOOLBOX_END

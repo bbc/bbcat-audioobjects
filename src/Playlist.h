@@ -64,6 +64,12 @@ public:
   /*--------------------------------------------------------------------------------*/
   uint_t GetMaxOutputChannels() const;
 
+  /*--------------------------------------------------------------------------------*/
+  /** Return number of objects in playlist
+   */
+  /*--------------------------------------------------------------------------------*/
+  uint_t GetCount() const {return list.size();}
+
 protected:
   std::vector<SoundFileSamples *> list;
   std::vector<SoundFileSamples *>::iterator it;

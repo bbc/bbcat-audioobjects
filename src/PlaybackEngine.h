@@ -101,6 +101,14 @@ public:
   uint_t GetMaxOutputChannels() const {return playlist.GetMaxOutputChannels();}
 
 protected:
+  /*--------------------------------------------------------------------------------*/
+  /** Register a self-registering-parametric-object or return -1
+   *
+   * @return index (if applicable) or -1 for unrecognized type
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual int Register(SelfRegisteringParametricObject *obj, const ParameterSet& parameters);
+
   virtual void SetFileChannelsAndSampleRate();
 
 protected:

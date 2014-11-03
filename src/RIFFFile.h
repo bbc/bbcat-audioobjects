@@ -4,8 +4,6 @@
 #include <vector>
 #include <map>
 
-#include <bbcat-base/misc.h>
-
 #include "RIFFChunks.h"
 
 BBC_AUDIOTOOLBOX_START

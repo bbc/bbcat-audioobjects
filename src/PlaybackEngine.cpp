@@ -141,6 +141,26 @@ void PlaybackEngine::SetFileChannelsAndSampleRate()
 }
 
 /*--------------------------------------------------------------------------------*/
+/** Register a self-registering-parametric-object or return -1
+ *
+ * @return index (if applicable) or -1 for unrecognized type
+ */
+/*--------------------------------------------------------------------------------*/
+int PlaybackEngine::Register(SelfRegisteringParametricObject *obj, const ParameterSet& parameters)
+{
+  int index = -1;
+
+  if (dynamic_cast<ADMFileReader *>(obj))
+  {
+    if (AddObject(*dynamic_cast<ADMFileReader *>(obj), "all")) index = playlist.GetCount();
+  }
+  else index = AudioPositionProcessor::Register(obj, parameters);
+
+  return index;
+}
+
+
+/*--------------------------------------------------------------------------------*/
 /** Update all positions if necessary
  */
 /*--------------------------------------------------------------------------------*/

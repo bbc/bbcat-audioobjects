@@ -4,10 +4,14 @@
 #include <string>
 #include <map>
 
+#include <bbcat-base/SelfRegisteringParametricObject.h>
+
 #include "RIFFFile.h"
 #include "ADMData.h"
 
 BBC_AUDIOTOOLBOX_START
+
+#define TYPE_RIFFFILE "rifffile"
 
 /*--------------------------------------------------------------------------------*/
 /** ADM BWF file support class
@@ -86,6 +90,13 @@ protected:
 
 protected:
   ADMData *adm;
+};
+
+class ADMFileReader : public ADMRIFFFile, public SelfRegisteringParametricObject
+{
+  SELF_REGISTER_CREATOR(ADMFileReader);
+
+  virtual ~ADMFileReader() {}
 };
 
 BBC_AUDIOTOOLBOX_END
