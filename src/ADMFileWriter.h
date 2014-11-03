@@ -16,19 +16,6 @@ public:
   virtual ~ADMFileWriter();
 
   /*--------------------------------------------------------------------------------*/
-  /** Create a WAVE/RIFF file
-   *
-   * @param filename filename of file to create
-   * @param samplerate sample rate of audio
-   * @param nchannels number of audio channels
-   * @param format sample format of audio in file
-   *
-   * @return true if file created properly
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual bool Create(const char *filename, uint32_t samplerate = 48000, uint_t nchannels = 2, SampleFormat_t format = SampleFormat_24bit);
-
-  /*--------------------------------------------------------------------------------*/
   /** Close file
    *
    * @note this may take some time because it copies sample data from a temporary file
@@ -61,6 +48,12 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   virtual uint_t GetDesiredOutputChannels() const {return GetChannels();}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Return whether this object actually supports positional information
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual bool CanHandlePositions() const {return (adm != NULL);}
 
   /*--------------------------------------------------------------------------------*/
   /** Consume audio

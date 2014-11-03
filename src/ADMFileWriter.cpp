@@ -52,8 +52,6 @@ ADMFileWriter::ADMFileWriter(const ParameterSet& parameters) : SoundPositionCons
         }
         else ERROR("Failed to create ADM data from file '%s'", admfile.c_str());
       }
-
-      DEBUG1(("PositionHandler::GetChannelCount() = %u", PositionHandler::GetChannelCount()));
     }
     else ERROR("Failed to create RIFF file '%s' (sample rate %uHz, %u channels)", filename.c_str(), samplerate, channels);
   }
@@ -62,37 +60,6 @@ ADMFileWriter::ADMFileWriter(const ParameterSet& parameters) : SoundPositionCons
 ADMFileWriter::~ADMFileWriter()
 {
   Close();
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Create a WAVE/RIFF file
- *
- * @param filename filename of file to create
- * @param samplerate sample rate of audio
- * @param nchannels number of audio channels
- * @param format sample format of audio in file
- *
- * @return true if file created properly
- */
-/*--------------------------------------------------------------------------------*/
-bool ADMFileWriter::Create(const char *filename, uint32_t samplerate, uint_t nchannels, SampleFormat_t format)
-{
-  bool success = false;
-
-  if (ADMRIFFFile::Create(filename, samplerate, nchannels, format))
-  {
-    uint_t i;
-
-    // create cursors for position tracking
-    for (i = 0; i < nchannels; i++)
-    {
-      cursors.push_back(new ADMTrackCursor(i));
-    }
-
-    success = true;
-  }
-
-  return success;
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -140,18 +107,22 @@ bool ADMFileWriter::CreateADM(const char *filename)
   if (ADMRIFFFile::CreateADM(filename))
   {
     std::vector<const ADMAudioObject *> objects;
-    uint_t i;
+    uint_t i, nchannels = GetChannels();
 
     // get list of ADMAudioObjects
     adm->GetAudioObjectList(objects);
 
+    // set position handler up to receive positions
+    SetChannels(nchannels);
+
+    // create cursors for position tracking
     // add all objects to all cursors
-    for (i = 0; i < cursors.size(); i++)
+    for (i = 0; i < nchannels; i++)
     {
       ADMTrackCursor *cursor;
 
-      if ((cursor = dynamic_cast<ADMTrackCursor *>(cursors[i])) != NULL)
-      {
+      if ((cursor = new ADMTrackCursor(i)) != NULL) {
+        cursors.push_back(cursor);
         cursor->Add(objects);
       }
     }
