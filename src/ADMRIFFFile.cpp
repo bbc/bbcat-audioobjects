@@ -252,6 +252,8 @@ ADMFileReader::ADMFileReader(const ParameterSet& parameters) : ADMRIFFFile()
   {
     Open(filename.c_str());
   }
+
+  SetParameters(parameters);
 }
 
 BBC_AUDIOTOOLBOX_END

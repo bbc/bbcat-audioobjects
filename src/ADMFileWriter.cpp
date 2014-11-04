@@ -55,6 +55,8 @@ ADMFileWriter::ADMFileWriter(const ParameterSet& parameters) : SoundPositionCons
     }
     else ERROR("Failed to create RIFF file '%s' (sample rate %uHz, %u channels)", filename.c_str(), samplerate, channels);
   }
+
+  SetParameters(parameters);
 }
 
 ADMFileWriter::~ADMFileWriter()
