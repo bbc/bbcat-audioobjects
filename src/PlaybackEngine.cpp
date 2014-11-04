@@ -22,6 +22,18 @@ PlaybackEngine::~PlaybackEngine()
 }
 
 /*--------------------------------------------------------------------------------*/
+/** Set parameters within object
+ */
+/*--------------------------------------------------------------------------------*/
+void PlaybackEngine::SetParameters(const ParameterSet& parameters)
+{
+  AudioPositionProcessor::SetParameters(parameters);
+
+  bool _loop;
+  if (parameters.Get("loop", _loop)) EnableLoop(_loop);
+}
+
+/*--------------------------------------------------------------------------------*/
 /** Add file to playlist
  *
  * @note object will be DELETED on destruction of this object!

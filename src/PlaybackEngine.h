@@ -25,6 +25,12 @@ public:
   virtual ~PlaybackEngine();
 
   /*--------------------------------------------------------------------------------*/
+  /** Set parameters within object
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void SetParameters(const ParameterSet& parameters);
+
+  /*--------------------------------------------------------------------------------*/
   /** Add file to playlist
    *
    * @param file COPY of file to add 
