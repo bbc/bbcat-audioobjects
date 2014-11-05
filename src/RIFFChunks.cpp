@@ -1,4 +1,5 @@
 
+#include <string.h>
 #include <errno.h>
 
 #define DEBUG_LEVEL 1

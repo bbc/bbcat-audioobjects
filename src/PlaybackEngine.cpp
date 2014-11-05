@@ -1,4 +1,6 @@
 
+#include <string.h>
+
 #define DEBUG_LEVEL 2
 #include "PlaybackEngine.h"
 #include "SoundFileWithPosition.h"
