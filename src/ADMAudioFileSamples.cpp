@@ -1,8 +1,4 @@
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-
 #define DEBUG_LEVEL 1
 #include "ADMAudioFileSamples.h"
 
