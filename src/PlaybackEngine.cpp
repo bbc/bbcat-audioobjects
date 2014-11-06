@@ -63,52 +63,57 @@ void PlaybackEngine::AddFile(SoundFileSamples *file)
 bool PlaybackEngine::AddObject(const ADMRIFFFile& file, const char *name)
 {
   ThreadLock lock(tlock);
-  const ADMData *adm;
   bool success = false;
 
-  if ((adm = file.GetADM()) != NULL)
+  if (file.IsOpen())
   {
-    ADMAudioFileSamples *afile;
+    const ADMData *adm;
 
-    if (strcasecmp(name, "all") == 0)
+    if ((adm = file.GetADM()) != NULL)
     {
-      std::vector<const ADMAudioObject *> objects;
+      ADMAudioFileSamples *afile;
 
-      // get list of ADMAudioObjects
-      adm->GetAudioObjectList(objects);
-
-      // play entire file
-      if ((afile = new ADMAudioFileSamples(file.GetSamples())) != NULL)
+      if (strcasecmp(name, "all") == 0)
       {
-        // add all objects to playback
-        afile->Add(objects);
+        std::vector<const ADMAudioObject *> objects;
 
-        DEBUG2(("Adding entire audio file (%u channels, %lu samples) to list", afile->GetChannels(), (ulong_t)afile->GetSampleLength()));
-        AddFile(afile);
-        success = true;
-      }
-      else ERROR("Unable to duplicate file handle for '%s'", name);
-    }
-    else
-    {
-      const ADMAudioObject *obj;
-    
-      // attempt to find object
-      if (((obj = dynamic_cast<const ADMAudioObject *>(adm->GetObjectByID(name, ADMAudioObject::Type))) != NULL) ||
-          ((obj = dynamic_cast<const ADMAudioObject *>(adm->GetObjectByName(name, ADMAudioObject::Type))) != NULL))
-      {
-        if ((afile = new ADMAudioFileSamples(file.GetSamples(), obj)) != NULL)
+        // get list of ADMAudioObjects
+        adm->GetAudioObjectList(objects);
+
+        // play entire file
+        if ((afile = new ADMAudioFileSamples(file.GetSamples())) != NULL)
         {
-          DEBUG2(("Adding audio object %s (%u channels, %lu samples) to list", obj->ToString().c_str(), afile->GetChannels(), (ulong_t)afile->GetSampleLength()));
+          // add all objects to playback
+          afile->Add(objects);
+
+          DEBUG2(("Adding entire audio file (%u channels, %lu samples) to list", afile->GetChannels(), (ulong_t)afile->GetSampleLength()));
           AddFile(afile);
           success = true;
         }
         else ERROR("Unable to duplicate file handle for '%s'", name);
       }
-      else ERROR("Failed to find audio object named or with ID of '%s'", name);
+      else
+      {
+        const ADMAudioObject *obj;
+    
+        // attempt to find object
+        if (((obj = dynamic_cast<const ADMAudioObject *>(adm->GetObjectByID(name, ADMAudioObject::Type))) != NULL) ||
+            ((obj = dynamic_cast<const ADMAudioObject *>(adm->GetObjectByName(name, ADMAudioObject::Type))) != NULL))
+        {
+          if ((afile = new ADMAudioFileSamples(file.GetSamples(), obj)) != NULL)
+          {
+            DEBUG2(("Adding audio object %s (%u channels, %lu samples) to list", obj->ToString().c_str(), afile->GetChannels(), (ulong_t)afile->GetSampleLength()));
+            AddFile(afile);
+            success = true;
+          }
+          else ERROR("Unable to duplicate file handle for '%s'", name);
+        }
+        else ERROR("Failed to find audio object named or with ID of '%s'", name);
+      }
     }
+    else ERROR("File does not have an ADM associated with it");
   }
-  else ERROR("File does not have an ADM associated with it");
+  else ERROR("File is not open");
 
   return success;
 }
@@ -217,7 +222,7 @@ uint_t PlaybackEngine::Render(const Sample_t *src, Sample_t *dst,
       // no files to play, revert to processing input
       frames = AudioPositionProcessor::Render(src, dst, nsrcchannels, ndstchannels, nsrcframes, ndstframes);
     }
-    else ERROR("No audio source data for renderer");
+    //else ERROR("No audio source data for renderer");
   }
   else
   {
