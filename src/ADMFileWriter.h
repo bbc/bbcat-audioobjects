@@ -7,6 +7,10 @@
 
 BBC_AUDIOTOOLBOX_START
 
+/*--------------------------------------------------------------------------------*/
+/** Self-registering thin class for writing ADM RIFF files
+ */
+/*--------------------------------------------------------------------------------*/
 class ADMFileWriter : public SoundPositionConsumer, public ADMRIFFFile
 {
   SELF_REGISTER_CREATOR(ADMFileWriter);
@@ -14,32 +18,6 @@ class ADMFileWriter : public SoundPositionConsumer, public ADMRIFFFile
 public:
   ADMFileWriter();
   virtual ~ADMFileWriter();
-
-  /*--------------------------------------------------------------------------------*/
-  /** Close file
-   *
-   * @note this may take some time because it copies sample data from a temporary file
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void Close();
-
-  /*--------------------------------------------------------------------------------*/
-  /** Create ADM from text file
-   *
-   * @param filename text filename (see below for format)
-   *
-   * @return true if successful
-   *
-   * The file MUST be of the following format with each entry on its own line:
-   * <ADM programme name>[:<ADM content name>]
-   *
-   * then for each track:
-   * <track>:<trackname>:<objectname>
-   *
-   * Where <track> is 1..number of tracks available within ADM
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual bool CreateADM(const char *filename);
 
   /*--------------------------------------------------------------------------------*/
   /** Return desired output channels
@@ -90,9 +68,6 @@ protected:
    */
   /*--------------------------------------------------------------------------------*/
   virtual void UpdatePositionEx(uint_t channel, const Position& pos, const ParameterSet *supplement);
-
-protected:
-  std::vector<PositionCursor *> cursors;
 };
 
 BBC_AUDIOTOOLBOX_END

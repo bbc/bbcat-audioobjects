@@ -314,8 +314,12 @@ RIFFChunk *RIFFFile::AddChunk(uint32_t id)
 
   if (writing)
   {
-    if ((id != RIFF_ID) || (id != WAVE_ID) || (id != fmt_ID) || (id != data_ID) ||
-        (chunkmap.find(id) == chunkmap.end()))
+    // ensure none of the chunk types specified below are duplicated
+    if ((chunkmap.find(id) == chunkmap.end()) ||
+        (id != RIFF_ID) ||
+        (id != WAVE_ID) ||
+        (id != fmt_ID)  ||
+        (id != data_ID))
     {
       if ((chunk = RIFFChunk::Create(id)) != NULL)
       {

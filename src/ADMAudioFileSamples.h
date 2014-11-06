@@ -7,6 +7,10 @@
 
 BBC_AUDIOTOOLBOX_START
 
+/*--------------------------------------------------------------------------------*/
+/** A version of SoundFileSamplesWithPosition specifically for ADM based files
+ */
+/*--------------------------------------------------------------------------------*/
 class ADMAudioFileSamples : public SoundFileSamplesWithPosition
 {
 public:
@@ -19,9 +23,6 @@ public:
   virtual bool Add(const std::vector<const ADMAudioObject *>& objs);
 
   virtual ADMAudioFileSamples *Duplicate() const {return new ADMAudioFileSamples(this);}
-
-protected:
-  virtual void UpdatePosition();
 
 protected:
   Clip_t                              initialclip;

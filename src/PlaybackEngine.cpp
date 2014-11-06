@@ -68,10 +68,11 @@ bool PlaybackEngine::AddObject(const ADMRIFFFile& file, const char *name)
 
   if ((adm = file.GetADM()) != NULL)
   {
+    ADMAudioFileSamples *afile;
+
     if (strcasecmp(name, "all") == 0)
     {
       std::vector<const ADMAudioObject *> objects;
-      ADMAudioFileSamples *afile;
 
       // get list of ADMAudioObjects
       adm->GetAudioObjectList(objects);
@@ -79,6 +80,7 @@ bool PlaybackEngine::AddObject(const ADMRIFFFile& file, const char *name)
       // play entire file
       if ((afile = new ADMAudioFileSamples(file.GetSamples())) != NULL)
       {
+        // add all objects to playback
         afile->Add(objects);
 
         DEBUG2(("Adding entire audio file (%u channels, %lu samples) to list", afile->GetChannels(), (ulong_t)afile->GetSampleLength()));
@@ -89,7 +91,6 @@ bool PlaybackEngine::AddObject(const ADMRIFFFile& file, const char *name)
     }
     else
     {
-      ADMAudioFileSamples *afile;
       const ADMAudioObject *obj;
     
       // attempt to find object

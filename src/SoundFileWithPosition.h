@@ -11,21 +11,22 @@
 
 BBC_AUDIOTOOLBOX_START
 
+/*--------------------------------------------------------------------------------*/
+/** Sound samples object which understands positions - syncs position updates
+ * with the reading of audio samples
+ */
+/*--------------------------------------------------------------------------------*/
 class SoundFileSamplesWithPosition : public SoundFileSamples
 {
 public:
-  SoundFileSamplesWithPosition() : SoundFileSamples() {}
-  SoundFileSamplesWithPosition(const SoundFileSamples *obj) : SoundFileSamples(obj) {}
-  virtual ~SoundFileSamplesWithPosition()
-  {
-    uint_t i;
-    for (i = 0; i < cursors.size(); i++)
-    {
-      delete cursors[i];
-    }
-  }   
+  SoundFileSamplesWithPosition();
+  SoundFileSamplesWithPosition(const SoundFileSamples *obj);
+  virtual ~SoundFileSamplesWithPosition();
 
   virtual const std::vector<PositionCursor *>& GetCursors() const {return cursors;}
+
+protected:
+  virtual void UpdatePosition();
 
 protected:
   std::vector<PositionCursor *> cursors;

@@ -5,6 +5,8 @@
 #include <map>
 
 #include <bbcat-base/SelfRegisteringParametricObject.h>
+#include <bbcat-base/PositionCursor.h>
+#include <bbcat-base/ParameterSet.h>
 
 #include "RIFFFile.h"
 #include "ADMData.h"
@@ -69,12 +71,31 @@ public:
   virtual bool CreateADM(const char *filename);
 
   /*--------------------------------------------------------------------------------*/
+  /** Set position of channel during writing
+   *
+   * @param channel channel to change the position of
+   * @param pos new position
+   * @param supplement optional extra information
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void SetPosition(uint_t channel, const Position& pos, const ParameterSet *supplement);
+
+  /*--------------------------------------------------------------------------------*/
   /** Close file
    *
    * @note this may take some time because it copies sample data from a temporary file
    */
   /*--------------------------------------------------------------------------------*/
   virtual void Close();
+
+  /*--------------------------------------------------------------------------------*/
+  /** Create cursors and add all objects to each cursor
+   *
+   * @note this can be called prior to writing samples or setting positions but it
+   * @note *will* be called by SetPositions() if not done so already
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void PrepareCursors();
 
   ADMData *GetADM() const {return adm;}
 
@@ -90,8 +111,13 @@ protected:
 
 protected:
   ADMData *adm;
+  std::vector<ADMTrackCursor *> cursors;        // *only* used during writing an ADM file
 };
 
+/*--------------------------------------------------------------------------------*/
+/** *Very* thin class to provide a self-registering ADM file reader
+ */
+/*--------------------------------------------------------------------------------*/
 class ADMFileReader : public ADMRIFFFile, public SelfRegisteringParametricObject
 {
   SELF_REGISTER_CREATOR(ADMFileReader);

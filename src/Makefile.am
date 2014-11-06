@@ -25,7 +25,8 @@ libbbcat_audioobjects_@BBCAT_AUDIOOBJECTS_MAJORMINOR@_la_SOURCES =	\
 	RIFFChunk.cpp													\
 	RIFFChunks.cpp													\
 	RIFFFile.cpp													\
-	SoundFileAttributes.cpp
+	SoundFileAttributes.cpp											\
+	SoundFileWithPosition.cpp
 
 pkginclude_HEADERS =							\
 	ADMAudioFileSamples.h						\

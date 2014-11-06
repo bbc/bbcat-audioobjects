@@ -45,6 +45,9 @@ ADMFileWriter::ADMFileWriter(const ParameterSet& parameters) : SoundPositionCons
       {
         if (CreateADM(admfile.c_str()))
         {
+          // set position handler up to receive positions
+          SetChannels(channels);
+
           DEBUG1(("Created ADM data from file '%s'", admfile.c_str()));
         }
         else ERROR("Failed to create ADM data from file '%s'", admfile.c_str());
@@ -58,78 +61,6 @@ ADMFileWriter::ADMFileWriter(const ParameterSet& parameters) : SoundPositionCons
 
 ADMFileWriter::~ADMFileWriter()
 {
-  Close();
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Close file - store final positions before closing file
- *
- * @note this may take some time because it copies sample data from a temporary file
- *
- */
-/*--------------------------------------------------------------------------------*/
-void ADMFileWriter::Close()
-{
-  uint64_t t = filesamples ? filesamples->GetPositionNS() : 0;
-  uint_t i;
-
-  for (i = 0; i < cursors.size(); i++)
-  {
-    cursors[i]->Seek(t);
-    cursors[i]->EndPositionChanges();
-    delete cursors[i];
-  }
-
-  ADMRIFFFile::Close();
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Create ADM from text file
- *
- * @param filename text filename (see below for format)
- *
- * @return true if successful
- *
- * The file MUST be of the following format with each entry on its own line:
- * <ADM programme name>[:<ADM content name>]
- *
- * then for each track:
- * <track>:<trackname>:<objectname>
- *
- * Where <track> is 1..number of tracks available within ADM
- */
-/*--------------------------------------------------------------------------------*/
-bool ADMFileWriter::CreateADM(const char *filename)
-{
-  bool success = false;
-
-  if (ADMRIFFFile::CreateADM(filename))
-  {
-    std::vector<const ADMAudioObject *> objects;
-    uint_t i, nchannels = GetChannels();
-
-    // get list of ADMAudioObjects
-    adm->GetAudioObjectList(objects);
-
-    // set position handler up to receive positions
-    SetChannels(nchannels);
-
-    // create cursors for position tracking
-    // add all objects to all cursors
-    for (i = 0; i < nchannels; i++)
-    {
-      ADMTrackCursor *cursor;
-
-      if ((cursor = new ADMTrackCursor(i)) != NULL) {
-        cursors.push_back(cursor);
-        cursor->Add(objects);
-      }
-    }
-
-    success = true;
-  }
-
-  return success;
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -181,13 +112,7 @@ void ADMFileWriter::Consume(const uint8_t *src, SampleFormat_t srcformat, uint_t
 /*--------------------------------------------------------------------------------*/
 void ADMFileWriter::UpdatePositionEx(uint_t channel, const Position& pos, const ParameterSet *supplement)
 {
-  if (channel < cursors.size())
-  {
-    PositionCursor *cursor = cursors[channel];
-
-    if (filesamples) cursor->Seek(filesamples->GetPositionNS());
-    cursor->SetPosition(pos, supplement);
-  }
+  ADMRIFFFile::SetPosition(channel, pos, supplement);
 }
 
 BBC_AUDIOTOOLBOX_END

@@ -64,6 +64,7 @@ bool ADMRIFFFile::CreateADM()
 
         Printf(name, "Track %u", i + 1);
 
+        // create chna track data
         if ((track = adm->CreateTrack(name)) != NULL)
         {
           track->SetTrackNum(i);
@@ -81,34 +82,6 @@ bool ADMRIFFFile::CreateADM()
 }
 
 /*--------------------------------------------------------------------------------*/
-/** Create ADM from text file
- *
- * @param filename text filename (see below for format)
- *
- * @return true if successful
- *
- * The file MUST be of the following format with each entry on its own line:
- * <ADM programme name>[:<ADM content name>]
- *
- * then for each track:
- * <track>:<trackname>:<objectname>
- *
- * Where <track> is 1..number of tracks available within ADM
- */
-/*--------------------------------------------------------------------------------*/
-bool ADMRIFFFile::CreateADM(const char *filename)
-{
-  bool success = false;
-
-  if (CreateADM())
-  {
-    success = adm->CreateFromFile(filename);
-  }
-
-  return success;
-}
-
-/*--------------------------------------------------------------------------------*/
 /** Close RIFF file, writing chunks if file was opened for writing 
  */
 /*--------------------------------------------------------------------------------*/
@@ -117,12 +90,23 @@ void ADMRIFFFile::Close()
   if (adm && writing)
   {
     RIFFChunk *chunk;
+    uint64_t  endtime = filesamples ? filesamples->GetAbsolutePositionNS() : 0;
     uint32_t  chnalen;
     uint8_t   *chna;
+    uint_t    i;
 
     adm->SortTracks();
     adm->ConnectReferences();
     adm->ChangeTemporaryIDs();
+
+    // complete BlockFormats on all channels
+    for (i = 0; i < cursors.size(); i++)
+    {
+      cursors[i]->Seek(endtime);
+      cursors[i]->EndPositionChanges();
+      delete cursors[i];
+    }
+    cursors.clear();
 
     // get ADM object to create chna chunk
     if ((chna = adm->GetChna(chnalen)) != NULL)
@@ -159,6 +143,70 @@ void ADMRIFFFile::Close()
   if (adm)
   {
     adm->Delete();
+  }
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Create ADM from text file
+ *
+ * @param filename text filename (see below for format)
+ *
+ * @return true if successful
+ *
+ * The file MUST be of the following format with each entry on its own line:
+ * <ADM programme name>[:<ADM content name>]
+ *
+ * then for each track:
+ * <track>:<trackname>:<objectname>
+ *
+ * Where <track> is 1..number of tracks available within ADM
+ */
+/*--------------------------------------------------------------------------------*/
+bool ADMRIFFFile::CreateADM(const char *filename)
+{
+  bool success = false;
+
+  if (CreateADM())
+  {
+    // create ADM structure (content and objects from file)
+    if (adm->CreateFromFile(filename))
+    {
+      // can prepare cursors now since all objects have been created
+      PrepareCursors();
+    }
+    else ERROR("Unable to create ADM structure from '%s'", filename);
+  }
+
+  return success;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Create cursors and add all objects to each cursor
+ *
+ * @note this can be called prior to writing samples or setting positions but it
+ * @note *will* be called by SetPositions() if not done so already
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMRIFFFile::PrepareCursors()
+{
+  if (cursors.size() == 0)
+  {
+    std::vector<const ADMAudioObject *> objects;
+    ADMTrackCursor *cursor;
+    uint_t i, nchannels = GetChannels();
+
+    // get list of ADMAudioObjects
+    adm->GetAudioObjectList(objects);
+
+    // add all objects to all cursors
+    for (i = 0; i < nchannels; i++)
+    {
+      // create track cursor for tracking position during writing
+      if ((cursor = new ADMTrackCursor(i)) != NULL) {
+        cursor->Add(objects);
+        cursors.push_back(cursor);
+      }
+    }
   }
 }
 
@@ -235,6 +283,31 @@ bool ADMRIFFFile::PostReadChunks()
 
 void ADMRIFFFile::UpdateSamplePosition()
 {
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Set position of channel during writing
+ *
+ * @param channel channel to change the position of
+ * @param pos new position
+ * @param supplement optional extra information
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMRIFFFile::SetPosition(uint_t channel, const Position& pos, const ParameterSet *supplement)
+{
+  if (cursors.size() == 0)
+  {
+    // create cursors and add all objects to them
+    PrepareCursors();
+  }
+
+  if (writing && (channel < cursors.size()))
+  {
+    uint64_t t = filesamples ? filesamples->GetAbsolutePositionNS() : 0;
+
+    cursors[channel]->Seek(t);
+    cursors[channel]->SetPosition(pos, supplement);
+  }
 }
 
 /*----------------------------------------------------------------------------------------------------*/

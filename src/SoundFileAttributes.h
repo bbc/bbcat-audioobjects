@@ -11,6 +11,10 @@
 
 BBC_AUDIOTOOLBOX_START
 
+/*--------------------------------------------------------------------------------*/
+/** Sound format object - manages the format of audio data within a file
+ */
+/*--------------------------------------------------------------------------------*/
 class SoundFormat
 {
 public:
@@ -41,6 +45,10 @@ protected:
   UniversalTime  timebase;
 };
 
+/*--------------------------------------------------------------------------------*/
+/** Sound smaples object - manages the audio data within a file
+ */
+/*--------------------------------------------------------------------------------*/
 class SoundFileSamples
 {
 public:

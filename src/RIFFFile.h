@@ -219,11 +219,11 @@ public:
    * @return number of frames read or -1 for an error (no open file for example)
    */
   /*--------------------------------------------------------------------------------*/
-  sint_t ReadFrames(uint8_t *buffer, SampleFormat_t type, uint_t dstchannel, uint_t ndstchannels, uint_t nframes) {return filesamples ? filesamples->ReadSamples((uint8_t *)buffer, type, dstchannel, ndstchannels, nframes) : -1;}
-  sint_t ReadFrames(int16_t *buffer, uint_t dstchannel, uint_t ndstchannels, uint_t nframes = 1) {return ReadFrames((uint8_t *)buffer, SampleFormatOf(buffer), dstchannel, ndstchannels, nframes);}
-  sint_t ReadFrames(int32_t *buffer, uint_t dstchannel, uint_t ndstchannels, uint_t nframes = 1) {return ReadFrames((uint8_t *)buffer, SampleFormatOf(buffer), dstchannel, ndstchannels, nframes);}
-  sint_t ReadFrames(float   *buffer, uint_t dstchannel, uint_t ndstchannels, uint_t nframes = 1) {return ReadFrames((uint8_t *)buffer, SampleFormatOf(buffer), dstchannel, ndstchannels, nframes);}
-  sint_t ReadFrames(double  *buffer, uint_t dstchannel, uint_t ndstchannels, uint_t nframes = 1) {return ReadFrames((uint8_t *)buffer, SampleFormatOf(buffer), dstchannel, ndstchannels, nframes);}
+  sint_t ReadSamples(uint8_t *buffer, SampleFormat_t type, uint_t dstchannel, uint_t ndstchannels, uint_t nframes) {return filesamples ? filesamples->ReadSamples((uint8_t *)buffer, type, dstchannel, ndstchannels, nframes) : -1;}
+  sint_t ReadSamples(int16_t *buffer, uint_t dstchannel, uint_t ndstchannels, uint_t nframes = 1) {return ReadSamples((uint8_t *)buffer, SampleFormatOf(buffer), dstchannel, ndstchannels, nframes);}
+  sint_t ReadSamples(int32_t *buffer, uint_t dstchannel, uint_t ndstchannels, uint_t nframes = 1) {return ReadSamples((uint8_t *)buffer, SampleFormatOf(buffer), dstchannel, ndstchannels, nframes);}
+  sint_t ReadSamples(float   *buffer, uint_t dstchannel, uint_t ndstchannels, uint_t nframes = 1) {return ReadSamples((uint8_t *)buffer, SampleFormatOf(buffer), dstchannel, ndstchannels, nframes);}
+  sint_t ReadSamples(double  *buffer, uint_t dstchannel, uint_t ndstchannels, uint_t nframes = 1) {return ReadSamples((uint8_t *)buffer, SampleFormatOf(buffer), dstchannel, ndstchannels, nframes);}
 
   /*--------------------------------------------------------------------------------*/
   /** Write sample frames
@@ -237,11 +237,11 @@ public:
    * @return number of frames written or -1 for an error (no open file for example)
    */
   /*--------------------------------------------------------------------------------*/
-  sint_t WriteFrames(const uint8_t *buffer, SampleFormat_t type, uint_t srcchannel, uint_t nsrcchannels, uint_t nsrcframes = 1) {return filesamples ? filesamples->WriteSamples((const uint8_t *)buffer, type, srcchannel, nsrcchannels, nsrcframes) : -1;}
-  sint_t WriteFrames(const int16_t *buffer, uint_t srcchannel, uint_t nsrcchannels, uint_t nsrcframes = 1) {return WriteFrames((const uint8_t *)buffer, SampleFormatOf(buffer), srcchannel, nsrcchannels, nsrcframes);}
-  sint_t WriteFrames(const int32_t *buffer, uint_t srcchannel, uint_t nsrcchannels, uint_t nsrcframes = 1) {return WriteFrames((const uint8_t *)buffer, SampleFormatOf(buffer), srcchannel, nsrcchannels, nsrcframes);}
-  sint_t WriteFrames(const float   *buffer, uint_t srcchannel, uint_t nsrcchannels, uint_t nsrcframes = 1) {return WriteFrames((const uint8_t *)buffer, SampleFormatOf(buffer), srcchannel, nsrcchannels, nsrcframes);}
-  sint_t WriteFrames(const double  *buffer, uint_t srcchannel, uint_t nsrcchannels, uint_t nsrcframes = 1) {return WriteFrames((const uint8_t *)buffer, SampleFormatOf(buffer), srcchannel, nsrcchannels, nsrcframes);}
+  sint_t WriteSamples(const uint8_t *buffer, SampleFormat_t type, uint_t srcchannel, uint_t nsrcchannels, uint_t nsrcframes = 1) {return filesamples ? filesamples->WriteSamples((const uint8_t *)buffer, type, srcchannel, nsrcchannels, nsrcframes) : -1;}
+  sint_t WriteSamples(const int16_t *buffer, uint_t srcchannel, uint_t nsrcchannels, uint_t nsrcframes = 1) {return WriteSamples((const uint8_t *)buffer, SampleFormatOf(buffer), srcchannel, nsrcchannels, nsrcframes);}
+  sint_t WriteSamples(const int32_t *buffer, uint_t srcchannel, uint_t nsrcchannels, uint_t nsrcframes = 1) {return WriteSamples((const uint8_t *)buffer, SampleFormatOf(buffer), srcchannel, nsrcchannels, nsrcframes);}
+  sint_t WriteSamples(const float   *buffer, uint_t srcchannel, uint_t nsrcchannels, uint_t nsrcframes = 1) {return WriteSamples((const uint8_t *)buffer, SampleFormatOf(buffer), srcchannel, nsrcchannels, nsrcframes);}
+  sint_t WriteSamples(const double  *buffer, uint_t srcchannel, uint_t nsrcchannels, uint_t nsrcframes = 1) {return WriteSamples((const uint8_t *)buffer, SampleFormatOf(buffer), srcchannel, nsrcchannels, nsrcframes);}
 
 protected:
   /*--------------------------------------------------------------------------------*/

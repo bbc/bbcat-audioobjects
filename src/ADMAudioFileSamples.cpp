@@ -126,16 +126,4 @@ bool ADMAudioFileSamples::Add(const std::vector<const ADMAudioObject *>& objs)
   return added;
 }
 
-void ADMAudioFileSamples::UpdatePosition()
-{
-  uint_t i;
-
-  SoundFileSamples::UpdatePosition();
-
-  for (i = 0; i < cursors.size(); i++)
-  {
-    cursors[i]->Seek(GetAbsolutePositionNS());
-  }
-}
-
 BBC_AUDIOTOOLBOX_END
