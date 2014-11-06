@@ -6,11 +6,11 @@
 #include <bbcat-audioobjects/ADMAudioFileSamples.h>
 #include <bbcat-audioobjects/TinyXMLADMData.h>
 
-USE_BBC_AUDIOTOOLBOX;
+using namespace bbcat;
 
 int main(int argc, char *argv[])
 {
-  // register TineXML based ADM decoder
+  // register TinyXML based ADM decoder
   TinyXMLADMData::Register();
 
   if (argc < 2)

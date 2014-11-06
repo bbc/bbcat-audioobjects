@@ -3,14 +3,13 @@
 #include <stdlib.h>
 
 #include <bbcat-audioobjects/ADMRIFFFile.h>
-#include <bbcat-audioobjects/ADMAudioFileSamples.h>
 #include <bbcat-audioobjects/TinyXMLADMData.h>
 
-USE_BBC_AUDIOTOOLBOX;
+using namespace bbcat;
 
 int main(void)
 {
-  // register TineXML based ADM decoder
+  // register TinyXML based ADM decoder
   TinyXMLADMData::Register();
 
   // ADM aware WAV file
@@ -73,6 +72,42 @@ int main(void)
     else fprintf(stderr, "Failed to create ADM for file '%s'!\n", filename);
     
     // write audio
+    std::vector<float> audio;
+    audio.resize(file.GetChannels());
+    double fs = (double)file.GetSampleRate();
+    double level = pow(10.0, .05 * -40.0);
+    uint_t i, j, nsamples = 20 * file.GetSampleRate(), step = file.GetSampleRate() / 10;
+
+    // write 20s worth samples
+    // this is somewhat inefficient since it is only writing one frame at a time!
+    for (i = 0; i < nsamples; i++)
+    {
+      // every 1/10s set positions of channels
+      if (!(i % step))
+      {
+        uint_t index = i / step;
+
+        for (j = 0; j < audio.size(); j++)
+        {
+          Position pos;
+
+          pos.polar = true;
+          pos.pos.az = (double)(index + j) * 20.0;
+          pos.pos.el = (double)j / (double)file.GetChannels() * 60.0;
+          pos.pos.d  = 1.0;
+          file.SetPosition(j, pos);
+        }
+      }
+
+      // create sine waves on each channel
+      for (j = 0; j < audio.size(); j++)
+      {
+        audio[j] = level * sin(2.0 * M_PI * 100.0 * (double)i / fs * (double)(1 + j));
+      }
+
+      // write a frame of audio
+      file.WriteSamples(&audio[0], 0, audio.size(), 1);
+    }
 
     file.Close();
   }
