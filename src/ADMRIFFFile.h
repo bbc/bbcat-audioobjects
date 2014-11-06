@@ -78,7 +78,7 @@ public:
    * @param supplement optional extra information
    */
   /*--------------------------------------------------------------------------------*/
-  virtual void SetPosition(uint_t channel, const Position& pos, const ParameterSet *supplement);
+  virtual void SetPosition(uint_t channel, const Position& pos, const ParameterSet *supplement = NULL);
 
   /*--------------------------------------------------------------------------------*/
   /** Close file

@@ -78,28 +78,36 @@ bool ADMData::SetChna(const uint8_t *data, uint_t len)
       std::string id;
 
       id.assign(chna.UIDs[i].UID, sizeof(chna.UIDs[i].UID));
+      id = id.substr(0, id.find(terminator));
 
       if ((track = dynamic_cast<ADMAudioTrack *>(Create(ADMAudioTrack::Type, id, ""))) != NULL)
       {
-        ADMVALUE value;
-
-        value.attr = false;
+        ADMVALUE tvalue, pvalue;
 
         track->SetTrackNum(chna.UIDs[i].TrackNum - 1);
 
-        value.name = ADMAudioTrackFormat::Reference;
-        value.value.assign(chna.UIDs[i].TrackRef, sizeof(chna.UIDs[i].TrackRef));
+        tvalue.attr = false;
+        tvalue.name = ADMAudioTrackFormat::Reference;
+        tvalue.value.assign(chna.UIDs[i].TrackRef, sizeof(chna.UIDs[i].TrackRef));
         // trim any zero bytes off the end of the string
-        value.value = value.value.substr(0, value.value.find(terminator));
-        track->AddValue(value);
+        tvalue.value = tvalue.value.substr(0, tvalue.value.find(terminator));
+        track->AddValue(tvalue);
             
-        value.name = ADMAudioPackFormat::Reference;
-        value.value.assign(chna.UIDs[i].PackRef, sizeof(chna.UIDs[i].PackRef));
+        pvalue.attr = false;
+        pvalue.name = ADMAudioPackFormat::Reference;
+        pvalue.value.assign(chna.UIDs[i].PackRef, sizeof(chna.UIDs[i].PackRef));
         // trim any zero bytes off the end of the string
-        value.value = value.value.substr(0, value.value.find(terminator));
-        track->AddValue(value);
+        pvalue.value = pvalue.value.substr(0, pvalue.value.find(terminator));
+        track->AddValue(pvalue);
 
         track->SetValues();
+
+        DEBUG2(("Track %u/%u: Index %u UID '%s' TrackFormatRef '%s' PackFormatRef '%s'",
+                i, (uint_t)tracklist.size(),
+                track->GetTrackNum() + 1,
+                track->GetID().c_str(),
+                tvalue.value.c_str(),
+                pvalue.value.c_str()));
       }
       else ERROR("Failed to create AudioTrack for UID %u", i);
     }
@@ -454,7 +462,7 @@ std::string ADMData::CreateID(const std::string& type) const
     else if (type == ADMAudioChannelFormat::Type) format = ADMAudioChannelFormat::IDPrefix + "%08u" + tempidsuffix;    // temporary
     else if (type == ADMAudioStreamFormat::Type)  format = ADMAudioStreamFormat::IDPrefix  + "%08u" + tempidsuffix;    // temporary
     else if (type == ADMAudioTrackFormat::Type)   format = ADMAudioTrackFormat::IDPrefix   + "%08u" + tempidsuffix;    // temporary
-    else if (type == ADMAudioTrack::Type)         format = ADMAudioTrack::IDPrefix         + "%08u" + tempidsuffix;    // temporary
+    else if (type == ADMAudioTrack::Type)         format = ADMAudioTrack::IDPrefix         + "%08u";
 
     id = FindUniqueID(type, format, start);
   }

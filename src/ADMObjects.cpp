@@ -1731,7 +1731,7 @@ bool ADMTrackCursor::Add(const ADMAudioObject *object, bool sort)
         }
         else ERROR("Incorrect streamformatrefs in '%s' (%u)!", trackformatrefs[0]->ToString().c_str(), (uint_t)streamformatrefs.size());
       }
-      else ERROR("Incorrect trackformatrefs in '%s' (%u)!", trackrefs[0]->ToString().c_str(), (uint_t)trackformatrefs.size());
+      else ERROR("Incorrect trackformatrefs in '%s' (%u)!", trackrefs[i]->ToString().c_str(), (uint_t)trackformatrefs.size());
     }
   }
 
