@@ -31,7 +31,7 @@ public:
    * @return number of desired output channels (0 == no limit / not restricted)
    */
   /*--------------------------------------------------------------------------------*/
-  virtual uint_t GetDesiredOutputChannels() const {return GetChannels();}
+  virtual uint_t GetDesiredOutputChannels() const {return ADMRIFFFile::GetChannels();}
 
   /*--------------------------------------------------------------------------------*/
   /** Return whether this object actually supports positional information
