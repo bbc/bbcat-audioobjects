@@ -10,6 +10,15 @@
 
 BBC_AUDIOTOOLBOX_START
 
+CONTROL_RECEIVER_REGISTER(PlaybackEngine, "processor.fileplayback");
+
+static const struct {
+  PARAMETERDESC loop;
+} _controls = 
+{
+  {"loop", "Enable looping of files"},
+};
+
 PlaybackEngine::PlaybackEngine() : AudioPositionProcessor()
 {
   samplesbuffer.resize(4096);
@@ -28,7 +37,53 @@ void PlaybackEngine::SetParameters(const ParameterSet& parameters)
   AudioPositionProcessor::SetParameters(parameters);
 
   bool _loop;
-  if (parameters.Get("loop", _loop)) EnableLoop(_loop);
+  if (parameters.Get(_controls.loop.name, _loop)) EnableLoop(_loop);
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Get a list of controls for this object
+ */
+/*--------------------------------------------------------------------------------*/
+void PlaybackEngine::GetControlDescriptions(std::vector<const PARAMETERDESC *>& list)
+{
+  const PARAMETERDESC *pcontrols = (const PARAMETERDESC *)&_controls;
+  uint_t i, n = sizeof(_controls) / sizeof(pcontrols[0]);
+
+  AudioPositionProcessor::GetControlDescriptions(list);
+
+  for (i = 0; i < n; i++) list.push_back(pcontrols + i);
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Set an arbitrary control within this object to a value
+ *
+ * @param handler source of control change
+ * @param value new value of control
+ *
+ * @return true if successful
+ */
+/*--------------------------------------------------------------------------------*/
+bool PlaybackEngine::SetLocalControl(ControlHandler *handler, const ParameterSet& value)
+{
+  std::string control;
+  bool success = false;
+
+  UNUSED_PARAMETER(handler);
+
+  if (value.Get(ControlReceiver::controlname, control))
+  {
+    int ival;
+
+    if ((control == _controls.loop.name) && value.Get(ControlReceiver::valuename, ival))
+    {
+      EnableLoop(ival);
+      success = true;
+    }
+  }
+
+  if (!success) success = AudioPositionProcessor::SetLocalControl(handler, value);
+
+  return success;
 }
 
 /*--------------------------------------------------------------------------------*/

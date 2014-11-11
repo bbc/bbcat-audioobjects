@@ -13,7 +13,7 @@
 
 BBC_AUDIOTOOLBOX_START
 
-#define TYPE_RIFFFILE "rifffile"
+#define TYPE_ADMBWF "admbwf"
 
 /*--------------------------------------------------------------------------------*/
 /** ADM BWF file support class
@@ -123,6 +123,12 @@ class ADMFileReader : public ADMRIFFFile, public SelfRegisteringParametricObject
   SELF_REGISTER_CREATOR(ADMFileReader);
 
   virtual ~ADMFileReader() {}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Get a list of parameters for this object
+   */
+  /*--------------------------------------------------------------------------------*/
+  static void GetParameterDescriptions(std::vector<const PARAMETERDESC *>& list);
 };
 
 BBC_AUDIOTOOLBOX_END

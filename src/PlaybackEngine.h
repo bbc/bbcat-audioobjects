@@ -20,6 +20,7 @@ BBC_AUDIOTOOLBOX_START
 class ADMRIFFFile;
 class PlaybackEngine : public AudioPositionProcessor
 {
+  CONTROL_RECEIVER();
 public:
   PlaybackEngine();
   virtual ~PlaybackEngine();
@@ -29,6 +30,12 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   virtual void SetParameters(const ParameterSet& parameters);
+
+  /*--------------------------------------------------------------------------------*/
+  /** Get a list of controls for this object
+   */
+  /*--------------------------------------------------------------------------------*/
+  static void GetControlDescriptions(std::vector<const PARAMETERDESC *>& list);
 
   /*--------------------------------------------------------------------------------*/
   /** Add file to playlist
@@ -114,6 +121,17 @@ protected:
    */
   /*--------------------------------------------------------------------------------*/
   virtual int Register(SelfRegisteringParametricObject *obj, const ParameterSet& parameters);
+
+  /*--------------------------------------------------------------------------------*/
+  /** Set an arbitrary control within this object to a value
+   *
+   * @param handler source of control change
+   * @param value new value of control
+   *
+   * @return true if successful
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual bool SetLocalControl(ControlHandler *handler, const ParameterSet& value);
 
   virtual void SetFileChannelsAndSampleRate();
 

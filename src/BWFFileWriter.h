@@ -1,23 +1,23 @@
-#ifndef __ADM_FILE_WRITER__
-#define __ADM_FILE_WRITER__
+#ifndef __BWF_FILE_WRITER__
+#define __BWF_FILE_WRITER__
 
 #include <bbcat-render/SoundConsumer.h>
 
-#include "ADMRIFFFile.h"
+#include "RIFFFile.h"
 
 BBC_AUDIOTOOLBOX_START
 
 /*--------------------------------------------------------------------------------*/
-/** Self-registering thin class for writing ADM RIFF files
+/** Self-registering thin class for writing BWF files
  */
 /*--------------------------------------------------------------------------------*/
-class ADMFileWriter : public SoundPositionConsumer, public ADMRIFFFile
+class BWFFileWriter : public SoundConsumer, public RIFFFile
 {
-  SELF_REGISTER_CREATOR(ADMFileWriter);
+  SELF_REGISTER_CREATOR(BWFFileWriter);
 
 public:
-  ADMFileWriter();
-  virtual ~ADMFileWriter();
+  BWFFileWriter();
+  virtual ~BWFFileWriter();
 
   /*--------------------------------------------------------------------------------*/
   /** Get a list of parameters for this object
@@ -32,12 +32,6 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   virtual uint_t GetDesiredOutputChannels() const {return GetChannels();}
-
-  /*--------------------------------------------------------------------------------*/
-  /** Return whether this object actually supports positional information
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual bool CanHandlePositions() const {return (adm != NULL);}
 
   /*--------------------------------------------------------------------------------*/
   /** Consume audio
@@ -61,19 +55,6 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   virtual void Consume(const uint8_t *src, SampleFormat_t srcformat, uint_t nsrcchannels, uint_t nsrcframes);
-
-protected:
-  /*--------------------------------------------------------------------------------*/
-  /** Overridable update position function 
-   *
-   * @param channel channel to change the position of
-   * @param pos new position
-   * @param supplement optional extra information
-   *
-   * @note this is the function that should be overridden in derived objects
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void UpdatePositionEx(uint_t channel, const Position& pos, const ParameterSet *supplement);
 };
 
 BBC_AUDIOTOOLBOX_END

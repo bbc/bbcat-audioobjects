@@ -3,34 +3,32 @@
 
 #define DEBUG_LEVEL 2
 
-#include "ADMFileWriter.h"
+#include "BWFFileWriter.h"
 
 BBC_AUDIOTOOLBOX_START
 
 static const struct {
   PARAMETERDESC filename;
-  PARAMETERDESC admfile;
   PARAMETERDESC samplerate;
   PARAMETERDESC channels;
   PARAMETERDESC format;
 } _parameters = 
 {
   {"filename",   "Filename of ADM BWF file to create"},
-  {"admfile",    "File containing description of ADM"},
   {"samplerate", "Sample rate of file"},
   {"channels",   "Number of channels in file"},
   {"format",     "Sample format ('16bit', '24bit', '32bit', 'float' or 'double')"},
 };
 
-SELF_REGISTER(ADMFileWriter, TYPE_PRE_RENDER_CONSUMER ".admbwf.writer");
+SELF_REGISTER(BWFFileWriter, TYPE_POST_RENDER_CONSUMER ".bwf.writer");
 
-ADMFileWriter::ADMFileWriter() : SoundPositionConsumer(),
-                                 ADMRIFFFile()
+BWFFileWriter::BWFFileWriter() : SoundConsumer(),
+                                 RIFFFile()
 {
 }
 
-ADMFileWriter::ADMFileWriter(const ParameterSet& parameters) : SoundPositionConsumer(),
-                                                               ADMRIFFFile()
+BWFFileWriter::BWFFileWriter(const ParameterSet& parameters) : SoundConsumer(),
+                                                               RIFFFile()
 {
   std::string    filename;
   std::string    admfile;
@@ -41,7 +39,6 @@ ADMFileWriter::ADMFileWriter(const ParameterSet& parameters) : SoundPositionCons
 
   if (parameters.Get(_parameters.filename.name, filename) && (filename != ""))
   {
-    parameters.Get(_parameters.admfile.name,    admfile);
     parameters.Get(_parameters.samplerate.name, samplerate);
     parameters.Get(_parameters.channels.name,   channels);
     parameters.Get(_parameters.format.name,     _format);
@@ -55,18 +52,6 @@ ADMFileWriter::ADMFileWriter(const ParameterSet& parameters) : SoundPositionCons
     if (Create(filename.c_str(), samplerate, channels, format))
     {
       DEBUG1(("Created RIFF file '%s' (sample rate %uHz, %u channels)", filename.c_str(), samplerate, channels));
-
-      if (admfile != "")
-      {
-        if (CreateADM(admfile.c_str()))
-        {
-          // set position handler up to receive positions
-          SetChannels(channels);
-
-          DEBUG1(("Created ADM data from file '%s'", admfile.c_str()));
-        }
-        else ERROR("Failed to create ADM data from file '%s'", admfile.c_str());
-      }
     }
     else ERROR("Failed to create RIFF file '%s' (sample rate %uHz, %u channels)", filename.c_str(), samplerate, channels);
   }
@@ -74,7 +59,7 @@ ADMFileWriter::ADMFileWriter(const ParameterSet& parameters) : SoundPositionCons
   SetParameters(parameters);
 }
 
-ADMFileWriter::~ADMFileWriter()
+BWFFileWriter::~BWFFileWriter()
 {
 }
 
@@ -82,12 +67,12 @@ ADMFileWriter::~ADMFileWriter()
 /** Get a list of parameters for this object
  */
 /*--------------------------------------------------------------------------------*/
-void ADMFileWriter::GetParameterDescriptions(std::vector<const PARAMETERDESC *>& list)
+void BWFFileWriter::GetParameterDescriptions(std::vector<const PARAMETERDESC *>& list)
 {
   const PARAMETERDESC *pparameters = (const PARAMETERDESC *)&_parameters;
   uint_t i, n = sizeof(_parameters) / sizeof(pparameters[0]);
 
-  SoundPositionConsumer::GetParameterDescriptions(list);
+  SoundConsumer::GetParameterDescriptions(list);
 
   for (i = 0; i < n; i++) list.push_back(pparameters + i);
 }
@@ -100,7 +85,7 @@ void ADMFileWriter::GetParameterDescriptions(std::vector<const PARAMETERDESC *>&
  * @param nsrcframes number of sample frames in source buffer
  */
 /*--------------------------------------------------------------------------------*/
-void ADMFileWriter::Consume(const Sample_t *src, uint_t nsrcchannels, uint_t nsrcframes)
+void BWFFileWriter::Consume(const Sample_t *src, uint_t nsrcchannels, uint_t nsrcframes)
 {
   if (filesamples)
   {
@@ -120,28 +105,13 @@ void ADMFileWriter::Consume(const Sample_t *src, uint_t nsrcchannels, uint_t nsr
  * @note this is just a wrapper for the above but derived classes can either override this or the above
  */
 /*--------------------------------------------------------------------------------*/
-void ADMFileWriter::Consume(const uint8_t *src, SampleFormat_t srcformat, uint_t nsrcchannels, uint_t nsrcframes)
+void BWFFileWriter::Consume(const uint8_t *src, SampleFormat_t srcformat, uint_t nsrcchannels, uint_t nsrcframes)
 {
   if (filesamples)
   {
     // write to file
     filesamples->WriteSamples(src, srcformat, consumestartchannel, nsrcchannels, nsrcframes);
   }
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Overridable update position function 
- *
- * @param channel channel to change the position of
- * @param pos new position
- * @param supplement optional extra information
- *
- * @note this is the function that should be overridden in derived objects
- */
-/*--------------------------------------------------------------------------------*/
-void ADMFileWriter::UpdatePositionEx(uint_t channel, const Position& pos, const ParameterSet *supplement)
-{
-  ADMRIFFFile::SetPosition(channel, pos, supplement);
 }
 
 BBC_AUDIOTOOLBOX_END

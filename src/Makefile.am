@@ -53,11 +53,13 @@ libbbcat_audioobjects_@BBCAT_AUDIOOBJECTS_MAJORMINOR@_la_CPPFLAGS += $(BBCAT_REN
 libbbcat_audioobjects_@BBCAT_AUDIOOBJECTS_MAJORMINOR@_la_LIBADD   += $(BBCAT_RENDER_LIBS)
 libbbcat_audioobjects_@BBCAT_AUDIOOBJECTS_MAJORMINOR@_la_SOURCES  +=	\
 	ADMFileWriter.cpp													\
+	BWFFileWriter.cpp													\
 	FilePositionGenerator.cpp											\
 	PlaybackEngine.cpp
 
 pkginclude_HEADERS +=							\
 	ADMFileWriter.h								\
+	BWFFileWriter.h								\
 	FilePositionGenerator.h						\
 	PlaybackEngine.h
 endif
