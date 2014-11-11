@@ -52,12 +52,14 @@ if ENABLE_RENDERING
 libbbcat_audioobjects_@BBCAT_AUDIOOBJECTS_MAJORMINOR@_la_CPPFLAGS += $(BBCAT_RENDER_CFLAGS)
 libbbcat_audioobjects_@BBCAT_AUDIOOBJECTS_MAJORMINOR@_la_LIBADD   += $(BBCAT_RENDER_LIBS)
 libbbcat_audioobjects_@BBCAT_AUDIOOBJECTS_MAJORMINOR@_la_SOURCES  +=	\
+	ADMFileReader.cpp													\
 	ADMFileWriter.cpp													\
 	BWFFileWriter.cpp													\
 	FilePositionGenerator.cpp											\
 	PlaybackEngine.cpp
 
 pkginclude_HEADERS +=							\
+	ADMFileReader.h								\
 	ADMFileWriter.h								\
 	BWFFileWriter.h								\
 	FilePositionGenerator.h						\

@@ -5,7 +5,7 @@
 #include "PlaybackEngine.h"
 #include "SoundFileWithPosition.h"
 #include "FilePositionGenerator.h"
-#include "ADMRIFFFile.h"
+#include "ADMFileReader.h"
 #include "ADMAudioFileSamples.h"
 
 BBC_AUDIOTOOLBOX_START

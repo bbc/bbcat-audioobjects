@@ -13,8 +13,6 @@
 
 BBC_AUDIOTOOLBOX_START
 
-#define TYPE_ADMBWF "admbwf"
-
 /*--------------------------------------------------------------------------------*/
 /** ADM BWF file support class
  *
@@ -112,23 +110,6 @@ protected:
 protected:
   ADMData *adm;
   std::vector<ADMTrackCursor *> cursors;        // *only* used during writing an ADM file
-};
-
-/*--------------------------------------------------------------------------------*/
-/** *Very* thin class to provide a self-registering ADM file reader
- */
-/*--------------------------------------------------------------------------------*/
-class ADMFileReader : public ADMRIFFFile, public SelfRegisteringParametricObject
-{
-  SELF_REGISTER_CREATOR(ADMFileReader);
-
-  virtual ~ADMFileReader() {}
-
-  /*--------------------------------------------------------------------------------*/
-  /** Get a list of parameters for this object
-   */
-  /*--------------------------------------------------------------------------------*/
-  static void GetParameterDescriptions(std::vector<const PARAMETERDESC *>& list);
 };
 
 BBC_AUDIOTOOLBOX_END
