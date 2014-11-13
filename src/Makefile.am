@@ -9,12 +9,14 @@ libbbcat_audioobjects_@BBCAT_AUDIOOBJECTS_MAJORMINOR@_la_LDFLAGS =	\
 
 libbbcat_audioobjects_@BBCAT_AUDIOOBJECTS_MAJORMINOR@_la_LIBADD =	\
 	$(BBCAT_BASE_LIBS)												\
-	$(BBCAT_DSP_LIBS)
+	$(BBCAT_DSP_LIBS)												\
+	$(TINYXML_LIBS)
 
 libbbcat_audioobjects_@BBCAT_AUDIOOBJECTS_MAJORMINOR@_la_CPPFLAGS =	\
 	$(BBCAT_AUDIOOBJECTS_CFLAGS)									\
 	$(BBCAT_BASE_CFLAGS)											\
-	$(BBCAT_DSP_CFLAGS)
+	$(BBCAT_DSP_CFLAGS)												\
+	$(TINYXML_CFLAGS)
 
 libbbcat_audioobjects_@BBCAT_AUDIOOBJECTS_MAJORMINOR@_la_SOURCES =	\
 	ADMAudioFileSamples.cpp											\
@@ -26,7 +28,8 @@ libbbcat_audioobjects_@BBCAT_AUDIOOBJECTS_MAJORMINOR@_la_SOURCES =	\
 	RIFFChunks.cpp													\
 	RIFFFile.cpp													\
 	SoundFileAttributes.cpp											\
-	SoundFileWithPosition.cpp
+	SoundFileWithPosition.cpp										\
+	TinyXMLADMData.cpp
 
 pkginclude_HEADERS =							\
 	ADMAudioFileSamples.h						\
@@ -40,14 +43,8 @@ pkginclude_HEADERS =							\
 	RIFFFile.h									\
 	SelfRegisteringObjects.h					\
 	SoundFileAttributes.h						\
-	SoundFileWithPosition.h
-
-if ENABLE_GPL
-libbbcat_audioobjects_@BBCAT_AUDIOOBJECTS_MAJORMINOR@_la_CPPFLAGS += $(TINYXML_CFLAGS)
-libbbcat_audioobjects_@BBCAT_AUDIOOBJECTS_MAJORMINOR@_la_LIBADD   += $(TINYXML_LIBS)
-libbbcat_audioobjects_@BBCAT_AUDIOOBJECTS_MAJORMINOR@_la_SOURCES  += TinyXMLADMData.cpp
-pkginclude_HEADERS											      += TinyXMLADMData.h
-endif
+	SoundFileWithPosition.h						\
+	TinyXMLADMData.h
 
 if ENABLE_RENDERING
 libbbcat_audioobjects_@BBCAT_AUDIOOBJECTS_MAJORMINOR@_la_CPPFLAGS += $(BBCAT_RENDER_CFLAGS)

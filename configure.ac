@@ -104,13 +104,10 @@ fi
 AM_CONDITIONAL(ENABLE_GPL, test "x${ENABLE_GPL}" = "xyes")
 CFLAGS="$EXISTING_CFLAGS"
 
-if test "x$ENABLE_GPL" = "xyes"; then
-  dnl tinyxml is required is GPL code is allowed
-  TINYXML_VER="2.6.2"
-  PKG_CHECK_MODULES(TINYXML, tinyxml >= $TINYXML_VER, HAVE_TINYXML=yes, HAVE_TINYXML=no)
-  if test "x${HAVE_TINYXML}" != xyes ; then
-    AC_MSG_ERROR([tinyxml >= $TINYXML_VER is required])
-  fi
+TINYXML_VER="2.6.2"
+PKG_CHECK_MODULES(TINYXML, tinyxml >= $TINYXML_VER, HAVE_TINYXML=yes, HAVE_TINYXML=no)
+if test "x${HAVE_TINYXML}" != xyes ; then
+  AC_MSG_ERROR([tinyxml >= $TINYXML_VER is required])
 fi
 
 AC_APPEND_SUPPORTED_CFLAGS(BBCAT_AUDIOOBJECTS_CFLAGS, [-Wall])

@@ -5,7 +5,11 @@ include doxygen.am
 
 SUBDIRS = src
 
-EXTRA_DIST = README COPYING autogen.sh
+audioobjects_DATA  = share/licences.txt
+
+audioobjectsdir = $(prefix)/share/$(PACKAGE)
+
+EXTRA_DIST = README COPYING autogen.sh $(audioobjects_DATA)
 
 pkgconfig_DATA = bbcat-audioobjects-$(BBCAT_AUDIOOBJECTS_MAJORMINOR).pc
 
