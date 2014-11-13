@@ -17,6 +17,6 @@ bbcat-audioobjects-$(BBCAT_AUDIOOBJECTS_MAJORMINOR)-uninstalled.pc: bbcat-audioo
 
 BUILT_SOURCES = bbcat-audioobjects-$(BBCAT_AUDIOOBJECTS_MAJORMINOR)-uninstalled.pc
 
-CLEANFILES = bbcat-audioobjects-$(BBCAT_AUDIOOBJECTS_MAJORMINOR).pc bbcat-audioobjects-$(BBCAT_AUDIOOBJECTS_MAJORMINOR)-uninstalled.pc src/SelfRegisteringObjects.h src/.SelfRegisteringObjects.h
+CLEANFILES = bbcat-audioobjects-$(BBCAT_AUDIOOBJECTS_MAJORMINOR).pc bbcat-audioobjects-$(BBCAT_AUDIOOBJECTS_MAJORMINOR)-uninstalled.pc src/SelfRegisteringObjects.h
 
 ACLOCAL_FLAGS = -I m4
