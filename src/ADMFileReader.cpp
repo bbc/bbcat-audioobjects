@@ -6,14 +6,17 @@ BBC_AUDIOTOOLBOX_START
 
 static const struct {
   PARAMETERDESC filename;
+  PARAMETERDESC object;
 } _parameters = 
 {
   {"filename", "Filename of ADM BWF file to read"},
+  {"object",   "ADM object to playback"},
 };
 
-SELF_REGISTER(ADMFileReader, TYPE_ADMBWF ".reader");
+SELF_REGISTERING_PARAMETRIC_OBJECT(ADMFileReader, TYPE_ADMBWF ".reader");
 
-ADMFileReader::ADMFileReader(const ParameterSet& parameters) : ADMRIFFFile()
+ADMFileReader::ADMFileReader(const ParameterSet& parameters) : ADMRIFFFile(),
+                                                               admobject("all")
 {
   std::string filename;
 
@@ -21,6 +24,8 @@ ADMFileReader::ADMFileReader(const ParameterSet& parameters) : ADMRIFFFile()
   {
     Open(filename.c_str());
   }
+
+  parameters.Get(_parameters.object.name, admobject);
 
   SetParameters(parameters);
 }

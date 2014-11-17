@@ -13,6 +13,8 @@
 
 BBC_AUDIOTOOLBOX_START
 
+#define TYPE_ADMBWF "admbwf"
+
 /*--------------------------------------------------------------------------------*/
 /** ADM BWF file support class
  *

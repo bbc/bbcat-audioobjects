@@ -13,10 +13,9 @@ BBC_AUDIOTOOLBOX_START
 /*--------------------------------------------------------------------------------*/
 class ADMFileWriter : public SoundPositionConsumer, public ADMRIFFFile
 {
-  SELF_REGISTER_CREATOR(ADMFileWriter);
-
 public:
   ADMFileWriter();
+  ADMFileWriter(const ParameterSet& parameters);
   virtual ~ADMFileWriter();
 
   /*--------------------------------------------------------------------------------*/

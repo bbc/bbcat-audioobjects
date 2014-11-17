@@ -10,7 +10,7 @@ using namespace bbcat;
 
 int main(int argc, char *argv[])
 {
-  // register TinyXML based ADM decoder
+  // register the TinyXML implementation of ADMData handler as usable
   TinyXMLADMData::Register();
 
   if (argc < 2)

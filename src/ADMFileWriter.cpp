@@ -2,7 +2,7 @@
 #include <math.h>
 
 #define DEBUG_LEVEL 2
-
+#include <bbcat-render/SelfRegisteringControlReceiver.h>
 #include "ADMFileWriter.h"
 
 BBC_AUDIOTOOLBOX_START
@@ -22,7 +22,7 @@ static const struct {
   {"format",     "Sample format ('16bit', '24bit', '32bit', 'float' or 'double')"},
 };
 
-SELF_REGISTER(ADMFileWriter, TYPE_PRE_RENDER_CONSUMER ".admbwf.writer");
+SELF_REGISTERING_CONTROL_RECEIVER(ADMFileWriter, TYPE_ADMBWF ".writer");
 
 ADMFileWriter::ADMFileWriter() : SoundPositionConsumer(),
                                  ADMRIFFFile()

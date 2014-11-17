@@ -13,7 +13,7 @@ BBC_AUDIOTOOLBOX_START
 /*--------------------------------------------------------------------------------*/
 class BWFFileWriter : public SoundConsumer, public RIFFFile
 {
-  SELF_REGISTER_CREATOR(BWFFileWriter);
+  SELF_REGISTER_DEF(BWFFileWriter);
 
 public:
   BWFFileWriter();

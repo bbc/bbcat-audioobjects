@@ -20,9 +20,9 @@ BBC_AUDIOTOOLBOX_START
 class ADMRIFFFile;
 class PlaybackEngine : public AudioPositionProcessor
 {
-  CONTROL_RECEIVER();
 public:
   PlaybackEngine();
+  PlaybackEngine(const ParameterSet& parameters);
   virtual ~PlaybackEngine();
 
   /*--------------------------------------------------------------------------------*/

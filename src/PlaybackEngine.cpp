@@ -2,6 +2,7 @@
 #include <string.h>
 
 #define DEBUG_LEVEL 2
+#include <bbcat-render/SelfRegisteringControlReceiver.h>
 #include "PlaybackEngine.h"
 #include "SoundFileWithPosition.h"
 #include "FilePositionGenerator.h"
@@ -10,7 +11,7 @@
 
 BBC_AUDIOTOOLBOX_START
 
-CONTROL_RECEIVER_REGISTER(PlaybackEngine, "processor.fileplayback");
+SELF_REGISTERING_CONTROL_SINGLETON(PlaybackEngine, "processor");
 
 static const struct {
   PARAMETERDESC loop;
@@ -22,6 +23,13 @@ static const struct {
 PlaybackEngine::PlaybackEngine() : AudioPositionProcessor()
 {
   samplesbuffer.resize(4096);
+}
+
+PlaybackEngine::PlaybackEngine(const ParameterSet& parameters) : AudioPositionProcessor(parameters)
+{
+  samplesbuffer.resize(4096);
+
+  SetParameters(parameters);
 }
 
 PlaybackEngine::~PlaybackEngine()
@@ -219,17 +227,18 @@ void PlaybackEngine::SetFileChannelsAndSampleRate()
 /*--------------------------------------------------------------------------------*/
 int PlaybackEngine::Register(SelfRegisteringParametricObject *obj, const ParameterSet& parameters)
 {
+  ADMFileReader *reader;
   int index = -1;
 
-  if (dynamic_cast<ADMFileReader *>(obj))
+  if ((reader = dynamic_cast<ADMFileReader *>(obj)) != NULL)
   {
-    if (AddObject(*dynamic_cast<ADMFileReader *>(obj), "all")) index = playlist.GetCount();
+    // ADMFileReader object will have read the desired object ADM object from the parameters
+    if (AddObject(*reader, reader->GetADMObject().c_str())) index = playlist.GetCount();
   }
   else index = AudioPositionProcessor::Register(obj, parameters);
 
   return index;
 }
-
 
 /*--------------------------------------------------------------------------------*/
 /** Update all positions if necessary

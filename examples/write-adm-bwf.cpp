@@ -9,7 +9,7 @@ using namespace bbcat;
 
 int main(void)
 {
-  // register TinyXML based ADM decoder
+  // register the TinyXML implementation of ADMData handler as usable
   TinyXMLADMData::Register();
 
   // ADM aware WAV file
