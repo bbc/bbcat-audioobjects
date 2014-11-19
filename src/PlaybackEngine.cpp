@@ -95,6 +95,18 @@ bool PlaybackEngine::SetLocalControl(ControlHandler *handler, const ParameterSet
 }
 
 /*--------------------------------------------------------------------------------*/
+/** Return the number of capture channels required: NOT necessarily the same as input channels
+ */
+/*--------------------------------------------------------------------------------*/
+uint_t PlaybackEngine::GetCaptureChannels() const
+{
+  ThreadLock lock(tlock);
+  
+  // if there is a playlist there is NO requirement for capture channels!
+  return Empty() ? inputchannels : 0;
+}
+
+/*--------------------------------------------------------------------------------*/
 /** Add file to playlist
  *
  * @note object will be DELETED on destruction of this object!
@@ -181,12 +193,20 @@ bool PlaybackEngine::AddObject(const ADMRIFFFile& file, const char *name)
   return success;
 }
 
-bool PlaybackEngine::Empty()
+/*--------------------------------------------------------------------------------*/
+/** Return whether playlist is empty
+ */
+/*--------------------------------------------------------------------------------*/
+bool PlaybackEngine::Empty() const
 {
   ThreadLock lock(tlock);
   return playlist.Empty();
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Clear play list
+ */
+/*--------------------------------------------------------------------------------*/
 void PlaybackEngine::Clear()
 {
   ThreadLock lock(tlock);
@@ -198,6 +218,10 @@ void PlaybackEngine::Clear()
   SetGenerator(NULL);
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Reset to start of playback list
+ */
+/*--------------------------------------------------------------------------------*/
 void PlaybackEngine::Reset()
 {
   ThreadLock lock(tlock);

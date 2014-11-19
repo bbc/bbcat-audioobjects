@@ -38,6 +38,12 @@ public:
   static void GetControlDescriptions(std::vector<const PARAMETERDESC *>& list);
 
   /*--------------------------------------------------------------------------------*/
+  /** Return the number of capture channels required: NOT necessarily the same as input channels
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual uint_t GetCaptureChannels() const;
+
+  /*--------------------------------------------------------------------------------*/
   /** Add file to playlist
    *
    * @param file COPY of file to add 
@@ -61,7 +67,7 @@ public:
   /** Return whether playlist is empty
    */
   /*--------------------------------------------------------------------------------*/
-  bool Empty();
+  bool Empty() const;
 
   /*--------------------------------------------------------------------------------*/
   /** Clear play list
