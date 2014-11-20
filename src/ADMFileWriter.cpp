@@ -65,10 +65,18 @@ ADMFileWriter::ADMFileWriter(const ParameterSet& parameters) : SoundPositionCons
 
           DEBUG1(("Created ADM data from file '%s'", admfile.c_str()));
         }
-        else ERROR("Failed to create ADM data from file '%s'", admfile.c_str());
+        else
+        {
+          ERROR("Failed to create ADM data from file '%s'", admfile.c_str());
+          InvalidateObject();
+        }
       }
     }
-    else ERROR("Failed to create RIFF file '%s' (sample rate %uHz, %u channels)", filename.c_str(), samplerate, channels);
+    else
+    {
+      ERROR("Failed to create RIFF file '%s' (sample rate %uHz, %u channels)", filename.c_str(), samplerate, channels);
+      InvalidateObject();
+    }
   }
 
   SetParameters(parameters);

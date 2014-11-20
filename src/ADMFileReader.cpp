@@ -22,7 +22,7 @@ ADMFileReader::ADMFileReader(const ParameterSet& parameters) : ADMRIFFFile(),
 
   if (parameters.Get(_parameters.filename.name, filename))
   {
-    Open(filename.c_str());
+    if (!Open(filename.c_str())) InvalidateObject();
   }
 
   parameters.Get(_parameters.object.name, admobject);
