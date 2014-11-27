@@ -32,6 +32,14 @@ public:
   virtual void SetParameters(const ParameterSet& parameters);
 
   /*--------------------------------------------------------------------------------*/
+  /** Return relative priority of this object's factory
+   *
+   * @note this object can override AudioPositionProcessor
+   */
+  /*--------------------------------------------------------------------------------*/
+  static int GetFactoryPriority() {return 1;}
+
+  /*--------------------------------------------------------------------------------*/
   /** Get a list of controls for this object
    */
   /*--------------------------------------------------------------------------------*/
