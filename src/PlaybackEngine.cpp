@@ -246,7 +246,10 @@ void PlaybackEngine::SetFileChannelsAndSampleRate()
 /*--------------------------------------------------------------------------------*/
 /** Register a self-registering-parametric-object or return -1
  *
- * @return index (if applicable) or -1 for unrecognized type
+ * @param obj object created by the above
+ * @param parameters the set of parameters used to create the object with
+ *
+ * @return index that object was registered using (may be global or local to a category) or -1 for failure
  */
 /*--------------------------------------------------------------------------------*/
 int PlaybackEngine::Register(SelfRegisteringParametricObject *obj, const ParameterSet& parameters)

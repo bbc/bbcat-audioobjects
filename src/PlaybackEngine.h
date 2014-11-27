@@ -122,20 +122,23 @@ public:
                         uint_t nsrcchannels, uint_t ndstchannels, uint_t nsrcframes, uint_t ndstframes);
 
   /*--------------------------------------------------------------------------------*/
+  /** Register a self-registering-parametric-object or return -1
+   *
+   * @param obj object created by the above
+   * @param parameters the set of parameters used to create the object with
+   *
+   * @return index that object was registered using (may be global or local to a category) or -1 for failure
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual int Register(SelfRegisteringParametricObject *obj, const ParameterSet& parameters);
+
+  /*--------------------------------------------------------------------------------*/
   /** Return max number of audio channels of playlist
    */
   /*--------------------------------------------------------------------------------*/
   uint_t GetMaxOutputChannels() const {return playlist.GetMaxOutputChannels();}
 
 protected:
-  /*--------------------------------------------------------------------------------*/
-  /** Register a self-registering-parametric-object or return -1
-   *
-   * @return index (if applicable) or -1 for unrecognized type
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual int Register(SelfRegisteringParametricObject *obj, const ParameterSet& parameters);
-
   /*--------------------------------------------------------------------------------*/
   /** Set an arbitrary control within this object to a value
    *
