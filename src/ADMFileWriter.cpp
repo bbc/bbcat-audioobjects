@@ -29,7 +29,7 @@ ADMFileWriter::ADMFileWriter() : SoundPositionConsumer(),
 {
 }
 
-ADMFileWriter::ADMFileWriter(const ParameterSet& parameters) : SoundPositionConsumer(),
+ADMFileWriter::ADMFileWriter(const ParameterSet& parameters) : SoundPositionConsumer(parameters),
                                                                ADMRIFFFile()
 {
   std::string    filename;

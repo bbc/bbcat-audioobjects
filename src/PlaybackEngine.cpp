@@ -37,7 +37,7 @@ PlaybackEngine::~PlaybackEngine()
 }
 
 /*--------------------------------------------------------------------------------*/
-/** Set parameters within object
+/** Set parameters within object (*only* parameters that can be set more than once)
  */
 /*--------------------------------------------------------------------------------*/
 void PlaybackEngine::SetParameters(const ParameterSet& parameters)

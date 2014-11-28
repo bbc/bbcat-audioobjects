@@ -33,10 +33,10 @@ public:
   virtual uint_t GetDesiredOutputChannels() const {return ADMRIFFFile::GetChannels();}
 
   /*--------------------------------------------------------------------------------*/
-  /** Return whether this object actually supports positional information
+  /** Return whether this object wants to be a pre-render consumer and receive positions
    */
   /*--------------------------------------------------------------------------------*/
-  virtual bool CanHandlePositions() const {return (adm != NULL);}
+  virtual bool IsPreRenderConsumer() const {return (adm != NULL);}
 
   /*--------------------------------------------------------------------------------*/
   /** Consume audio
