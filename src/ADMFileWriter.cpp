@@ -190,6 +190,9 @@ void ADMFileWriter::OpenFileIfNecessary()
 /*--------------------------------------------------------------------------------*/
 void ADMFileWriter::Consume(const Sample_t *src, uint_t nsrcchannels, uint_t nsrcframes)
 {
+  // set number of input channels (for file creation)
+  inputchannels = nsrcchannels;
+
   OpenFileIfNecessary();
 
   // write to file
@@ -209,6 +212,9 @@ void ADMFileWriter::Consume(const Sample_t *src, uint_t nsrcchannels, uint_t nsr
 /*--------------------------------------------------------------------------------*/
 void ADMFileWriter::Consume(const uint8_t *src, SampleFormat_t srcformat, uint_t nsrcchannels, uint_t nsrcframes)
 {
+  // set number of input channels (for file creation)
+  inputchannels = nsrcchannels;
+
   OpenFileIfNecessary();
 
   // write to file
