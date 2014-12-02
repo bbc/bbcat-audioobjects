@@ -7,13 +7,9 @@
 
 BBC_AUDIOTOOLBOX_START
 
-static const struct {
-  PARAMETERDESC filename;
-  PARAMETERDESC admfile;
-  PARAMETERDESC samplerate;
-  PARAMETERDESC channels;
-  PARAMETERDESC format;
-} _parameters = 
+SELF_REGISTERING_CONTROL_RECEIVER(ADMFileWriter, TYPE_ADMBWF ".writer");
+
+static const PARAMETERDESC _parameters[] = 
 {
   {"filename",   "Filename of ADM BWF file to create"},
   {"admfile",    "File containing description of ADM"},
@@ -22,7 +18,15 @@ static const struct {
   {"format",     "Sample format ('16bit', '24bit', '32bit', 'float' or 'double')"},
 };
 
-SELF_REGISTERING_CONTROL_RECEIVER(ADMFileWriter, TYPE_ADMBWF ".writer");
+// MUST be in the same order as the above
+enum
+{
+  Parameter_filename = 0,
+  Parameter_admfile,
+  Parameter_samplerate,
+  Parameter_channels,
+  Parameter_format,
+};
 
 ADMFileWriter::ADMFileWriter() : SoundPositionConsumer(),
                                  usersamplerate(0),
@@ -57,11 +61,11 @@ void ADMFileWriter::SetParameters(const ParameterSet& parameters)
 
   SoundPositionConsumer::SetParameters(parameters);
 
-  parameters.Get(_parameters.filename.name,   filename);
-  parameters.Get(_parameters.admfile.name,    admfile);
-  parameters.Get(_parameters.samplerate.name, usersamplerate);
-  parameters.Get(_parameters.channels.name,   userchannels);
-  if (parameters.Get(_parameters.format.name, _format))
+  parameters.Get(_parameters[Parameter_filename].name,   filename);
+  parameters.Get(_parameters[Parameter_admfile].name,    admfile);
+  parameters.Get(_parameters[Parameter_samplerate].name, usersamplerate);
+  parameters.Get(_parameters[Parameter_channels].name,   userchannels);
+  if (parameters.Get(_parameters[Parameter_format].name, _format))
   {
     if      (_format == "16bit")  format = SampleFormat_16bit;
     else if (_format == "24bit")  format = SampleFormat_24bit;
@@ -103,12 +107,9 @@ void ADMFileWriter::SetParameters(const ParameterSet& parameters)
 /*--------------------------------------------------------------------------------*/
 void ADMFileWriter::GetParameterDescriptions(std::vector<const PARAMETERDESC *>& list)
 {
-  const PARAMETERDESC *pparameters = (const PARAMETERDESC *)&_parameters;
-  uint_t i, n = sizeof(_parameters) / sizeof(pparameters[0]);
-
   SoundPositionConsumer::GetParameterDescriptions(list);
 
-  for (i = 0; i < n; i++) list.push_back(pparameters + i);
+  AddParametersToList(_parameters, NUMBEROF(_parameters), list);
 }
 
 /*--------------------------------------------------------------------------------*/

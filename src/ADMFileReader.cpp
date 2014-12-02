@@ -4,28 +4,32 @@
 
 BBC_AUDIOTOOLBOX_START
 
-static const struct {
-  PARAMETERDESC filename;
-  PARAMETERDESC object;
-} _parameters = 
+SELF_REGISTERING_PARAMETRIC_OBJECT(ADMFileReader, TYPE_ADMBWF ".reader");
+
+static const PARAMETERDESC _parameters[] = 
 {
   {"filename", "Filename of ADM BWF file to read"},
   {"object",   "ADM object to playback"},
 };
 
-SELF_REGISTERING_PARAMETRIC_OBJECT(ADMFileReader, TYPE_ADMBWF ".reader");
+// MUST be in the same order as the above
+enum
+{
+  Parameter_filename = 0,
+  Parameter_object,
+};
 
 ADMFileReader::ADMFileReader(const ParameterSet& parameters) : ADMRIFFFile(),
                                                                admobject("all")
 {
   std::string filename;
 
-  if (parameters.Get(_parameters.filename.name, filename))
+  if (parameters.Get(_parameters[Parameter_filename].name, filename))
   {
     if (!Open(filename.c_str())) InvalidateObject();
   }
 
-  parameters.Get(_parameters.object.name, admobject);
+  parameters.Get(_parameters[Parameter_object].name, admobject);
 
   SetParameters(parameters);
 }
@@ -36,12 +40,9 @@ ADMFileReader::ADMFileReader(const ParameterSet& parameters) : ADMRIFFFile(),
 /*--------------------------------------------------------------------------------*/
 void ADMFileReader::GetParameterDescriptions(std::vector<const PARAMETERDESC *>& list)
 {
-  const PARAMETERDESC *pparameters = (const PARAMETERDESC *)&_parameters;
-  uint_t i, n = sizeof(_parameters) / sizeof(pparameters[0]);
-
   SelfRegisteringParametricObject::GetParameterDescriptions(list);
 
-  for (i = 0; i < n; i++) list.push_back(pparameters + i);
+  AddParametersToList(_parameters, NUMBEROF(_parameters), list);
 }
 
 BBC_AUDIOTOOLBOX_END

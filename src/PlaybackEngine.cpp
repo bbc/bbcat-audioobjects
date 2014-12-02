@@ -13,11 +13,15 @@ BBC_AUDIOTOOLBOX_START
 
 SELF_REGISTERING_CONTROL_RECEIVER(PlaybackEngine, "processor");
 
-static const struct {
-  PARAMETERDESC loop;
-} _controls = 
+static const PARAMETERDESC _controls[] = 
 {
   {"loop", "Enable looping of files"},
+};
+
+// MUST be in the same order as the above
+enum
+{
+  Control_loop = 0,
 };
 
 PlaybackEngine::PlaybackEngine() : AudioPositionProcessor()
@@ -45,7 +49,7 @@ void PlaybackEngine::SetParameters(const ParameterSet& parameters)
   AudioPositionProcessor::SetParameters(parameters);
 
   bool _loop;
-  if (parameters.Get(_controls.loop.name, _loop)) EnableLoop(_loop);
+  if (parameters.Get(_controls[Control_loop].name, _loop)) EnableLoop(_loop);
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -54,12 +58,9 @@ void PlaybackEngine::SetParameters(const ParameterSet& parameters)
 /*--------------------------------------------------------------------------------*/
 void PlaybackEngine::GetControlDescriptions(std::vector<const PARAMETERDESC *>& list)
 {
-  const PARAMETERDESC *pcontrols = (const PARAMETERDESC *)&_controls;
-  uint_t i, n = sizeof(_controls) / sizeof(pcontrols[0]);
-
   AudioPositionProcessor::GetControlDescriptions(list);
 
-  for (i = 0; i < n; i++) list.push_back(pcontrols + i);
+  AddParametersToList(_controls, NUMBEROF(_controls), list);
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -82,7 +83,7 @@ bool PlaybackEngine::SetLocalControl(ControlHandler *handler, const ParameterSet
   {
     int ival;
 
-    if ((control == _controls.loop.name) && value.Get(ControlReceiver::valuename, ival))
+    if ((control == _controls[Control_loop].name) && value.Get(ControlReceiver::valuename, ival))
     {
       EnableLoop(ival);
       success = true;

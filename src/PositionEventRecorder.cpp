@@ -6,14 +6,18 @@
 
 BBC_AUDIOTOOLBOX_START
 
-static const struct {
-  PARAMETERDESC filename;
-} _parameters = 
+SELF_REGISTERING_CONTROL_RECEIVER(PositionEventRecorder, "event.positionwriter");
+
+static const PARAMETERDESC _parameters[] = 
 {
   {"filename",   "Filename of event file to create"},
 };
 
-SELF_REGISTERING_CONTROL_RECEIVER(PositionEventRecorder, "event.positionwriter");
+// MUST be in the same order as the above
+enum
+{
+  Parameter_filename = 0,
+};
 
 PositionEventRecorder::PositionEventRecorder() : SoundPositionConsumer()
 {
@@ -36,7 +40,7 @@ void PositionEventRecorder::SetParameters(const ParameterSet& parameters)
 {
   SoundPositionConsumer::SetParameters(parameters);
 
-  parameters.Get(_parameters.filename.name, filename);
+  parameters.Get(_parameters[Parameter_filename].name, filename);
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -45,12 +49,9 @@ void PositionEventRecorder::SetParameters(const ParameterSet& parameters)
 /*--------------------------------------------------------------------------------*/
 void PositionEventRecorder::GetParameterDescriptions(std::vector<const PARAMETERDESC *>& list)
 {
-  const PARAMETERDESC *pparameters = (const PARAMETERDESC *)&_parameters;
-  uint_t i, n = sizeof(_parameters) / sizeof(pparameters[0]);
-
   SoundPositionConsumer::GetParameterDescriptions(list);
 
-  for (i = 0; i < n; i++) list.push_back(pparameters + i);
+  AddParametersToList(_parameters, NUMBEROF(_parameters), list);
 }
 
 /*--------------------------------------------------------------------------------*/
