@@ -122,7 +122,7 @@ void ADMFileWriter::SetInputChannels(uint_t n)
   {
     inputchannels = n;
   }
-  else ERROR("Trying to set input channels in ADMFileWriter after file has been created");
+  else if (n != inputchannels) ERROR("Trying to set input channels in ADMFileWriter after file has been created");
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -135,7 +135,7 @@ void ADMFileWriter::SetInputSampleRate(uint32_t sr)
   {
     samplerate = sr;
   }
-  else ERROR("Trying to set sample rate in ADMFileWriter after file has been created");
+  else if (sr != samplerate) ERROR("Trying to set sample rate in ADMFileWriter after file has been created");
 }
 
 /*--------------------------------------------------------------------------------*/

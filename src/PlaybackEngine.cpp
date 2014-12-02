@@ -324,6 +324,9 @@ uint_t PlaybackEngine::Render(const Sample_t *src, Sample_t *dst,
       SoundFileSamples *file;
       uint_t           nread = 0;
 
+      // if reached the maximum render time, break out
+      if (MaxRuntimeReached()) break;
+
       // if not at the end of the play list, try and read out samples
       if ((file = playlist.GetFile()) != NULL)
       {
