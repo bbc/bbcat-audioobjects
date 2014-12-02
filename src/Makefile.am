@@ -53,13 +53,15 @@ libbbcat_audioobjects_@BBCAT_AUDIOOBJECTS_MAJORMINOR@_la_SOURCES  +=	\
 	ADMFileReader.cpp													\
 	ADMFileWriter.cpp													\
 	FilePositionGenerator.cpp											\
-	PlaybackEngine.cpp
+	PlaybackEngine.cpp													\
+	PositionEventRecorder.cpp
 
 pkginclude_HEADERS +=							\
 	ADMFileReader.h								\
 	ADMFileWriter.h								\
 	FilePositionGenerator.h						\
-	PlaybackEngine.h
+	PlaybackEngine.h							\
+	PositionEventRecorder.h
 endif
 
 SelfRegisteringObjects.h: $(libbbcat_audioobjects_@BBCAT_AUDIOOBJECTS_MAJORMINOR@_la_SOURCES) Makefile Makefile.am
