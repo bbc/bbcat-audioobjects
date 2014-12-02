@@ -173,6 +173,8 @@ bool ADMRIFFFile::CreateADM(const char *filename)
     {
       // can prepare cursors now since all objects have been created
       PrepareCursors();
+
+      success = true;
     }
     else ERROR("Unable to create ADM structure from '%s'", filename);
   }
