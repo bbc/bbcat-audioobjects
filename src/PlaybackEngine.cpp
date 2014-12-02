@@ -11,7 +11,7 @@
 
 BBC_AUDIOTOOLBOX_START
 
-SELF_REGISTERING_CONTROL_SINGLETON(PlaybackEngine, "processor");
+SELF_REGISTERING_CONTROL_RECEIVER(PlaybackEngine, "processor");
 
 static const struct {
   PARAMETERDESC loop;
