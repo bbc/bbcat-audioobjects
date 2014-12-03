@@ -72,6 +72,7 @@ SelfRegisteringObjects.h: $(libbbcat_audioobjects_@BBCAT_AUDIOOBJECTS_MAJORMINOR
 	@grep -h -o -E "SELF_REGISTERING.*\(.+," $(libbbcat_audioobjects_@BBCAT_AUDIOOBJECTS_MAJORMINOR@_la_SOURCES) | sed -E "s/^.+\((.+),/extern RegisteredObjectFactory *factory_\1;/" | sort >>SelfRegisteringObjects.h
 	@echo "const RegisteredObjectFactory *factories_audioobjects[]=\n{" >>SelfRegisteringObjects.h
 	@grep -h -o -E "SELF_REGISTERING.*\(.+," $(libbbcat_audioobjects_@BBCAT_AUDIOOBJECTS_MAJORMINOR@_la_SOURCES) | sed -E "s/^.+\((.+),/factory_\1,/" | sort >>SelfRegisteringObjects.h
-	@echo "};\nBBC_AUDIOTOOLBOX_END" >>SelfRegisteringObjects.h
+	@echo "};" >>SelfRegisteringObjects.h
+	@echo "BBC_AUDIOTOOLBOX_END" >>SelfRegisteringObjects.h
 
 noinst_HEADERS =
