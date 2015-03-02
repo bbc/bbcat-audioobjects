@@ -1,0 +1,75 @@
+Purpose
+
+Audio Objects handling library
+
+Dependencies
+
+bbcat-base - https://github.com/bbcrd/bbcat-base.git
+bbcat-dsp - https://github.com/bbcrd/bbcat-dsp.git
+bbcat-control - https://github.com/bbcrd/bbcat-control.git
+tinyxml
+
+Files
+
+autogen.sh - simple autotools script
+configure.ac - configure configuration for autotools
+COPYING - information on copying this library
+debian/ - Debian control and version information
+doxygen.am - Doxygen automake file
+doxygen.cfg - Doxygen configuration
+m4 - folder for autotools
+Makefile.am - makefile for automake
+README - this file
+src/ - source folder containing C/C++ source and header files
+examples/ - folder with example C++ files (just type make)
+
+src/ADMAudioFileSamples.cpp             | Handler for reading audio samples AND position from ADM object and BWF file 
+src/ADMAudioFileSamples.h               |
+
+src/ADMData.cpp                         | Base class for ADM data handlers
+src/ADMData.h                           |
+
+src/ADMFileReader.cpp                   | An ADM file reader
+src/ADMFileReader.h                     |
+
+src/ADMFileWriter.cpp                   | An ADM file writer implemented as a sound consumer
+src/ADMFileWriter.h                     |
+
+src/ADMObjects.cpp                      | Individual component ADM objects
+src/ADMObjects.h                        |
+
+src/ADMRIFFFile.cpp                     | ADM RIFF (BWF) file support
+src/ADMRIFFFile.h                       |
+
+src/Makefile.am                         | Makefile for automake
+
+src/Playlist.cpp                        | Simple multi-file playlist
+src/Playlist.h                          |
+
+src/RIFFChunk_Definitions.h             | RIFF chunk definitions
+
+src/RIFFChunk.cpp                       | Base class for RIFF chunk handlers
+src/RIFFChunk.h                         |
+
+src/RIFFChunks.cpp                      | RIFF chunk handlers
+src/RIFFChunks.h                        |
+
+src/RIFFFile.cpp                        | RIFF file support
+src/RIFFFile.h                          |
+
+src/SoundFileAttributes.cpp             | Sound format and data classes
+src/SoundFileAttributes.h               |
+
+src/SoundObjectFile.cpp                 | A version of the SoundFileSamples class which uses AudioObjectCursors to read channel parameters from a sound file
+src/SoundObjectFile.h                   |
+
+src/TinyXMLADMData.cpp                  | An implementation of ADM decoding using TinyXML
+src/TinyXMLADMData.h                    |
+
+examples/read-adm-bwf.cpp               | Example code for reading and decoding an ADM file
+
+examples/write-adm-bwf.cpp              | Example code for writing an ADM file
+
+Building (dynamic libraries)
+
+./autogen.sh && configure && make && sudo make install
