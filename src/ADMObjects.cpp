@@ -35,7 +35,7 @@ ADMObject::ADMObject(ADMData& _owner, const std::string& _id, const std::string&
     // populate typeLabel map
     SetTypeDefinition(TypeLabel_DirectSpeakers, "DirectSpeakers");
     SetTypeDefinition(TypeLabel_Matrix,         "Matrix");
-    SetTypeDefinition(TypeLabel_Objects,        "Object");
+    SetTypeDefinition(TypeLabel_Objects,        "Objects");
     SetTypeDefinition(TypeLabel_HOA,            "HOA");
     SetTypeDefinition(TypeLabel_Binaural,       "Binaural");
   }
