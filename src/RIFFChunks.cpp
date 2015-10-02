@@ -426,8 +426,7 @@ bool RIFFfmtChunk::CreateWriteData()
         chunk.BitsPerSample = 24;
         break;
     }
-    // block align MUST be even!
-    chunk.BlockAlign = ((channels * bytespersample) & 1) ? 2 * bytespersample : bytespersample;
+    chunk.BlockAlign = channels * bytespersample;
 
     length = sizeof(chunk);
     if ((data = new uint8_t[length]) != NULL)
