@@ -1432,44 +1432,43 @@ void ADMAudioChannelFormat::UpdateID()
 /*--------------------------------------------------------------------------------*/
 bool ADMAudioChannelFormat::Add(ADMAudioBlockFormat *obj)
 {
-  std::vector<ADMAudioBlockFormat *>::iterator list = blockformatrefs.begin();
   uint_t n = blockformatrefs.size();
   uint64_t t = obj->GetStartTime();
 
   // insert obj into list ordered by time
 
   // allocate memory in large chunks to reduce re-allocation time
-  if (blockformatrefs.size() == blockformatrefs.capacity()) blockformatrefs.reserve(blockformatrefs.capacity() + 1024);
+  if (n == blockformatrefs.capacity()) blockformatrefs.reserve(blockformatrefs.capacity() + 1024);
 
   // if the list is empty just append
-  if (!blockformatrefs.size())
+  if (!n)
   {
     DEBUG2(("blockformat list is empty: new item appended"));
     obj->SetChannelFormat(this);
     blockformatrefs.push_back(obj);
   }
   // the most likely place for the new item is on the end so check this first
-  else if (t >= list[n - 1]->GetStartTime())
+  else if (t >= blockformatrefs[n - 1]->GetStartTime())
   {
     // ensure the new object is not already in the list
-    if (obj != list[n - 1])
+    if (obj != blockformatrefs[n - 1])
     {
       // new object just needs to be appended to list
-      DEBUG2(("New item is beyond last item (%llu >= %llu): new item appended", t, list[n - 1]->GetStartTime()));
+      DEBUG2(("New item is beyond last item (%llu >= %llu): new item appended", t, blockformatrefs[n - 1]->GetStartTime()));
       obj->SetChannelFormat(this);
       blockformatrefs.push_back(obj);
     }
   }
   // if the list has only one item or the new object is before the first item, new item must be inserted at the start
-  else if ((n == 1) || (t <= list[0]->GetStartTime()))
+  else if ((n == 1) || (t <= blockformatrefs[0]->GetStartTime()))
   {
     // ensure the new object is not already in the list
-    if (obj != list[0])
+    if (obj != blockformatrefs[0])
     {
       // new object just needs inserted at the start of the list
-      DEBUG2(("New item is before first item (%llu <= %llu): new item inserted at start", t, list[0]->GetStartTime()));
+      DEBUG2(("New item is before first item (%llu <= %llu): new item inserted at start", t, blockformatrefs[0]->GetStartTime()));
       obj->SetChannelFormat(this);
-      blockformatrefs.insert(list, obj);
+      blockformatrefs.insert(blockformatrefs.begin(), obj);
     }
   }
   // object should be placed somewhere in the list but not at the end (checked above)
@@ -1482,14 +1481,14 @@ bool ADMAudioChannelFormat::Add(ADMAudioBlockFormat *obj)
     uint_t count = 0;
 
     // break out when the new object is between the current and next item
-    while (!((t >= list[pos]->GetStartTime()) &&
-             (t <  list[pos + 1]->GetStartTime())))
+    while (!((t >= blockformatrefs[pos]->GetStartTime()) &&
+             (t <  blockformatrefs[pos + 1]->GetStartTime())))
     {
       // half increment (rounding up to ensure it is always non-zero)
       inc = (inc + 1) >> 1;
 
       // if the new item is before the current one, move back by the increment
-      if (t < list[pos]->GetStartTime())
+      if (t < blockformatrefs[pos]->GetStartTime())
       {
         if (pos >= inc) pos -= inc;
         else            pos  = 0;
@@ -1501,11 +1500,11 @@ bool ADMAudioChannelFormat::Add(ADMAudioBlockFormat *obj)
     }
 
     // check that the item isn't already in the list
-    if (obj != list[pos])
+    if (obj != blockformatrefs[pos])
     {
       (void)count;
 
-      DEBUG2(("New item is between indexes %u and %u (%llu <= %llu < %llu) (%u iterations): new item inserted between them", pos, pos + 1, list[pos]->GetStartTime(), t, list[pos + 1]->GetStartTime(), count));
+      DEBUG2(("New item is between indexes %u and %u (%llu <= %llu < %llu) (%u iterations): new item inserted between them", pos, pos + 1, blockformatrefs[pos]->GetStartTime(), t, blockformatrefs[pos + 1]->GetStartTime(), count));
 
       // the new item is between the pos'th and pos+1'th item
       // but insert works by inserting *before* the given position
@@ -1513,7 +1512,7 @@ bool ADMAudioChannelFormat::Add(ADMAudioBlockFormat *obj)
       pos++;
 
       obj->SetChannelFormat(this);
-      blockformatrefs.insert(list + pos, obj);
+      blockformatrefs.insert(blockformatrefs.begin() + pos, obj);
     }
   }
 
