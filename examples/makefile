@@ -15,7 +15,7 @@ LDFLAGS=
 CXX = g++
 LD = g++
 
-APPLICATIONS=read-adm-bwf write-adm-bwf
+APPLICATIONS=read-adm-bwf write-adm-bwf create-adm
 
 all: $(APPLICATIONS)
 
