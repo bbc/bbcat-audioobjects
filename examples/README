@@ -1,5 +1,8 @@
 This directory contains some examples of using the BBC Audio Toolbox libraries
 
+create-adm.cpp - example code for creating an ADM (in XML form) WITHOUT using a RIFF file
+
 read-adm-bwf.cpp - example code for reading the displaying parts of the ADM and then accessing the sample data of one of the ADM audio objects
 
 write-adm-bwf.cpp - example code for creation of a simple ADM
+
