@@ -2,14 +2,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <bbcat-audioobjects/ADMData.h>
 #include <bbcat-audioobjects/TinyXMLADMData.h>
 
 using namespace bbcat;
 
 int main(void)
 {
-  // register the TinyXML implementation of ADMData handler as usable
-  TinyXMLADMData::Register();
+  // ensure TinyXMLADMData class is not thrown away during link!
+  (void)TinyXMLADMData::pinned();
 
   ADMData *adm;
   // create basic ADM
@@ -68,7 +69,7 @@ int main(void)
 
         for (i = 0; i < 20; i++)
         {
-          if ((bf = adm->CreateBlockFormat("" /* block formats do not have names */, cf)) != NULL)
+          if ((bf = adm->CreateBlockFormat(cf)) != NULL)
           {
             AudioObjectParameters params;
             Position pos;
@@ -83,7 +84,23 @@ int main(void)
             pos.pos.el = (double)i / (double)ntracks * 60.0;
             pos.pos.d  = 1.0;
             params.SetPosition(pos);
-            
+
+            params.SetGain(2.0);
+            params.SetWidth(5.0);
+            params.SetHeight(10.0);
+            params.SetDepth(15.0);
+            params.SetDiffuseness(20.0);
+            params.SetDelay(25.0);
+            params.SetImportance(5);
+            params.SetDialogue(1);
+            params.SetChannelLock(true);
+            params.SetInteract(true);
+            params.SetInterpolate(true);
+            params.SetInterpolationTime(5.2);
+            params.SetOnScreen(true);
+            ParameterSet othervalues = params.GetOtherValues();
+            params.SetOtherValues(othervalues.Set("other1", 1).Set("other2", "2"));
+
             // set object parameters
             bf->GetObjectParameters() = params;
           }
@@ -98,14 +115,11 @@ int main(void)
     }
 
     // finalise ADM
-    adm->SortTracks();
-    adm->ConnectReferences();
-    adm->ChangeTemporaryIDs();
-
+    adm->Finalise();
+    
     // output ADM
     printf("XML:\n%s", adm->GetAxml().c_str());
   }
 
   return 0;
 }
-

@@ -8,11 +8,14 @@
 
 using namespace bbcat;
 
+// ensure TinyXMLADMData class is not thrown away during link!
+const volatile bool pinned[] =
+{
+  TinyXMLADMData::pinned(),
+};
+
 int main(int argc, char *argv[])
 {
-  // register the TinyXML implementation of ADMData handler as usable
-  TinyXMLADMData::Register();
-
   if (argc < 2)
   {
     fprintf(stderr, "Usage: read-adm-bwf <bwf-file>\n");
@@ -60,10 +63,10 @@ int main(int argc, char *argv[])
           // print out information about the object
           printf("  %s\n", obj->ToString().c_str());
         }
+
+        printf("\n");
       }
       else printf("No objects of type '%s'!\n", type);
-
-      printf("\n");
     }
 
     // access the audio of an audio object

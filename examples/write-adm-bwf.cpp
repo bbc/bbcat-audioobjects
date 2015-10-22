@@ -3,26 +3,30 @@
 #include <stdlib.h>
 
 #include <bbcat-audioobjects/ADMRIFFFile.h>
-#include <bbcat-audioobjects/TinyXMLADMData.h>
 
 using namespace bbcat;
 
+//BBC_AUDIOTOOLBOX_REQUIRE(TinyXMLADMData);
+extern const bool keep_TinyXMLADMData;
+const bool keep_TinyXMLADMData_in_app = keep_TinyXMLADMData;
+
 int main(void)
 {
-  // register the TinyXML implementation of ADMData handler as usable
-  TinyXMLADMData::Register();
-
   // ADM aware WAV file
   ADMRIFFFile file;
   const char *filename = "adm-bwf.wav";
 
+  // IMPORTANT: create basic ADM here - if this is not done, the file will be a plain WAV file!
+  file.CreateADM();
+
+  // create file
   if (file.Create(filename, 48000, 16))
   {
-    // create basic ADM
-    if (file.CreateADM())
+    ADMData *adm = file.GetADM();
+
+    if (adm)
     {
       ADMData::OBJECTNAMES names;
-      ADMData *adm = file.GetADM();
 
       printf("Created '%s' okay, %u channels at %luHz (%u bytes per sample)\n", filename, file.GetChannels(), (ulong_t)file.GetSampleRate(), (uint_t)file.GetBytesPerSample());
 
@@ -63,13 +67,16 @@ int main(void)
         names.packFormatName = "";  // need this because Printf() APPENDS!
         Printf(names.packFormatName, "Pack %u", 1 + (t / 4));
 
+        // set default typeLabel
+        names.typeLabel = ADMObject::TypeLabel_Objects;
+
         adm->CreateObjects(names);
 
         // note how the programme and content names are left in place in 'names'
         // this is necessary to ensure that things are linked up properly
       }
     }
-    else fprintf(stderr, "Failed to create ADM for file '%s'!\n", filename);
+    else fprintf(stderr, "File does not have an ADM associated with it, did you forget to create one?\n");
     
     // write audio
     std::vector<float> audio;
@@ -105,17 +112,17 @@ int main(void)
       // create sine waves on each channel
       for (j = 0; j < audio.size(); j++)
       {
-        audio[j] = level * sin(2.0 * M_PI * 100.0 * (double)i / fs * (double)(1 + j));
+        audio[j] = (float)(level * sin(2.0 * M_PI * 100.0 * (double)i / fs * (double)(1 + j)));
       }
 
       // write a frame of audio
-      file.WriteSamples(&audio[0], 0, audio.size(), 1);
+      file.WriteSamples(&audio[0], 0, (uint_t)audio.size(), 1);
     }
 
     file.Close();
   }
   else fprintf(stderr, "Failed to open file '%s' for writing!\n", filename);
-
+  
   return 0;
 }
 
