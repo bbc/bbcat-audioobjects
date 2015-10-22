@@ -2,7 +2,7 @@ Source: bbcat-audioobjects
 Priority: optional
 Maintainer: Richard Day <richard.day@bbc.co.uk>
 Standards-Version: 3.9.3
-Build-Depends: debhelper (>= 9), pkg-config, libbbcat-base-dev (>= 0.1.1.0), libbbcat-dsp-dev (>= 0.1.1.0), libbbcat-control-dev (>= 0.1.1.0), libbbcat-render-dev (>= 0.1.1.0), libtinyxml-dev (>= 2.6.2)
+Build-Depends: debhelper (>= 9), pkg-config, libbbcat-base-dev (>= 0.1.1.0), libbbcat-dsp-dev (>= 0.1.1.0), libbbcat-control-dev (>= 0.1.1.1), libbbcat-render-dev (>= 0.1.1.1), libtinyxml-dev (>= 2.6.2)
 
 Package: libbbcat-audioobjects
 Section: libs

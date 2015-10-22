@@ -132,6 +132,17 @@ void RIFFds64Chunk::ByteSwapData(bool writing)
   }
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Return ID when writing chunk
+ *
+ * @note can be used to mark chunks as 'JUNK' if they are not required
+ */
+/*--------------------------------------------------------------------------------*/
+uint32_t RIFFds64Chunk::GetWriteID() const
+{
+  return riff64 ? id : JUNK_ID;
+}
+
 // create write data
 bool RIFFds64Chunk::CreateWriteData()
 {
@@ -139,10 +150,13 @@ bool RIFFds64Chunk::CreateWriteData()
 
   if (!success)
   {
-    length = sizeof(ds64_CHUNK);
+    length = sizeof(ds64_CHUNK) + tablecount * sizeof(CHUNKSIZE64);
     if ((data = new uint8_t[length]) != NULL)
     {
       memset(data, 0, length);
+
+      // set table count
+      ((ds64_CHUNK *)data)->TableEntryCount = tablecount;
 
       success = true;
     }
@@ -249,15 +263,94 @@ void RIFFds64Chunk::SetSampleCount(uint64_t count)
   }
 }
 
+void RIFFds64Chunk::SetTableCount(uint_t count)
+{
+  if (data && (count != GetTableCount()))
+  {
+    // if data has been allocaed and table count changed, need to re-allocate
+    uint64_t newlength = sizeof(ds64_CHUNK) + count * sizeof(CHUNKSIZE64);
+    uint8_t  *newdata;
+
+    // reallocate, copy and replace
+    if ((newdata = new uint8_t[newlength]) != NULL)
+    {
+      // clear data
+      memset(newdata, 0, newlength);
+
+      // copy over old data
+      memcpy(newdata, data, MIN(length, newlength));
+      delete[] data;
+
+      data   = newdata;
+      length = newlength;
+
+      // set the number of entries in the table to allow for post-sample writing updates
+      ds64_CHUNK *ds64;
+      if ((ds64 = (ds64_CHUNK *)GetData()) != NULL) {
+        ds64->TableEntryCount = count;
+      }
+    }
+  }
+  
+  // update internal variable in case data hasn't been allocated yet
+  tablecount = count;
+}
+
 bool RIFFds64Chunk::SetChunkSize(uint32_t id, uint64_t length)
 {
-  bool set = false;
+  ds64_CHUNK *ds64;
+  bool success = false;
   
   // WARNING: a switch statement cannot be used here because RIFF_ID, etc, uses an array (the name)!
-  if      (id == RIFF_ID) SetRIFFSize(length);
-  else if (id == data_ID) SetdataSize(length);
-  
-  return set;
+  if (id == RIFF_ID)
+  {
+    SetRIFFSize(length);
+    success = true;
+  }
+  else if (id == data_ID)
+  {
+    SetdataSize(length);
+    success = true;
+  }
+  else if ((ds64 = (ds64_CHUNK *)GetData()) != NULL) {
+    uint_t i, n = ds64->TableEntryCount;
+    uint_t firstempty = ~0;
+
+    // look for chunk in table
+    for (i = 0; i < n; i++)
+    {
+      uint32_t tid = IFFID(ds64->Table[i].ChunkId);
+
+      if (tid == id)
+      {
+        // found ID -> update chunk size
+        ds64->Table[i].ChunkSizeLow  = (uint32_t)length;
+        ds64->Table[i].ChunkSizeHigh = (uint32_t)(length >> 32);
+        success = true;
+        break;
+      }
+      else if (!tid && (i < firstempty))
+      {
+        // save first unused slot
+        firstempty = i;
+      }
+    }
+
+    // existing slot not found -> test for empty slot
+    if ((i == n) && ((i = firstempty) < n))
+    {
+      // use free slot -> set ID and length
+      ds64->Table[i].ChunkId[0]    = (char)(id >> 24); 
+      ds64->Table[i].ChunkId[1]    = (char)(id >> 16); 
+      ds64->Table[i].ChunkId[2]    = (char)(id >> 8); 
+      ds64->Table[i].ChunkId[3]    = (char)id;
+      ds64->Table[i].ChunkSizeLow  = (uint32_t)length;
+      ds64->Table[i].ChunkSizeHigh = (uint32_t)(length >> 32);
+      success = true;
+    }
+  }
+
+  return success;
 }
 
 uint64_t RIFFds64Chunk::GetChunkSize(uint32_t id, uint64_t original_length) const
@@ -683,6 +776,12 @@ void RIFFchnaChunk::ByteSwapData(bool writing)
 
 /*----------------------------------------------------------------------------------------------------*/
 
+RIFFaxmlChunk::RIFFaxmlChunk(uint32_t chunk_id) : RIFFChunk(chunk_id)
+{
+  // include an extra byte when allocating/reading data for string terminator
+  extrabytes = 1;
+}
+
 /*--------------------------------------------------------------------------------*/
 /** axml chunk - part of the ADM (EBU Tech 3364)
  *
@@ -699,15 +798,6 @@ void RIFFaxmlChunk::Register()
 
 RIFFdataChunk::~RIFFdataChunk()
 {
-}
-
-/*--------------------------------------------------------------------------------*/
-/** Initialise chunk for writing - called when empty chunk is first created
- */
-/*--------------------------------------------------------------------------------*/
-bool RIFFdataChunk::InitialiseForWriting()
-{
-  return CreateTempFile();
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -743,41 +833,15 @@ bool RIFFdataChunk::CreateWriteData()
   return true;
 }
 
-// copy sample data from temporary file
+// move over data that already been written
 bool RIFFdataChunk::WriteChunkData(EnhancedFile *file)
 {
-  std::vector<uint8_t> buffer;
-  EnhancedFile *srcfile = this->file;
   bool success = false;
+  
+  // tell SoundFileSamples about file it needs to write to
+  SetFile(file, file->ftell(), length, false);
 
-  // create temp buffer
-  buffer.resize(0x10000);
-
-  uint8_t  *buf    = &buffer[0];
-  uint_t   buflen  = buffer.size();
-  uint64_t length1 = length;
-  size_t   bytes;
-
-  DEBUG1(("Copying data from '%s' to '%s'", srcfile->getfilename().c_str(), file->getfilename().c_str()));
-
-  // copy raw sample data from this->file to file
-  srcfile->fflush();
-  srcfile->rewind();
-  while (length1 && ((bytes = srcfile->fread(buf, 1, buflen)) > 0))
-  {
-    if ((bytes = file->fwrite(buf, 1, MIN(length1, bytes))) > 0) length1 -= bytes;
-    else {
-      ERROR("Failed to write data to destination, error %s", strerror(errno));
-      break;
-    }
-  }
-
-  if (length1) ERROR("%lu bytes left to write to destination", (ulong_t)length1);
-  else
-  {
-    DEBUG1(("Copied data from '%s' to '%s'", srcfile->getfilename().c_str(), file->getfilename().c_str()));
-    success = true;
-  }
+  if ((success = file->fseek(length, SEEK_CUR) == 0) == false) ERROR("Failed to seek over sample data");
 
   return success;
 }

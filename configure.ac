@@ -1,5 +1,5 @@
 AC_PREREQ([2.68])
-AC_INIT([BBCAT_AUDIOOBJECTS],[0.1.1.0])
+AC_INIT([BBCAT_AUDIOOBJECTS],[0.1.1.1])
 
 AS_NANO(BBCAT_AUDIOOBJECTS_CVS=no,BBCAT_AUDIOOBJECTS_CVS=yes)
 
@@ -36,6 +36,18 @@ AC_SUBST(ACLOCAL_AMFLAGS)
 DX_DOXYGEN_FEATURE(ON)
 DX_INIT_DOXYGEN(bbcat-audioobjects, doxygen.cfg)
 
+dnl Set install paths.
+dnl this is required because ${prefix} is used below
+if test "x$prefix" = "xNONE" ; then
+  prefix="/usr/local"
+fi
+if test "x$exec_prefix" = "xNONE" ; then
+  exec_prefix=$prefix
+fi
+
+BBCAT_GLOBAL_AUDIOOBJECTS_CFLAGS="$BBCAT_GLOBAL_AUDIOOBJECTS_CFLAGS -DBBCAT_AUDIOOBJECTS_DATA_FILES=\\\"${prefix}/share/$PACKAGE\\\""
+AC_SUBST(BBCAT_GLOBAL_AUDIOOBJECTS_CFLAGS)
+
 # Check if we should disable optimization  (./configure --disable-opt)
 AC_MSG_CHECKING(whether to disable optimization)
 AC_ARG_ENABLE(opt, AS_HELP_STRING([--disable-opt], [disable optimzation]), DISABLE_OPTIMIZATION="yes", DISABLE_OPTIMIZATION="no")
@@ -50,25 +62,47 @@ AC_SUBST(CFLAGS)
 AC_SUBST(CXXFLAGS)
 
 dnl bbcat-base is required
-BBCAT_BASE_VER="0.1.1.0"
+BBCAT_BASE_VER="0.1.1.1"
 PKG_CHECK_MODULES(BBCAT_BASE, bbcat-base-0.1 >= $BBCAT_BASE_VER, HAVE_BBCAT_BASE=yes, HAVE_BBCAT_BASE=no)
 if test "x${HAVE_BBCAT_BASE}" != xyes ; then
   AC_MSG_ERROR([bbcat-base-0.1 >= $BBCAT_BASE_VER is required])
 fi
 
 dnl bbcat-dsp is required
-BBCAT_DSP_VER="0.1.1.0"
+BBCAT_DSP_VER="0.1.1.1"
 PKG_CHECK_MODULES(BBCAT_DSP, bbcat-dsp-0.1 >= $BBCAT_DSP_VER, HAVE_BBCAT_DSP=yes, HAVE_BBCAT_DSP=no)
 if test "x${HAVE_BBCAT_DSP}" != xyes ; then
   AC_MSG_ERROR([bbcat-dsp-0.1 >= $BBCAT_DSP_VER is required])
 fi
 
 dnl bbcat-control is required
-BBCAT_CONTROL_VER="0.1.1.0"
+BBCAT_CONTROL_VER="0.1.1.1"
 PKG_CHECK_MODULES(BBCAT_CONTROL, bbcat-control-0.1 >= $BBCAT_CONTROL_VER, HAVE_BBCAT_CONTROL=yes, HAVE_BBCAT_CONTROL=no)
 if test "x${HAVE_BBCAT_CONTROL}" != xyes ; then
   AC_MSG_ERROR([bbcat-control-0.1 >= $BBCAT_CONTROL_VER is required])
 fi
+
+# Check for GPL support
+# only need ENABLE_GPL for inclusion of extra files, C flags are handled automatically!
+EXISTING_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS $BBCAT_BASE_CFLAGS $BBCAT_DSP_CFLAGS $BBCAT_CONTROL_CFLAGS"
+
+# Check for ENABLE_GPL
+AC_MSG_CHECKING(whether GPL code is supported)
+AC_TRY_COMPILE([],
+                [#if !ENABLE_GPL
+                 #error GPL not enabled
+                 #endif
+                ],
+                [ENABLE_GPL="yes"],
+                [ENABLE_GPL="no"])
+if test "x${ENABLE_GPL}" = "xyes"; then
+  AC_MSG_RESULT(yes)
+else
+  AC_MSG_RESULT(no)
+fi
+AM_CONDITIONAL(ENABLE_GPL, test "x${ENABLE_GPL}" = "xyes")
+CFLAGS="$EXISTING_CFLAGS"
 
 TINYXML_VER="2.6.2"
 PKG_CHECK_MODULES(TINYXML, tinyxml >= $TINYXML_VER, HAVE_TINYXML=yes, HAVE_TINYXML=no)

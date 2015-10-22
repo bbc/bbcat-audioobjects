@@ -20,12 +20,12 @@ class SoundObjectFileSamples : public SoundFileSamples
 public:
   SoundObjectFileSamples();
   SoundObjectFileSamples(const SoundFileSamples *obj);
+  SoundObjectFileSamples(const SoundObjectFileSamples *obj);
   virtual ~SoundObjectFileSamples();
 
   virtual const std::vector<AudioObjectCursor *>& GetCursors() const {return cursors;}
 
-protected:
-  virtual void UpdatePosition();
+  virtual void GetObjectList(AudioObject::LIST& list);
 
 protected:
   std::vector<AudioObjectCursor *> cursors;

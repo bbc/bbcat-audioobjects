@@ -12,6 +12,10 @@ SoundObjectFileSamples::SoundObjectFileSamples(const SoundFileSamples *obj) : So
 {
 }
 
+SoundObjectFileSamples::SoundObjectFileSamples(const SoundObjectFileSamples *obj) : SoundFileSamples(obj)
+{
+}
+
 SoundObjectFileSamples::~SoundObjectFileSamples()
 {
   uint_t i;
@@ -22,19 +26,19 @@ SoundObjectFileSamples::~SoundObjectFileSamples()
   }
 }   
 
-void SoundObjectFileSamples::UpdatePosition()
+void SoundObjectFileSamples::GetObjectList(AudioObject::LIST& list)
 {
+  AudioObject *lastobj = NULL;
   uint_t i;
-
-  SoundFileSamples::UpdatePosition();
 
   for (i = 0; i < cursors.size(); i++)
   {
-    if (cursors[i]->Seek(GetAbsolutePositionNS()))
-    {
-      // position changed!
-    }
-  }
+    AudioObject *obj = cursors[i]->GetAudioObject();
+
+    if (obj && (obj != lastobj)) list.push_back(obj);
+    
+    lastobj = obj;
+  }  
 }
 
 BBC_AUDIOTOOLBOX_END

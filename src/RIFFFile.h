@@ -4,6 +4,8 @@
 #include <vector>
 #include <map>
 
+#include <bbcat-base/RefCount.h>
+
 #include "RIFFChunks.h"
 
 BBC_AUDIOTOOLBOX_START
@@ -32,6 +34,14 @@ public:
   virtual bool Open(const char *filename);
 
   /*--------------------------------------------------------------------------------*/
+  /** Enable/disable background file writing
+   *
+   * @note can be called at any time to enable/disable
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void EnableBackgroundWriting(bool enable);
+
+  /*--------------------------------------------------------------------------------*/
   /** Create a WAVE/RIFF file
    *
    * @param filename filename of file to create
@@ -50,7 +60,7 @@ public:
    * @return true if file is open
    */
   /*--------------------------------------------------------------------------------*/
-  bool IsOpen() const {return (file && (file->isopen()));}
+  bool IsOpen() const {return (fileref.Obj() && fileref.Obj()->isopen());}
 
   /*--------------------------------------------------------------------------------*/
   /** Close file
@@ -68,7 +78,7 @@ public:
    * @return EnhancedFile object (or NULL)
    */
   /*--------------------------------------------------------------------------------*/
-  EnhancedFile *GetFile() {return file;}
+  EnhancedFile *GetFile() {return fileref;}
 
   /// file type enumeration
   enum
@@ -157,7 +167,7 @@ public:
    * @return chunk count
    */
   /*--------------------------------------------------------------------------------*/
-  uint_t GetChunkCount() const {return chunklist.size();}
+  uint_t GetChunkCount() const {return (uint_t)chunklist.size();}
 
   /*--------------------------------------------------------------------------------*/
   /** Return chunk at specifiec index
@@ -281,6 +291,18 @@ protected:
   virtual bool PostReadChunks() {return true;}
 
   /*--------------------------------------------------------------------------------*/
+  /** Optional stage to create extra chunks when writing WAV files
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual bool CreateExtraChunks() {return true;}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Write chunk data
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void WriteChunks(EnhancedFile *file, bool closing);
+
+  /*--------------------------------------------------------------------------------*/
   /** Overrideable called whenever sample position changes
    */
   /*--------------------------------------------------------------------------------*/
@@ -290,14 +312,14 @@ protected:
   typedef std::map<uint32_t, RIFFChunk *> ChunkMap_t;
 
 protected:
-  EnhancedFile      *file;
-  uint8_t           filetype;
-  SoundFormat       *fileformat;
-  SoundFileSamples  *filesamples;
-  bool              writing;
-
-  ChunkList_t       chunklist;
-  ChunkMap_t        chunkmap;
+  RefCount<EnhancedFile> fileref;
+  uint8_t                filetype;
+  SoundFormat            *fileformat;
+  SoundFileSamples       *filesamples;
+  ChunkList_t            chunklist;
+  ChunkMap_t             chunkmap;
+  bool                   writing;
+  bool                   backgroundwriting;
 };
 
 BBC_AUDIOTOOLBOX_END

@@ -7,6 +7,9 @@ class TiXmlNode;
 
 BBC_AUDIOTOOLBOX_START
 
+//BBC_AUDIOTOOLBOX_KEEP(TinyXMLADMData);
+extern const bool keep_TinyXMLADMData;
+
 /*--------------------------------------------------------------------------------*/
 /** An implementation of ADMData using the TinyXML library (GPL)
  */
@@ -14,29 +17,89 @@ BBC_AUDIOTOOLBOX_START
 class TinyXMLADMData : public ADMData
 {
 public:
-  TinyXMLADMData();
+  TinyXMLADMData(const std::string& standarddefinitionsfile);
   virtual ~TinyXMLADMData();
-
-  /*--------------------------------------------------------------------------------*/
-  /** Register function - this MUST be called for this class to be usable
-   */
-  /*--------------------------------------------------------------------------------*/
-  static void Register() {ADMData::RegisterProvider(&__Creator);}
-
+  
 protected:
   /*--------------------------------------------------------------------------------*/
-  /** Required implementation of XML translation
+  /** Register function - this is called automatically
    */
   /*--------------------------------------------------------------------------------*/
-  virtual bool TranslateXML(const std::string& data);
+  static bool Register();
 
   /*--------------------------------------------------------------------------------*/
-  /** Required parsing functions
+  /** Decode XML string as ADM
+   *
+   * @param data ptr to string containing ADM XML (MUST be terminated)
+   *
+   * @return true if XML decoded correctly
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual bool TranslateXML(const char *data);
+
+  /*--------------------------------------------------------------------------------*/
+  /** Parse XML header
    */
   /*--------------------------------------------------------------------------------*/
   virtual void ParseHeader(ADMHEADER& header, const std::string& type, void *userdata);
-  virtual void ParseValue(ADMObject *obj, const std::string& type, void *userdata);
-  virtual void ParseValues(ADMObject *obj, const std::string& type, void *userdata);
+
+  /*--------------------------------------------------------------------------------*/
+  /** Parse value (and its attributes) into a list of XML values
+   *
+   * @param obj ADM object
+   * @param userdata implementation specific object data
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void ParseValue(ADMObject *obj, void *userdata);
+  
+  /*--------------------------------------------------------------------------------*/
+  /** Parse value (and its attributes) into a list of XML values
+   *
+   * @param name name of object (for DEBUGGING only)
+   * @param values list of XML values to be added to
+   * @param userdata implementation specific object data
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void ParseValue(const std::string& name, XMLValues& values, void *userdata);
+
+  /*--------------------------------------------------------------------------------*/
+  /** Parse attributes and subnodes as values
+   *
+   * @param obj object to read values from
+   * @param userdata user suppled data
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void ParseValues(ADMObject *obj, void *userdata);
+
+  /*--------------------------------------------------------------------------------*/
+  /** Parse audioBlockFormat XML object
+   *
+   * @param name parent name (for DEBUGGING only)
+   * @param obj audioBlockFormat object
+   * @param userdata user suppled data
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void ParseValues(const std::string& name, ADMAudioBlockFormat *obj, void *userdata);
+
+  /*--------------------------------------------------------------------------------*/
+  /** Parse attributes into a list of XML values
+   *
+   * @param obj ADM object
+   * @param userdata implementation specific object data
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void ParseAttributes(ADMObject *obj, void *userdata);
+
+  /*--------------------------------------------------------------------------------*/
+  /** Parse attributes into a list of XML values
+   *
+   * @param name name of object (for DEBUGGING only)
+   * @param type object type - necessary to prevent object name and ID being added
+   * @param values list of XML values to be populated
+   * @param userdata implementation specific object data
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void ParseAttributes(const std::string& name, const std::string& type, XMLValues& values, void *userdata);
 
   /*--------------------------------------------------------------------------------*/
   /** Find named element in subnode list
@@ -57,11 +120,14 @@ protected:
   /** Creator for this class
    */
   /*--------------------------------------------------------------------------------*/
-  static ADMData *__Creator(void *context)
+  static ADMData *__Creator(const std::string& standarddefinitionsfile, void *context)
   {
     UNUSED_PARAMETER(context);
-    return new TinyXMLADMData();
+    return new TinyXMLADMData(standarddefinitionsfile);
   }
+
+protected:
+  static const bool registered;
 };
 
 BBC_AUDIOTOOLBOX_END

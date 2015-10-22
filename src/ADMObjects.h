@@ -8,7 +8,11 @@
 #include <map>
 
 #include <bbcat-base/misc.h>
+#include <bbcat-base/ThreadLock.h>
 #include <bbcat-control/AudioObjectCursor.h>
+#include <bbcat-control/AudioObjectParameters.h>
+
+#include "XMLValue.h"
 
 BBC_AUDIOTOOLBOX_START
 
@@ -65,12 +69,14 @@ public:
   /** Set and Get object ID
    *
    * @param id new ID
+   * @param start start index to find an ID from
    *
    * @note setting the ID updates the map held within the ADMData object
+   * @note some types of ID start numbering at 0x1000, some at 0x0000
    */
   /*--------------------------------------------------------------------------------*/
-  void SetID(const std::string& _id);
-  const std::string& GetID()   const {return id;}
+  virtual void SetID(const std::string& _id, uint_t start = 0);
+  virtual const std::string& GetID() const {return id;}
 
   /*--------------------------------------------------------------------------------*/
   /** Return ID prefix string
@@ -83,7 +89,7 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   void SetName(const std::string& _name) {name= _name;}
-  const std::string& GetName() const {return name;}
+  virtual const std::string& GetName() const {return name;}
 
   /*--------------------------------------------------------------------------------*/
   /** Get map entry
@@ -94,6 +100,8 @@ public:
   /*--------------------------------------------------------------------------------*/
   /** Set and Get object typeLabel
    *
+   * @param type typeLabel index
+   *
    * @note if type is a recognized typeLabel, typeDefinition will automatically be set!
    */
   /*--------------------------------------------------------------------------------*/
@@ -102,9 +110,11 @@ public:
 
   /*--------------------------------------------------------------------------------*/
   /** Set and Get object typeDefinition
+   *
+   * @param type typeLabel index
    */
   /*--------------------------------------------------------------------------------*/
-  void SetTypeDefinition(const std::string& str) {typeDefinition = str;}
+  void SetTypeDefinition(const std::string& str);
   const std::string& GetTypeDefinition() const {return typeDefinition;}
 
   /*--------------------------------------------------------------------------------*/
@@ -114,6 +124,25 @@ public:
   const ADMData& GetOwner() const {return owner;}
   ADMData& GetOwner() {return owner;}
 
+  /*--------------------------------------------------------------------------------*/
+  /** Set and Get standard definition flag
+   */
+  /*--------------------------------------------------------------------------------*/
+  void SetStandardDefinition(bool stddef = true) {standarddef = stddef;}
+  bool IsStandardDefinition() const              {return standarddef;}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Add a value to the internal list
+   */
+  /*--------------------------------------------------------------------------------*/
+  void AddValue(const XMLValue& value) {values.AddValue(value);}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Get XML value list
+   */
+  /*--------------------------------------------------------------------------------*/
+  XMLValues& GetValues() {return values;}
+  
   /*--------------------------------------------------------------------------------*/
   /** Set internal variables from values added to internal list (e.g. from XML)
    */
@@ -127,66 +156,9 @@ public:
   virtual void SetReferences();
 
   /*--------------------------------------------------------------------------------*/
-  /** Arbitary values list handling
-   */
-  /*--------------------------------------------------------------------------------*/
-  // each 'value' can also have a list of attributes (a consequence of XML)
-  typedef std::map<std::string,std::string> ADMATTRS;
-  typedef struct
-  {
-    bool        attr;       // true if this value is a simple XML attribute
-    std::string name;       // value name
-    std::string value;      // value value
-    ADMATTRS    attrs;      // additional attributes (if attr == false)
-  } ADMVALUE;
-  typedef std::vector<ADMVALUE> ADMVALUES;
-
-  /*--------------------------------------------------------------------------------*/
-  /** Set ADMVALUE object as a simple XML attribute (name/value pair)
-   */
-  /*--------------------------------------------------------------------------------*/
-  static void SetAttribute(ADMVALUE& obj, const std::string& name, const std::string& value) {SetValue(obj, name, value, true);}
-  static void SetAttribute(ADMVALUE& obj, const std::string& name, const char        *value) {SetValue(obj, name, value, true);}
-  static void SetAttribute(ADMVALUE& obj, const std::string& name, bool               value) {SetValue(obj, name, value, true);}
-  static void SetAttribute(ADMVALUE& obj, const std::string& name, sint_t             value, const char *format = "%d")     {SetValue(obj, name, value, true, format);}
-  static void SetAttribute(ADMVALUE& obj, const std::string& name, uint_t             value, const char *format = "%u")     {SetValue(obj, name, value, true, format);}
-  static void SetAttribute(ADMVALUE& obj, const std::string& name, uint64_t           value) {SetValue(obj, name, value, true);}
-  static void SetAttribute(ADMVALUE& obj, const std::string& name, double             value, const char *format = "%0.6lf") {SetValue(obj, name, value, true, format);}
-
-  /*--------------------------------------------------------------------------------*/
-  /** Set ADMVALUE object as a XML value (name/value pair) with optional attributes
-   */
-  /*--------------------------------------------------------------------------------*/
-  static void SetValue(ADMVALUE& obj, const std::string& name, const std::string& value, bool attr = false);
-  static void SetValue(ADMVALUE& obj, const std::string& name, const char        *value, bool attr = false);
-  static void SetValue(ADMVALUE& obj, const std::string& name, bool               value, bool attr = false) {SetValue(obj, name, StringFrom(value), attr);}
-  static void SetValue(ADMVALUE& obj, const std::string& name, sint_t             value, bool attr = false, const char *format = "%d") {SetValue(obj, name, StringFrom(value, format), attr);}
-  static void SetValue(ADMVALUE& obj, const std::string& name, uint_t             value, bool attr = false, const char *format = "%u") {SetValue(obj, name, StringFrom(value, format), attr);}
-  static void SetValue(ADMVALUE& obj, const std::string& name, uint64_t           value, bool attr = false);
-  static void SetValue(ADMVALUE& obj, const std::string& name, double             value, bool attr = false, const char *format = "%0.6lf") {SetValue(obj, name, StringFrom(value, format), attr);}
-
-  /*--------------------------------------------------------------------------------*/
-  /** Set attribute of ADMVALUE value object (initialised above)
-   */
-  /*--------------------------------------------------------------------------------*/
-  static void SetValueAttribute(ADMVALUE& obj, const std::string& name, const std::string& value);
-  static void SetValueAttribute(ADMVALUE& obj, const std::string& name, const char        *value);
-  static void SetValueAttribute(ADMVALUE& obj, const std::string& name, bool               value) {SetValueAttribute(obj, name, StringFrom(value));}
-  static void SetValueAttribute(ADMVALUE& obj, const std::string& name, sint_t             value, const char *format = "%d") {SetValueAttribute(obj, name, StringFrom(value, format));}
-  static void SetValueAttribute(ADMVALUE& obj, const std::string& name, uint_t             value, const char *format = "%u") {SetValueAttribute(obj, name, StringFrom(value, format));}
-  static void SetValueAttribute(ADMVALUE& obj, const std::string& name, uint64_t           value);
-  static void SetValueAttribute(ADMVALUE& obj, const std::string& name, double             value, const char *format = "%0.6lf") {SetValueAttribute(obj, name, StringFrom(value, format));}
-
-  /*--------------------------------------------------------------------------------*/
-  /** Add a value to the internal list
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void AddValue(const ADMVALUE& value);
-
-  /*--------------------------------------------------------------------------------*/
   /** Return list of values/attributes from internal variables and list of referenced objects
    *
-   * @param objvalues list to be populated with ADMVALUE's holding object attributes and values
+   * @param objvalues list to be populated with XMLValue's holding object attributes and values
    * @param objects list to be populdated with referenced or contained objects
    * @param full true to generate complete list including values that do not appear in the XML
    */
@@ -194,10 +166,32 @@ public:
   typedef struct {
     ADMObject *obj;
     bool      genref;     // generate reference to object from this object
-    bool      gendata;    // output object within this object
   } REFERENCEDOBJECT;
-  virtual void GetValuesAndReferences(ADMVALUES& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full = false) const;
+  virtual void GetValuesAndReferences(XMLValues& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full = false) const;
 
+  /*--------------------------------------------------------------------------------*/
+  /** Provide a way of accessing contained items without knowing what they are
+   * (used for block formats)
+   *
+   * @param n object index
+   * @param object structure to be filled
+   *
+   * @return true if object valid
+   */
+  /*--------------------------------------------------------------------------------*/
+  typedef struct {
+    std::string type;
+    XMLValues   attrs;
+    XMLValues   values;
+  } CONTAINEDOBJECT;
+  virtual uint_t GetContainedObjectCount() const {return 0;}
+  virtual bool   GetContainedObject(uint_t n, CONTAINEDOBJECT& object) const
+  {
+    UNUSED_PARAMETER(n);
+    UNUSED_PARAMETER(object);
+    return false;
+  }
+    
   /*--------------------------------------------------------------------------------*/
   /** Return human friendly summary of the object in the form:
    *
@@ -216,30 +210,10 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   virtual void GenerateReferenceList(std::string& str) const {UNUSED_PARAMETER(str);}
-
-  /*--------------------------------------------------------------------------------*/
-  /** Convert text time to ns time
-   *
-   * @param t ns time variable to be modified
-   * @param str time in text format 'hh:mm:ss.SSSSS'
-   *
-   * @return true if conversion was successful
-   */
-  /*--------------------------------------------------------------------------------*/
-  static bool CalcTime(uint64_t& t, const std::string& str);
-
-  /*--------------------------------------------------------------------------------*/
-  /** Convert ns time to text time
-   *
-   * @param t ns time
-   *
-   * @return str time in text format 'hh:mm:ss.SSSSS'
-   */
-  /*--------------------------------------------------------------------------------*/
-  static std::string GenTime(uint64_t t);
   
   enum {
-    TypeLabel_DirectSpeakers = 1,
+    TypeLabel_Unknown = 0,
+    TypeLabel_DirectSpeakers,
     TypeLabel_Matrix,
     TypeLabel_Objects,
     TypeLabel_HOA,
@@ -247,6 +221,9 @@ public:
 
     TypeLabel_Custom = 0x1000,
   };
+
+  // absolute maximum time
+  static const uint64_t MaxTime;
 
   static void SetTypeDefinition(uint_t type, const std::string& definition)     {typeLabelMap[type]     = definition;}
   static void SetFormatDefinition(uint_t format, const std::string& definition) {formatLabelMap[format] = definition;}
@@ -273,49 +250,6 @@ protected:
   virtual void UpdateID();
 
   /*--------------------------------------------------------------------------------*/
-  /** Return ptr to value with specified name or NULL
-   */
-  /*--------------------------------------------------------------------------------*/
-  const ADMVALUE *GetValue(const std::string& name) const;
-
-  /*--------------------------------------------------------------------------------*/
-  /** Return ptr to attributes within specified value with specified name or NULL
-   */
-  /*--------------------------------------------------------------------------------*/
-  const std::string *GetAttribute(const ADMVALUE& value, const std::string& name) const;
-
-  /*--------------------------------------------------------------------------------*/
-  /** Remove and delete value from internal list of values
-   *
-   * @param value address of value to be erased
-   *
-   * @note value passed MUST be the address of the desired item
-   */
-  /*--------------------------------------------------------------------------------*/
-  void EraseValue(const ADMVALUE *value);
-
-  /*--------------------------------------------------------------------------------*/
-  /** Set internal variables from value with specified name
-   *
-   * @param res internal variable to be modified
-   * @param name value name
-   * @param hex true if value is expected to be hexidecimal
-   *
-   * @return true if value found and variable set
-   *
-   * @note the value, if found, is REMOVED from the list
-   */
-  /*--------------------------------------------------------------------------------*/
-  bool SetValue(std::string& res, const std::string& name);
-  bool SetValue(double& res, const std::string& name);
-  bool SetValue(uint_t& res, const std::string& name, bool hex = false);
-  bool SetValue(ulong_t& res, const std::string& name, bool hex = false);
-  bool SetValue(sint_t& res, const std::string& name, bool hex = false);
-  bool SetValue(slong_t& res, const std::string& name, bool hex = false);
-  bool SetValue(bool& res, const std::string& name);
-  bool SetValueTime(uint64_t& res, const std::string& name);
-
-  /*--------------------------------------------------------------------------------*/
   /** Prototypes for adding references of different kinds.  Any unimplemented handlers will result in references of that kind to be rejected
    */
   /*--------------------------------------------------------------------------------*/
@@ -335,7 +269,7 @@ protected:
    *
    */
   /*--------------------------------------------------------------------------------*/
-  virtual void GenerateObjectReference(std::string& str) const {Printf(str, "%s:%s", GetType().c_str(), GetName().c_str());}
+  virtual void GenerateObjectReference(std::string& str) const {Printf(str, "%s", GetID().c_str());}
 
   /*--------------------------------------------------------------------------------*/
   /** Generate a textual reference 
@@ -347,13 +281,60 @@ protected:
   /*--------------------------------------------------------------------------------*/
   void GenerateReference(std::string& str, const ADMObject *obj) const {GenerateObjectReference(str); str += "->"; obj->GenerateObjectReference(str); str += "\n";}
 
+  /*--------------------------------------------------------------------------------*/
+  /** Update typeLabels of referenced objects
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void UpdateRefTypeLabels() {}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Update typeDefinitions of referenced objects
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void UpdateRefTypeDefinitions() {}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Update typeLabels of referenced objects
+   */
+  /*--------------------------------------------------------------------------------*/
+  template<typename vectortype>
+  void UpdateRefTypeLabelsList(std::vector<vectortype *>& list)
+  {
+    if (typeLabel != TypeLabel_Unknown)
+    {
+      typename std::vector<vectortype *>::iterator it;
+      for (it = list.begin(); it != list.end(); ++it) (*it)->SetTypeLabel(typeLabel);
+    }
+  }
+
+  /*--------------------------------------------------------------------------------*/
+  /** Update typeDefinitions of referenced objects
+   */
+  /*--------------------------------------------------------------------------------*/
+  template<class vectortype>
+  void UpdateRefTypeDefinitionsList(std::vector<vectortype *>& list)
+  {
+    if (!typeDefinition.empty())
+    {
+      typename std::vector<vectortype *>::iterator it;
+      for (it = list.begin(); it != list.end(); ++it) (*it)->SetTypeDefinition(typeDefinition);
+    }
+  }
+
+  /*--------------------------------------------------------------------------------*/
+  /** Set typeLabel and typeDefinition (if valid and ADM is not in pure mode) in supplied object
+   */
+  /*--------------------------------------------------------------------------------*/
+  void SetTypeInfoInObject(ADMObject *obj) const;
+
 protected:
-  ADMData&    owner;
-  std::string id;
-  std::string name;
-  uint_t      typeLabel;
-  std::string typeDefinition;
-  ADMVALUES   values;
+  ADMData&       owner;
+  std::string    id;
+  std::string    name;
+  uint_t         typeLabel;
+  std::string    typeDefinition;
+  XMLValues values;
+  bool           standarddef;
 
   static std::map<uint_t,std::string> typeLabelMap;
   static std::map<uint_t,std::string> formatLabelMap;
@@ -395,6 +376,18 @@ public:
   virtual const std::string& GetIDPrefix() const {return IDPrefix;}
 
   /*--------------------------------------------------------------------------------*/
+  /** Get ID (for AudioProgramme handling)
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual const std::string& GetID() const {return ADMObject::GetID();}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Get Name (for AudioProgramme handling)
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual const std::string& GetName() const {return ADMObject::GetName();}
+
+  /*--------------------------------------------------------------------------------*/
   /** Set internal variables from values added to internal list (e.g. from XML)
    */
   /*--------------------------------------------------------------------------------*/
@@ -417,16 +410,16 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   const std::vector<ADMAudioContent *>& GetContentRefs() const {return contentrefs;}
-
+  
   /*--------------------------------------------------------------------------------*/
   /** Return list of values/attributes from internal variables and list of referenced objects
    *
-   * @param objvalues list to be populated with ADMVALUE's holding object attributes and values
+   * @param objvalues list to be populated with XMLValue's holding object attributes and values
    * @param objects list to be populdated with referenced or contained objects
    * @param full true to generate complete list including values that do not appear in the XML
    */
   /*--------------------------------------------------------------------------------*/
-  virtual void GetValuesAndReferences(ADMVALUES& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full = false) const;
+  virtual void GetValuesAndReferences(XMLValues& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full = false) const;
 
   /*--------------------------------------------------------------------------------*/
   /** Generate a textual list of references 
@@ -487,6 +480,18 @@ public:
   virtual const std::string& GetIDPrefix() const {return IDPrefix;}
 
   /*--------------------------------------------------------------------------------*/
+  /** Get ID (for AudioContent handling)
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual const std::string& GetID() const {return ADMObject::GetID();}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Get Name (for AudioContent handling)
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual const std::string& GetName() const {return ADMObject::GetName();}
+
+  /*--------------------------------------------------------------------------------*/
   /** Set internal variables from values added to internal list (e.g. from XML)
    */
   /*--------------------------------------------------------------------------------*/
@@ -509,16 +514,17 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   const std::vector<ADMAudioObject *>& GetObjectRefs() const {return objectrefs;}
+  virtual std::vector<AudioObject *> GetObjectsList() const {return ConvertList<AudioObject>(objectrefs);}
 
   /*--------------------------------------------------------------------------------*/
   /** Return list of values/attributes from internal variables and list of referenced objects
    *
-   * @param objvalues list to be populated with ADMVALUE's holding object attributes and values
+   * @param objvalues list to be populated with XMLValue's holding object attributes and values
    * @param objects list to be populdated with referenced or contained objects
    * @param full true to generate complete list including values that do not appear in the XML
    */
   /*--------------------------------------------------------------------------------*/
-  virtual void GetValuesAndReferences(ADMVALUES& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full = false) const;
+  virtual void GetValuesAndReferences(XMLValues& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full = false) const;
 
   /*--------------------------------------------------------------------------------*/
   /** Generate a textual list of references 
@@ -545,7 +551,7 @@ protected:
 
 /*----------------------------------------------------------------------------------------------------*/
 
-class ADMAudioObject : public ADMObject
+class ADMAudioObject : public ADMObject, public AudioObject
 {
 public:
   /*--------------------------------------------------------------------------------*/
@@ -585,18 +591,39 @@ public:
   virtual void SetValues();
 
   /*--------------------------------------------------------------------------------*/
+  /** Get ID (for AudioObject handling)
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual const std::string& GetID() const {return ADMObject::GetID();}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Get Name (for AudioObject handling)
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual const std::string& GetName() const {return ADMObject::GetName();}
+
+  /*--------------------------------------------------------------------------------*/
   /** Set and Get startTime
    */
   /*--------------------------------------------------------------------------------*/
-  void     SetStartTime(uint64_t t) {startTime = t;}
-  uint64_t GetStartTime() const {return startTime;}
+  virtual void SetStartTime(uint64_t t) {startTime = t; startTimeSet = true;}
+  virtual uint64_t GetStartTime() const {return startTime;}
+  bool StartTimeSet() const {return startTimeSet;}
 
   /*--------------------------------------------------------------------------------*/
   /** Set and Get duration
    */
   /*--------------------------------------------------------------------------------*/
-  void     SetDuration(uint64_t t) {duration = t;}
-  uint64_t GetDuration() const {return duration;}
+  virtual void SetDuration(uint64_t t) {duration = t; durationSet = true;}
+  virtual uint64_t GetDuration() const {return duration;}
+  bool DurationSet() const {return durationSet;}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Set and Get endTime
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void SetEndTime(uint64_t t) {duration = (t < ADMObject::MaxTime) ? subz<>(t, startTime) : 0;}
+  virtual uint64_t GetEndTime() const {return duration ? addm<>(startTime, duration) : ADMObject::MaxTime;}
 
   /*--------------------------------------------------------------------------------*/
   /** Add reference to an AudioObject object
@@ -608,6 +635,8 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   const std::vector<ADMAudioObject *>& GetObjectRefs() const {return objectrefs;}
+  virtual std::vector<AudioObject *> GetObjectsList() const {return ConvertList<AudioObject>(objectrefs);}
+
   /*--------------------------------------------------------------------------------*/
   /** Add reference to an AudioPackFormat object
    */
@@ -630,15 +659,39 @@ public:
   const std::vector<ADMAudioTrack *>& GetTrackRefs() const {return trackrefs;}
 
   /*--------------------------------------------------------------------------------*/
+  /** Get start channel
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual uint_t GetStartChannel() const {return starttrack;}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Get number of channels
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual uint_t GetChannelCount() const {return (uint_t)trackrefs.size();}
+
+  /*--------------------------------------------------------------------------------*/
   /** Return list of values/attributes from internal variables and list of referenced objects
    *
-   * @param objvalues list to be populated with ADMVALUE's holding object attributes and values
+   * @param objvalues list to be populated with XMLValue's holding object attributes and values
    * @param objects list to be populdated with referenced or contained objects
    * @param full true to generate complete list including values that do not appear in the XML
    */
   /*--------------------------------------------------------------------------------*/
-  virtual void GetValuesAndReferences(ADMVALUES& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full = false) const;
+  virtual void GetValuesAndReferences(XMLValues& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full = false) const;
 
+  /*--------------------------------------------------------------------------------*/
+  /** Get audioChannelFormat for a particular track
+   */
+  /*--------------------------------------------------------------------------------*/
+  ADMAudioChannelFormat *GetChannelFormat(uint_t track) const;
+
+  /*--------------------------------------------------------------------------------*/
+  /** Get list of audioBlockFormats for a particular track
+   */
+  /*--------------------------------------------------------------------------------*/
+  const std::vector<ADMAudioBlockFormat *> *GetBlockFormatList(uint_t track) const;
+  
   static bool Compare(const ADMAudioObject *obj1, const ADMAudioObject *obj2)
   {
     return (obj1->GetStartTime() < obj2->GetStartTime());
@@ -653,6 +706,16 @@ public:
   /*--------------------------------------------------------------------------------*/
   virtual void GenerateReferenceList(std::string& str) const;
 
+#if ENABLE_JSON
+  /*--------------------------------------------------------------------------------*/
+  /** Convert parameters to a JSON object
+   *
+   * ADM audio objects contain extra information for the JSON representation
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void ToJSON(json_spirit::mObject& obj) const;
+#endif
+
   // static type name
   static const std::string Type;
 
@@ -663,11 +726,15 @@ public:
   static const std::string IDPrefix;
 
 protected:
-  std::vector<ADMAudioObject     *> objectrefs;
-  std::vector<ADMAudioPackFormat *> packformatrefs;
-  std::vector<ADMAudioTrack      *> trackrefs;
-  uint64_t                          startTime;
-  uint64_t                          duration;
+  std::vector<ADMAudioObject     *>      objectrefs;
+  std::vector<ADMAudioPackFormat *>      packformatrefs;
+  std::vector<ADMAudioTrack      *>      trackrefs;
+  std::map<uint_t,const ADMAudioTrack *> trackmap;
+  uint_t                                 starttrack;
+  uint64_t                               startTime;
+  uint64_t                               duration;
+  bool                                   startTimeSet;
+  bool                                   durationSet;
 };
 
 /*----------------------------------------------------------------------------------------------------*/
@@ -724,6 +791,11 @@ public:
   void SetTrackNum(uint_t ind) {trackNum = ind;}
   uint_t GetTrackNum() const {return trackNum;}
 
+  static bool Compare(const ADMAudioTrack *obj1, const ADMAudioTrack *obj2)
+  {
+    return (obj1->GetTrackNum() < obj2->GetTrackNum());
+  }
+
   /*--------------------------------------------------------------------------------*/
   /** Set and Get sample rate
    */
@@ -762,17 +834,12 @@ public:
   /*--------------------------------------------------------------------------------*/
   /** Return list of values/attributes from internal variables and list of referenced objects
    *
-   * @param objvalues list to be populated with ADMVALUE's holding object attributes and values
+   * @param objvalues list to be populated with XMLValue's holding object attributes and values
    * @param objects list to be populdated with referenced or contained objects
    * @param full true to generate complete list including values that do not appear in the XML
    */
   /*--------------------------------------------------------------------------------*/
-  virtual void GetValuesAndReferences(ADMVALUES& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full = false) const;
-
-  static bool Compare(const ADMAudioTrack *track1, const ADMAudioTrack *track2)
-  {
-    return (track1->trackNum < track2->trackNum);
-  }
+  virtual void GetValuesAndReferences(XMLValues& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full = false) const;
 
   /*--------------------------------------------------------------------------------*/
   /** Generate a textual list of references 
@@ -794,13 +861,24 @@ public:
 
 protected:
   /*--------------------------------------------------------------------------------*/
-  /** Generate a textual reference 
-   *
-   * @param str string to be modified
-   *
+  /** Update typeLabels of referenced objects
    */
   /*--------------------------------------------------------------------------------*/
-  virtual void GenerateObjectReference(std::string& str) const {Printf(str, "%s:%u", GetType().c_str(), trackNum);}
+  virtual void UpdateRefTypeLabels()
+  {
+    UpdateRefTypeLabelsList(trackformatrefs);
+    UpdateRefTypeLabelsList(packformatrefs);
+  }
+
+  /*--------------------------------------------------------------------------------*/
+  /** Update typeDefinitions of referenced objects
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void UpdateRefTypeDefinitions()
+  {
+    UpdateRefTypeDefinitionsList(trackformatrefs);
+    UpdateRefTypeDefinitionsList(packformatrefs);
+  }
 
 protected:
   uint_t                             trackNum;
@@ -851,9 +929,6 @@ public:
   /*--------------------------------------------------------------------------------*/
   virtual void SetValues();
 
-  void SetTypeDefinition(const std::string& str) {typeDefinition = str;}
-  const std::string& GetTypeDefinition() const {return typeDefinition;}
-
   /*--------------------------------------------------------------------------------*/
   /** Add reference to an AudioChannelFormat object
    */
@@ -878,12 +953,12 @@ public:
   /*--------------------------------------------------------------------------------*/
   /** Return list of values/attributes from internal variables and list of referenced objects
    *
-   * @param objvalues list to be populated with ADMVALUE's holding object attributes and values
+   * @param objvalues list to be populated with XMLValue's holding object attributes and values
    * @param objects list to be populdated with referenced or contained objects
    * @param full true to generate complete list including values that do not appear in the XML
    */
   /*--------------------------------------------------------------------------------*/
-  virtual void GetValuesAndReferences(ADMVALUES& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full = false) const;
+  virtual void GetValuesAndReferences(XMLValues& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full = false) const;
 
   /*--------------------------------------------------------------------------------*/
   /** Generate a textual list of references 
@@ -910,14 +985,37 @@ protected:
   /*--------------------------------------------------------------------------------*/
   virtual void UpdateID();
 
+  /*--------------------------------------------------------------------------------*/
+  /** Update typeLabels of referenced objects
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void UpdateRefTypeLabels()
+  {
+    UpdateRefTypeLabelsList(channelformatrefs);
+    UpdateRefTypeLabelsList(packformatrefs);
+  }
+
+  /*--------------------------------------------------------------------------------*/
+  /** Update typeDefinitions of referenced objects
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void UpdateRefTypeDefinitions()
+  {
+    UpdateRefTypeDefinitionsList(channelformatrefs);
+    UpdateRefTypeDefinitionsList(packformatrefs);
+  }
+
 protected:
   std::vector<ADMAudioChannelFormat *> channelformatrefs;
   std::vector<ADMAudioPackFormat    *> packformatrefs;
-  std::string typeDefinition;
 };
 
 /*----------------------------------------------------------------------------------------------------*/
 
+/*--------------------------------------------------------------------------------*/
+/** NOTE: an audioStreamFormat may be used by more than one audioObject!
+ */
+/*--------------------------------------------------------------------------------*/
 class ADMAudioStreamFormat : public ADMObject
 {
 public:
@@ -1008,12 +1106,12 @@ public:
   /*--------------------------------------------------------------------------------*/
   /** Return list of values/attributes from internal variables and list of referenced objects
    *
-   * @param objvalues list to be populated with ADMVALUE's holding object attributes and values
+   * @param objvalues list to be populated with XMLValue's holding object attributes and values
    * @param objects list to be populdated with referenced or contained objects
    * @param full true to generate complete list including values that do not appear in the XML
    */
   /*--------------------------------------------------------------------------------*/
-  virtual void GetValuesAndReferences(ADMVALUES& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full = false) const;
+  virtual void GetValuesAndReferences(XMLValues& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full = false) const;
 
   /*--------------------------------------------------------------------------------*/
   /** Generate a textual list of references 
@@ -1040,6 +1138,28 @@ protected:
   /*--------------------------------------------------------------------------------*/
   virtual void UpdateID();
 
+  /*--------------------------------------------------------------------------------*/
+  /** Update typeLabels of referenced objects
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void UpdateRefTypeLabels()
+  {
+    UpdateRefTypeLabelsList(channelformatrefs);
+    UpdateRefTypeLabelsList(trackformatrefs);
+    UpdateRefTypeLabelsList(packformatrefs);
+  }
+
+  /*--------------------------------------------------------------------------------*/
+  /** Update typeDefinitions of referenced objects
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void UpdateRefTypeDefinitions()
+  {
+    UpdateRefTypeDefinitionsList(channelformatrefs);
+    UpdateRefTypeDefinitionsList(trackformatrefs);
+    UpdateRefTypeDefinitionsList(packformatrefs);
+  }
+
 protected:
   uint_t                               formatLabel;
   std::string                          formatDefinition;
@@ -1048,6 +1168,10 @@ protected:
   std::vector<ADMAudioPackFormat *>    packformatrefs;
 };
 
+/*--------------------------------------------------------------------------------*/
+/** NOTE: an audioChannelFormat may be used by more than one audioObject!
+ */
+/*--------------------------------------------------------------------------------*/
 class ADMAudioChannelFormat : public ADMObject
 {
 public:
@@ -1062,7 +1186,8 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   ADMAudioChannelFormat(ADMData& _owner, const std::string& _id, const std::string& _name) : ADMObject(_owner, _id, _name) {Register();}
-
+  virtual ~ADMAudioChannelFormat();
+  
   /*--------------------------------------------------------------------------------*/
   /** Return textual type name of this object
    */
@@ -1106,12 +1231,12 @@ public:
   /*--------------------------------------------------------------------------------*/
   /** Return list of values/attributes from internal variables and list of referenced objects
    *
-   * @param objvalues list to be populated with ADMVALUE's holding object attributes and values
+   * @param objvalues list to be populated with XMLValue's holding object attributes and values
    * @param objects list to be populdated with referenced or contained objects
    * @param full true to generate complete list including values that do not appear in the XML
    */
   /*--------------------------------------------------------------------------------*/
-  virtual void GetValuesAndReferences(ADMVALUES& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full = false) const;
+  virtual void GetValuesAndReferences(XMLValues& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full = false) const;
 
   /*--------------------------------------------------------------------------------*/
   /** Generate a textual list of references 
@@ -1121,6 +1246,25 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   virtual void GenerateReferenceList(std::string& str) const;
+
+  /*--------------------------------------------------------------------------------*/
+  /** Sort block formats in time order
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void SortBlockFormats();
+  
+  /*--------------------------------------------------------------------------------*/
+  /** Provide a way of accessing contained items without knowing what they are
+   * (used for block formats)
+   *
+   * @param n object index
+   * @param object structure to be filled
+   *
+   * @return true if object valid
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual uint_t GetContainedObjectCount() const {return (uint_t)blockformatrefs.size();}
+  virtual bool   GetContainedObject(uint_t n, CONTAINEDOBJECT& object) const;
 
   // static type name
   static const std::string Type;
@@ -1144,6 +1288,10 @@ protected:
 
 /*----------------------------------------------------------------------------------------------------*/
 
+/*--------------------------------------------------------------------------------*/
+/** NOTE: an audioTrackFormat may be used by more than one audioObject!
+ */
+/*--------------------------------------------------------------------------------*/
 class ADMAudioTrackFormat : public ADMObject
 {
 public:
@@ -1212,12 +1360,12 @@ public:
   /*--------------------------------------------------------------------------------*/
   /** Return list of values/attributes from internal variables and list of referenced objects
    *
-   * @param objvalues list to be populated with ADMVALUE's holding object attributes and values
+   * @param objvalues list to be populated with XMLValue's holding object attributes and values
    * @param objects list to be populdated with referenced or contained objects
    * @param full true to generate complete list including values that do not appear in the XML
    */
   /*--------------------------------------------------------------------------------*/
-  virtual void GetValuesAndReferences(ADMVALUES& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full = false) const;
+  virtual void GetValuesAndReferences(XMLValues& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full = false) const;
 
   /*--------------------------------------------------------------------------------*/
   /** Generate a textual list of references 
@@ -1244,6 +1392,24 @@ protected:
   /*--------------------------------------------------------------------------------*/
   virtual void UpdateID();
 
+  /*--------------------------------------------------------------------------------*/
+  /** Update typeLabels of referenced objects
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void UpdateRefTypeLabels()
+  {
+    UpdateRefTypeLabelsList(streamformatrefs);
+  }
+
+  /*--------------------------------------------------------------------------------*/
+  /** Update typeDefinitions of referenced objects
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void UpdateRefTypeDefinitions()
+  {
+    UpdateRefTypeDefinitionsList(streamformatrefs);
+  }
+
 protected:
   uint_t      formatLabel;
   std::string formatDefinition;
@@ -1252,90 +1418,91 @@ protected:
 
 /*----------------------------------------------------------------------------------------------------*/
 
-class ADMAudioBlockFormat : public ADMObject
+/*--------------------------------------------------------------------------------*/
+/** audioBlockFormat
+ *
+ * NOTE: an audioBlockFormat may be used by more than one audioObject!
+ */
+/*--------------------------------------------------------------------------------*/
+class ADMAudioBlockFormat   // NOT derived from ADMObject to save memory
 {
 public:
   /*--------------------------------------------------------------------------------*/
   /** ADM AudioBlockFormat object
    *
-   * @param _owner an instance of ADMData that this object should belong to
-   * @param _id unique ID for this object (specified as part of the ADM)
-   * @param _name optional human-friendly name of the object
-   *
-   * @note type passed to base constructor is fixed by static member variable Type 
+   * @note constructor code is in ADMObjects.cpp
    */
   /*--------------------------------------------------------------------------------*/
-  ADMAudioBlockFormat(ADMData& _owner, const std::string& _id, const std::string& _name) :
-    ADMObject(_owner, _id, _name),
-    rtime(0),
-    duration(0),
-    channelformat(NULL) {Register();}
+  ADMAudioBlockFormat();
+  ~ADMAudioBlockFormat() {}
 
   /*--------------------------------------------------------------------------------*/
   /** Return textual type name of this object
    */
   /*--------------------------------------------------------------------------------*/
-  virtual const std::string& GetType() const {return Type;}
+  const std::string& GetType() const {return Type;}
 
   /*--------------------------------------------------------------------------------*/
   /** Returns textual reference type name of this object
    */
   /*--------------------------------------------------------------------------------*/
-  virtual const std::string& GetReference() const {return Reference;}
+  const std::string& GetReference() const {return Reference;}
 
   /*--------------------------------------------------------------------------------*/
   /** Return ID prefix string
    */
   /*--------------------------------------------------------------------------------*/
-  virtual const std::string& GetIDPrefix() const {return IDPrefix;}
+  const std::string& GetIDPrefix() const {return IDPrefix;}
 
   /*--------------------------------------------------------------------------------*/
   /** Set internal variables from values added to internal list (e.g. from XML)
    */
   /*--------------------------------------------------------------------------------*/
-  virtual void SetValues();
-
-  /*--------------------------------------------------------------------------------*/
-  /** Set owning audioChannelFormat
-   */
-  /*--------------------------------------------------------------------------------*/
-  void SetChannelFormat(const ADMAudioChannelFormat *obj) {channelformat = obj;}
+  void SetValues(XMLValues& values);
 
   /*--------------------------------------------------------------------------------*/
   /** Set and Get rtime
    */
   /*--------------------------------------------------------------------------------*/
-  void     SetRTime(uint64_t t) {rtime = t;}
+  void     SetRTime(uint64_t t) {rtime = t; rtimeSet = true;}
   uint64_t GetRTime() const {return rtime;}
+  bool     RTimeSet() const {return rtimeSet;}
 
   /*--------------------------------------------------------------------------------*/
   /** Set and Get duration
    */
   /*--------------------------------------------------------------------------------*/
-  void     SetDuration(uint64_t t) {duration = t;}
+  void     SetDuration(uint64_t t) {duration = t; durationSet = true;}
   uint64_t GetDuration() const {return duration;}
+  bool     DurationSet() const {return durationSet;}
 
   /*--------------------------------------------------------------------------------*/
-  /** Return block start time
+  /** Set and Get block start time (absolute)
+   *
+   * @param obj audio object this block is being used with
    */
   /*--------------------------------------------------------------------------------*/
-  uint64_t GetStartTime() const {return rtime;}
+  void SetStartTime(uint64_t t, const ADMAudioObject *obj = NULL) {SetRTime(obj ? subz<>(t, obj->GetStartTime()) : t);}
+  uint64_t GetStartTime(const ADMAudioObject *obj = NULL) const {return obj ? addm<>(obj->GetStartTime(), rtime) : rtime;}
 
   /*--------------------------------------------------------------------------------*/
-  /** Return block end time
+  /** Set and Get block end time (absolute)
+   *
+   * @param obj audio object this block is being used with
    */
   /*--------------------------------------------------------------------------------*/
-  uint64_t GetEndTime() const {return rtime + duration;}
+  void SetEndTime(uint64_t t, const ADMAudioObject *obj = NULL) {SetDuration((t < ADMObject::MaxTime) ? subz<>(t, GetStartTime(obj)) : 0);}
+  uint64_t GetEndTime(const ADMAudioObject *obj = NULL) const {return duration ? addm<>(GetStartTime(obj), duration) : ADMObject::MaxTime;}
 
   /*--------------------------------------------------------------------------------*/
   /** Return list of values/attributes from internal variables and list of referenced objects
    *
-   * @param objvalues list to be populated with ADMVALUE's holding object attributes and values
-   * @param objects list to be populdated with referenced or contained objects
+   * @param objattrs list to be populated with XMLValue's holding object attributes
+   * @param objvalues list to be populated with XMLValue's holding object values
    * @param full true to generate complete list including values that do not appear in the XML
    */
   /*--------------------------------------------------------------------------------*/
-  virtual void GetValuesAndReferences(ADMVALUES& objvalues, std::vector<REFERENCEDOBJECT>& objects, bool full = false) const;
+  void GetValues(XMLValues& objattrs, XMLValues& objvalues, bool full = false) const;
 
   static bool Compare(const ADMAudioBlockFormat *block1, const ADMAudioBlockFormat *block2)
   {
@@ -1349,7 +1516,7 @@ public:
    *
    */
   /*--------------------------------------------------------------------------------*/
-  virtual void GenerateReferenceList(std::string& str) const;
+  void GenerateReferenceList(std::string& str) const;
 
   /*--------------------------------------------------------------------------------*/
   /** Return modifiable object parameters object
@@ -1363,6 +1530,32 @@ public:
   /*--------------------------------------------------------------------------------*/
   const AudioObjectParameters& GetObjectParameters() const {return objparameters;}
 
+#if ENABLE_JSON
+  /*--------------------------------------------------------------------------------*/
+  /** Convert parameters to a JSON object
+   */
+  /*--------------------------------------------------------------------------------*/
+  void ToJSON(json_spirit::mObject& obj) const;
+
+  /*--------------------------------------------------------------------------------*/
+  /** Convert parameters to a JSON object
+   */
+  /*--------------------------------------------------------------------------------*/
+  json_spirit::mObject ToJSON() const {json_spirit::mObject obj; ToJSON(obj); return obj;}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Operator overload
+   */
+  /*--------------------------------------------------------------------------------*/
+  operator json_spirit::mObject() const {return ToJSON();}
+ 
+  /*--------------------------------------------------------------------------------*/
+  /** Convert parameters to a JSON string
+   */
+  /*--------------------------------------------------------------------------------*/
+  std::string ToJSONString() const {return json_spirit::write(ToJSON(), json_spirit::pretty_print);}
+#endif
+
   // static type name
   static const std::string Type;
 
@@ -1373,17 +1566,11 @@ public:
   static const std::string IDPrefix;
 
 protected:
-  /*--------------------------------------------------------------------------------*/
-  /** Update object's ID
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void UpdateID();
-
-protected:
+  AudioObjectParameters       objparameters;
   uint64_t                    rtime;
   uint64_t                    duration;
-  AudioObjectParameters       objparameters;
-  const ADMAudioChannelFormat *channelformat;
+  bool                        rtimeSet;
+  bool                        durationSet;
 };
 
 /*----------------------------------------------------------------------------------------------------*/
@@ -1420,6 +1607,12 @@ public:
   bool Add(const std::vector<const ADMAudioObject *>& objects);
 
   /*--------------------------------------------------------------------------------*/
+  /** Add audio objects to this object
+   */
+  /*--------------------------------------------------------------------------------*/
+  bool Add(const std::vector<const ADMObject *>& objects);
+
+  /*--------------------------------------------------------------------------------*/
   /** Return cursor start time in ns
    */
   /*--------------------------------------------------------------------------------*/
@@ -1444,24 +1637,30 @@ public:
   virtual uint_t GetChannel() const {return channel;}
 
   /*--------------------------------------------------------------------------------*/
-  /** Get current audio object textual data
-   *
-   * @return true if information filled in
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual bool GetAudioObjectText(ParameterSet& data) const;
-
-  /*--------------------------------------------------------------------------------*/
   /** Return audio object parameters at current time
    */
   /*--------------------------------------------------------------------------------*/
-  virtual const AudioObjectParameters *GetObjectParameters() const;
+  virtual const ADMAudioBlockFormat *GetBlockFormat() const;
+
+  /*--------------------------------------------------------------------------------*/
+  /** Get current audio object
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual AudioObject *GetAudioObject() const;
+
+  /*--------------------------------------------------------------------------------*/
+  /** Return audio object parameters at current time
+   *
+   * @return true if object parameters are valid and returned in currentparameters
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual bool GetObjectParameters(AudioObjectParameters& currentparameters) const;
 
   /*--------------------------------------------------------------------------------*/
   /** Set audio object parameters for current time
    */
   /*--------------------------------------------------------------------------------*/
-  virtual void SetObjectParameters(const AudioObjectParameters& objparameters);
+  virtual void SetObjectParameters(const AudioObjectParameters& newparameters);
   
   /*--------------------------------------------------------------------------------*/
   /** End parameters updates by marking the end of the last block
@@ -1500,12 +1699,15 @@ protected:
   }
 
 protected:
+  ThreadLockObject         tlock;
   uint_t                   channel;
+  AudioObjectParameters    objparameters;
   std::vector<AUDIOOBJECT> objectlist;
   uint_t                   objectindex;
   uint_t                   blockindex;
   uint64_t                 currenttime;
   bool                     blockformatstarted;
+  bool                     objparametersvalid;
 };
 
 BBC_AUDIOTOOLBOX_END

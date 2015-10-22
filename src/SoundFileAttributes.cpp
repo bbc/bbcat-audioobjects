@@ -2,8 +2,6 @@
 #include <string.h>
 
 #define DEBUG_LEVEL 1
-#include <bbcat-base/BackgroundFile.h>
-
 #include "SoundFileAttributes.h"
 
 BBC_AUDIOTOOLBOX_START
@@ -24,82 +22,47 @@ SoundFormat::~SoundFormat()
 
 SoundFileSamples::SoundFileSamples() :
   format(NULL),
-  file(NULL),
   filepos(0),
   samplepos(0),
   totalsamples(0),
   totalbytes(0),
   samplebuffer(NULL),
   samplebufferframes(256),
-  readonly(true),
-  istempfile(false)
+  readonly(true)
 {
   memset(&clip, 0, sizeof(clip));
 }
 
 SoundFileSamples::SoundFileSamples(const SoundFileSamples *obj) :
   format(NULL),
-  file(NULL),
   filepos(0),
   samplepos(0),
   totalsamples(0),
   totalbytes(0),
   samplebuffer(NULL),
   samplebufferframes(256),
-  readonly(true),
-  istempfile(false)
+  readonly(true)
 {
   memset(&clip, 0, sizeof(clip));
 
   SetFormat(obj->GetFormat());
-  SetFile(obj->file, obj->filepos, obj->totalbytes);
+  SetFile(obj->fileref, obj->filepos, obj->totalbytes);
   SetClip(obj->GetClip());
 }
 
 SoundFileSamples::~SoundFileSamples()
 {
   if (samplebuffer) delete[] samplebuffer;
-  if (file)
+
+  EnhancedFile *file;
+  if ((file = fileref.Obj()) != NULL)
   {
     std::string filename = file->getfilename();
 
     file->fclose();
 
-    // delete file if it has been used as a temporary file
-    if (istempfile) remove(filename.c_str());
-
-    delete file;
+    // DON'T delete file object here, it will be done by the fileref object on destruction
   }
-}
-
-bool SoundFileSamples::CreateTempFile()
-{
-  BackgroundFile *bfile;
-  bool success = false;
-
-  if (file)
-  {
-    DEBUG("Warning: destroying file object before creating temp file");
-    delete file;
-    file = NULL;
-  }
-
-  // create background writing capable file 
-  if ((bfile = new BackgroundFile) != NULL)
-  {
-    std::string filename;
-
-    // create temporary file for samples
-    Printf(filename, "samples-%016lx.raw", (ulong_t)this);
-
-    success    = bfile->fopen(filename.c_str(), "wb+");
-    readonly   = false;
-    istempfile = true;
-
-    file = bfile;
-  }
-
-  return success;
 }
 
 void SoundFileSamples::SetFormat(const SoundFormat *format)
@@ -108,11 +71,10 @@ void SoundFileSamples::SetFormat(const SoundFormat *format)
   UpdateData();
 }
 
-void SoundFileSamples::SetFile(const EnhancedFile *file, uint64_t pos, uint64_t bytes, bool readonly)
+void SoundFileSamples::SetFile(const RefCount<EnhancedFile>& file, uint64_t pos, uint64_t bytes, bool readonly)
 {
-  if (this->file) delete this->file;
-
-  this->file = file ? file->dup() : NULL;
+  // use file reference to control deletion
+  fileref    = file;
 
   filepos    = pos;
   totalbytes = bytes;
@@ -134,21 +96,14 @@ void SoundFileSamples::SetClip(const Clip_t& newclip)
   UpdatePosition();
 }
 
-void SoundFileSamples::EnableBackgroundWriting(bool enable)
-{
-  BackgroundFile *bfile;
-
-  // if the current file supports background writing, enable or disable it as required
-  if ((bfile = dynamic_cast<BackgroundFile *>(file)) != NULL) bfile->EnableBackground(enable);
-}
-
 uint_t SoundFileSamples::ReadSamples(uint8_t *buffer, SampleFormat_t type, uint_t dstchannel, uint_t ndstchannels, uint_t frames, uint_t firstchannel, uint_t nchannels)
 {
+  EnhancedFile *file = fileref;
   uint_t n = 0;
 
   if (file && file->isopen() && samplebuffer)
   {
-    frames = MIN(frames, clip.nsamples - samplepos);
+    frames = (uint_t)MIN((uint64_t)frames, clip.nsamples - samplepos);
 
     if (!frames)
     {
@@ -176,7 +131,7 @@ uint_t SoundFileSamples::ReadSamples(uint8_t *buffer, SampleFormat_t type, uint_
 
           if ((res = file->fread(samplebuffer, format->GetBytesPerFrame(), nframes)) > 0)
           {
-            nframes = res;
+            nframes = (uint_t)res;
 
             DEBUG4(("Read %u frames, extracting channels %u-%u (from 0-%u), converting and copying to destination", nframes, clip.channel + firstchannel, clip.channel + firstchannel + nchannels, format->GetChannels()));
 
@@ -226,6 +181,7 @@ uint_t SoundFileSamples::ReadSamples(uint8_t *buffer, SampleFormat_t type, uint_
 
 uint_t SoundFileSamples::WriteSamples(const uint8_t *buffer, SampleFormat_t type, uint_t srcchannel, uint_t nsrcchannels, uint_t nsrcframes, uint_t firstchannel, uint_t nchannels)
 {
+  EnhancedFile *file = fileref;
   uint_t n = 0;
 
   if (file && file->isopen() && samplebuffer && !readonly)
@@ -266,7 +222,7 @@ uint_t SoundFileSamples::WriteSamples(const uint8_t *buffer, SampleFormat_t type
 
         if ((res = file->fwrite(samplebuffer, bpf, nframes)) > 0)
         {
-          nframes     = res;
+          nframes     = (uint_t)res;
           n          += nframes;
           buffer     += nframes * nsrcchannels * GetBytesPerSample(type);
           nsrcframes -= nframes;

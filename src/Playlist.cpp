@@ -248,6 +248,7 @@ uint_t Playlist::ReadSamples(Sample_t *dst, uint_t channel, uint_t channels, uin
 
       // fading down, limit to fadedowncount and fade after reading
       nread = GetFile()->ReadSamples(dst, channel, channels, MIN(frames, fadedowncount));
+      DEBUG2(("Read %u/%u/%u frames from file (fadedown)", nread, frames, fadedowncount));
 
       // fade read audio
       for (i = 0; i < nread; i++, fadedowncount--)
@@ -280,6 +281,7 @@ uint_t Playlist::ReadSamples(Sample_t *dst, uint_t channel, uint_t channels, uin
 
       // fading up, limit to fadeupcount and fade after reading
       nread = GetFile()->ReadSamples(dst, channel, channels, MIN(frames, fadeupcount));
+      DEBUG2(("Read %u/%u/%u frames from file (fadeup)", nread, frames, fadeupcount));
 
       // fade read audio
       for (i = 0; i < nread; i++, fadeupcount--)
@@ -288,11 +290,14 @@ uint_t Playlist::ReadSamples(Sample_t *dst, uint_t channel, uint_t channels, uin
         for (j = 0; j < channels; j++) dst[i * channels + j] *= mul;
       }
     }
-    else
+    else if (GetFile())
     {
+      DEBUG2(("Reading %u frames from file", frames));
       // no position changes pending, simple read
       nread = GetFile()->ReadSamples(dst, channel, channels, frames);
+      DEBUG2(("Read %u/%u frames from file", nread, frames));
     }
+    else ERROR("No file when trying to read samples in Playlist!");
 
     if (!nread) break;
 
