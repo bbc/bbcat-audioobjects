@@ -1,4 +1,6 @@
 
+#include <stdio.h>
+
 #include "XMLValue.h"
 
 BBC_AUDIOTOOLBOX_START
