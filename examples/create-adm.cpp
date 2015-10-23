@@ -106,7 +106,7 @@ int main(void)
             params.SetChannelLock(true);
             params.SetInteract(true);
             params.SetInterpolate(true);
-            params.SetInterpolationTime(5.2);
+            params.SetInterpolationTimeS(5.2);
             params.SetOnScreen(true);
             ParameterSet othervalues = params.GetOtherValues();
             params.SetOtherValues(othervalues.Set("other1", 1).Set("other2", "2"));

@@ -1502,8 +1502,7 @@ void ADMAudioBlockFormat::SetValues(XMLValues& values)
         XMLValue::ATTRS::const_iterator it2;
         double fval;
         
-        if (((it2 = value.attrs.find("interpolationTime")) != value.attrs.end()) &&
-            Evaluate(it2->second, fval)) objparameters.SetInterpolationTime(fval);
+        if (((it2 = value.attrs.find("interpolationTime")) != value.attrs.end()) && Evaluate(it2->second, fval)) objparameters.SetInterpolationTimeS(fval);
       }
       
       it = values.erase(it);
@@ -1623,7 +1622,7 @@ void ADMAudioBlockFormat::GetValues(XMLValues& objattrs, XMLValues& objvalues, b
     value.SetValue("jumpPosition", !bval);    // NOTE: inverted!
 
     // set interpolation time
-    if (objparameters.GetInterpolationTime(itime)) value.SetValueAttribute("interpolationTime", itime);
+    if (objparameters.GetInterpolationTimeS(itime)) value.SetValueAttribute("interpolationTime", itime);
     
     objvalues.push_back(value);
   }
