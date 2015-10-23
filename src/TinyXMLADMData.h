@@ -7,9 +7,6 @@ class TiXmlNode;
 
 BBC_AUDIOTOOLBOX_START
 
-//BBC_AUDIOTOOLBOX_KEEP(TinyXMLADMData);
-extern const bool keep_TinyXMLADMData;
-
 /*--------------------------------------------------------------------------------*/
 /** An implementation of ADMData using the TinyXML library (GPL)
  */

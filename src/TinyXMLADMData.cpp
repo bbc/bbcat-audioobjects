@@ -8,8 +8,7 @@
 
 BBC_AUDIOTOOLBOX_START
 
-//BBC_AUDIOTOOLBOX_KEEP_IMPL(TinyXMLADMData);
-const bool keep_TinyXMLADMData = true;
+BBC_AUDIOTOOLBOX_KEEP(TinyXMLADMData);
 
 const bool TinyXMLADMData::registered = TinyXMLADMData::Register();
 

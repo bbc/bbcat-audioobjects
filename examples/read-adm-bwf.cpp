@@ -2,17 +2,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <bbcat-base/LoadedVersions.h>
+
 #include <bbcat-audioobjects/ADMRIFFFile.h>
 #include <bbcat-audioobjects/ADMAudioFileSamples.h>
-#include <bbcat-audioobjects/TinyXMLADMData.h>
 
 using namespace bbcat;
 
-// ensure TinyXMLADMData class is not thrown away during link!
-const volatile bool pinned[] =
-{
-  TinyXMLADMData::pinned(),
-};
+// ensure the version numbers of the linked libraries and registered
+BBC_AUDIOTOOLBOX_REQUIRE(bbcat_base_version);
+BBC_AUDIOTOOLBOX_REQUIRE(bbcat_dsp_version);
+BBC_AUDIOTOOLBOX_REQUIRE(bbcat_control_version);
+BBC_AUDIOTOOLBOX_REQUIRE(bbcat_audioobjects_version);
+
+// ensure the TinyXMLADMData object file is kept in the application
+BBC_AUDIOTOOLBOX_REQUIRE(TinyXMLADMData);
 
 int main(int argc, char *argv[])
 {
@@ -22,6 +26,9 @@ int main(int argc, char *argv[])
     exit(1);
   }
 
+  // print library versions (the actual loaded versions, if dynamically linked)
+  printf("Versions:\n%s\n", LoadedVersions::Get().GetVersionsList().c_str());
+  
   // ADM aware WAV file
   ADMRIFFFile file;
 
