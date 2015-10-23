@@ -11,8 +11,8 @@
 
 if(WIN32)
 	set(TinyXML_INSTALL_DIR "${WIN32_LIB_DESTINATION}/TinyXML")
-	set(TinyXML_INCLUDE_DIRS "${TinyXML_INSTALL_DIR}/include" CACHE PATH "TinyXML include directory" FORCE)
-	set(TinyXML_LIBRARY_DIRS "${TinyXML_INSTALL_DIR}/lib" CACHE PATH "TinyXML library directory" FORCE)
+	set(TinyXML_INCLUDE_DIRS "${TinyXML_INSTALL_DIR}" CACHE PATH "TinyXML include directory" FORCE)
+	set(TinyXML_LIBRARY_DIRS "${TinyXML_INSTALL_DIR}/x64/Release" CACHE PATH "TinyXML library directory" FORCE)
 	set(TinyXML_LIBRARIES "${TinyXML_LIBRARY_DIRS}/tinyxmlSTL.lib" CACHE STRING "TinyXML libraries" FORCE)	
 else(WIN32)
     find_package(PkgConfig)
