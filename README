@@ -66,6 +66,9 @@ src/SoundObjectFile.h                   |
 src/TinyXMLADMData.cpp                  | An implementation of ADM decoding using TinyXML
 src/TinyXMLADMData.h                    |
 
+src/XMLValue.cpp                        | Representation of XML style values/attributes
+src/XMLValue.h                          |
+
 examples/read-adm-bwf.cpp               | Example code for reading and decoding an ADM file
 
 examples/write-adm-bwf.cpp              | Example code for writing an ADM file
