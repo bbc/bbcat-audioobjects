@@ -1,5 +1,5 @@
 AC_PREREQ([2.68])
-AC_INIT([BBCAT_AUDIOOBJECTS],[0.1.1.1])
+AC_INIT([BBCAT_AUDIOOBJECTS],[0.1.2.0])
 
 AS_NANO(BBCAT_AUDIOOBJECTS_CVS=no,BBCAT_AUDIOOBJECTS_CVS=yes)
 
@@ -62,21 +62,21 @@ AC_SUBST(CFLAGS)
 AC_SUBST(CXXFLAGS)
 
 dnl bbcat-base is required
-BBCAT_BASE_VER="0.1.1.1"
+BBCAT_BASE_VER="0.1.2.0"
 PKG_CHECK_MODULES(BBCAT_BASE, bbcat-base-0.1 >= $BBCAT_BASE_VER, HAVE_BBCAT_BASE=yes, HAVE_BBCAT_BASE=no)
 if test "x${HAVE_BBCAT_BASE}" != xyes ; then
   AC_MSG_ERROR([bbcat-base-0.1 >= $BBCAT_BASE_VER is required])
 fi
 
 dnl bbcat-dsp is required
-BBCAT_DSP_VER="0.1.1.1"
+BBCAT_DSP_VER="0.1.2.0"
 PKG_CHECK_MODULES(BBCAT_DSP, bbcat-dsp-0.1 >= $BBCAT_DSP_VER, HAVE_BBCAT_DSP=yes, HAVE_BBCAT_DSP=no)
 if test "x${HAVE_BBCAT_DSP}" != xyes ; then
   AC_MSG_ERROR([bbcat-dsp-0.1 >= $BBCAT_DSP_VER is required])
 fi
 
 dnl bbcat-control is required
-BBCAT_CONTROL_VER="0.1.1.1"
+BBCAT_CONTROL_VER="0.1.2.0"
 PKG_CHECK_MODULES(BBCAT_CONTROL, bbcat-control-0.1 >= $BBCAT_CONTROL_VER, HAVE_BBCAT_CONTROL=yes, HAVE_BBCAT_CONTROL=no)
 if test "x${HAVE_BBCAT_CONTROL}" != xyes ; then
   AC_MSG_ERROR([bbcat-control-0.1 >= $BBCAT_CONTROL_VER is required])

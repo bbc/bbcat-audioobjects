@@ -1,8 +1,8 @@
-bbcat-audioobjects (0.1.1.0) quantal; urgency=low
+bbcat-audioobjects (0.1.2.0) quantal; urgency=low
 
-  * Improved handling of audio object parameters.
+  * 
 
- -- Richard Day <richard.day@bbc.co.uk>  Fri, 13 Feb 2015 08:10:00 +0000
+ -- Richard Day <richard.day@bbc.co.uk>  Mon, 26 Oct 2015 10:30:00 +0000
 
 bbcat-audioobjects (0.1.0.0) quantal; urgency=low
 
