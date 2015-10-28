@@ -1,6 +1,15 @@
 bbcat-audioobjects (0.1.2.0) quantal; urgency=low
 
-  * 
+  * Added Windows build support using CMake
+  * Added CMake build support for Mac and Linux
+  * Improved WAV file generation so that it is a single pass process, even when generating ADM files.
+  * Split XML value handling out into XMLValue class.
+  * Added support for using 'standard definitions' ADM file ('share/standarddefinitions.xml'): WAV files without chna/axml chunks will have a speaker layout chosen for them based on the number of channels
+  * Added version number embedding using versions.cpp/h.
+  * Added support for ds64 chunk for big files.
+  * Updated examples to output versions of libraries used.
+  * Updated examples to *stop* certain unreferenced object files being discarded by linker.
+  * Updated README file.
 
  -- Richard Day <richard.day@bbc.co.uk>  Mon, 26 Oct 2015 10:30:00 +0000
 
