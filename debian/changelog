@@ -10,6 +10,7 @@ bbcat-audioobjects (0.1.2.0) quantal; urgency=low
   * Updated examples to output versions of libraries used.
   * Updated examples to *stop* certain unreferenced object files being discarded by linker.
   * Updated README file.
+  * Added example udp-demo as a demonstration of UDP socket handling, threading and using a lock-free buffer
 
  -- Richard Day <richard.day@bbc.co.uk>  Mon, 26 Oct 2015 10:30:00 +0000
 
