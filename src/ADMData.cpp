@@ -678,12 +678,12 @@ std::string ADMData::CreateID(const std::string& type)
     if      (type == ADMAudioProgramme::Type)     {format = ADMAudioProgramme::IDPrefix     + "%04x"; start = 0x1000;}
     else if (type == ADMAudioContent::Type)       {format = ADMAudioContent::IDPrefix       + "%04x"; start = 0x1000;}
     else if (type == ADMAudioObject::Type)        {format = ADMAudioObject::IDPrefix        + "%04x"; start = 0x1000;}
-    else if (type == ADMAudioPackFormat::Type)    {format = ADMAudioPackFormat::IDPrefix    + "%08u" + tempidsuffix; start = uniqueids[type];}    // temporary
-    else if (type == ADMAudioBlockFormat::Type)   {format = ADMAudioBlockFormat::IDPrefix   + "%08u" + tempidsuffix; start = uniqueids[type];}    // temporary
-    else if (type == ADMAudioChannelFormat::Type) {format = ADMAudioChannelFormat::IDPrefix + "%08u" + tempidsuffix; start = uniqueids[type];}    // temporary
-    else if (type == ADMAudioStreamFormat::Type)  {format = ADMAudioStreamFormat::IDPrefix  + "%08u" + tempidsuffix; start = uniqueids[type];}    // temporary
-    else if (type == ADMAudioTrackFormat::Type)   {format = ADMAudioTrackFormat::IDPrefix   + "%08u" + tempidsuffix; start = uniqueids[type];}    // temporary
-    else if (type == ADMAudioTrack::Type)         format = ADMAudioTrack::IDPrefix          + "%08u";
+    else if (type == ADMAudioPackFormat::Type)    {format = ADMAudioPackFormat::IDPrefix    + "%08x" + tempidsuffix; start = uniqueids[type];}    // temporary
+    else if (type == ADMAudioBlockFormat::Type)   {format = ADMAudioBlockFormat::IDPrefix   + "%08x" + tempidsuffix; start = uniqueids[type];}    // temporary
+    else if (type == ADMAudioChannelFormat::Type) {format = ADMAudioChannelFormat::IDPrefix + "%08x" + tempidsuffix; start = uniqueids[type];}    // temporary
+    else if (type == ADMAudioStreamFormat::Type)  {format = ADMAudioStreamFormat::IDPrefix  + "%08x" + tempidsuffix; start = uniqueids[type];}    // temporary
+    else if (type == ADMAudioTrackFormat::Type)   {format = ADMAudioTrackFormat::IDPrefix   + "%08x" + tempidsuffix; start = uniqueids[type];}    // temporary
+    else if (type == ADMAudioTrack::Type)         format = ADMAudioTrack::IDPrefix          + "%08x";
 
     if ((type == ADMAudioBlockFormat::Type) && start)
     {
