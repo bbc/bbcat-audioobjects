@@ -37,24 +37,29 @@ public:
   /** Open a WAVE/RIFF file
    *
    * @param filename filename of file to open
+   * @param standarddefinitionsfile filename of standard definitions XML file to use
    *
    * @return true if file opened and interpreted correctly (including any extra chunks if present)
    */
   /*--------------------------------------------------------------------------------*/
-  virtual bool Open(const char *filename);
+  virtual bool Open(const char *filename) {return Open(filename, "");}
+  virtual bool Open(const char *filename, const std::string& standarddefinitionsfile);
 
   /*--------------------------------------------------------------------------------*/
   /** Create empty ADM and populate basic track information
    *
+   * @param standarddefinitionsfile filename of standard definitions XML file to use
+   *
    * @return true if successful
    */
   /*--------------------------------------------------------------------------------*/
-  virtual bool CreateADM();
+  virtual bool CreateADM(const std::string& standarddefinitionsfile = "");
 
   /*--------------------------------------------------------------------------------*/
   /** Create ADM from text file
    *
    * @param filename text filename (see below for format)
+   * @param standarddefinitionsfile filename of standard definitions XML file to use
    *
    * @return true if successful
    *
@@ -67,7 +72,7 @@ public:
    * Where <track> is 1..number of tracks available within ADM
    */
   /*--------------------------------------------------------------------------------*/
-  virtual bool CreateADM(const char *filename);
+  virtual bool CreateADMFromFile(const std::string& filename, const std::string& standarddefinitionsfile = "");
 
   /*--------------------------------------------------------------------------------*/
   /** Set parameters of channel during writing
@@ -107,10 +112,21 @@ protected:
   /*--------------------------------------------------------------------------------*/
   virtual bool PostReadChunks();
 
+  /*--------------------------------------------------------------------------------*/
+  /** Optional stage to create extra chunks when writing WAV files
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual bool CreateExtraChunks();
+
+  /*--------------------------------------------------------------------------------*/
+  /** Overrideable called whenever sample position changes
+   */
+  /*--------------------------------------------------------------------------------*/
   virtual void UpdateSamplePosition();
 
 protected:
-  ADMData *adm;
+  std::string admfile;
+  ADMData     *adm;
   std::vector<ADMTrackCursor *> cursors;        // *only* used during writing an ADM file
 };
 

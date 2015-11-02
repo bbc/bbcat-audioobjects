@@ -123,9 +123,18 @@ typedef PACKEDSTRUCT
   uint8_t      GUID[16];
 } WAVEFORMAT_EXTENSIBLE_CHUNK;
 
+#ifndef WAVE_FORMAT_PCM
 #define WAVE_FORMAT_PCM        0x0001
+#endif
+
+#ifndef WAVE_FORMAT_IEEE
 #define WAVE_FORMAT_IEEE       0x0003
+#endif
+
+#ifndef WAVE_FORMAT_EXTENSIBLE
 #define WAVE_FORMAT_EXTENSIBLE 0xfffe
+#endif
+
 #define fmt_ID                 IFFID("fmt ")
 
 #define data_ID IFFID("data")
@@ -146,6 +155,8 @@ typedef PACKEDSTRUCT
 } CHNA_CHUNK;
 
 #define axml_ID IFFID("axml")
+
+#define JUNK_ID IFFID("JUNK")
 
 BBC_AUDIOTOOLBOX_END
 

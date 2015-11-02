@@ -6,3 +6,31 @@ read-adm-bwf.cpp - example code for reading the displaying parts of the ADM and 
 
 write-adm-bwf.cpp - example code for creation of a simple ADM
 
+write-separate-adm.cpp - example code for creation of a simple ADM and then writing the CHNA and AXML chunks to a RIFF file
+
+udp-demo.cpp - example of using UDP port, threading and a lock-free buffer
+
+--------------------------------------------------------------------------------
+Building on Windows (Visual Studio)
+
+mkdir build
+cd build
+cmake -G "Visual Studio 14 2015 Win64" .. && cmake --build . --target ALL_BUILD --config Release 
+cd Release
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+Building on Mac and Linux
+
+for autotools:
+./autogen.sh && configure && make
+
+for cmake:
+mkdir build ; cd build ; cmake .. && make
+--------------------------------------------------------------------------------
+
+With the examples built:
+
+./write-adm-bwf
+./read-adm-bwf adm-bwf.wav
+./create-adm

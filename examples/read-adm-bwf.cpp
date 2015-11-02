@@ -2,23 +2,33 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <bbcat-base/LoadedVersions.h>
+
 #include <bbcat-audioobjects/ADMRIFFFile.h>
 #include <bbcat-audioobjects/ADMAudioFileSamples.h>
-#include <bbcat-audioobjects/TinyXMLADMData.h>
 
 using namespace bbcat;
 
+// ensure the version numbers of the linked libraries and registered
+BBC_AUDIOTOOLBOX_REQUIRE(bbcat_base_version);
+BBC_AUDIOTOOLBOX_REQUIRE(bbcat_dsp_version);
+BBC_AUDIOTOOLBOX_REQUIRE(bbcat_control_version);
+BBC_AUDIOTOOLBOX_REQUIRE(bbcat_audioobjects_version);
+
+// ensure the TinyXMLADMData object file is kept in the application
+BBC_AUDIOTOOLBOX_REQUIRE(TinyXMLADMData);
+
 int main(int argc, char *argv[])
 {
-  // register the TinyXML implementation of ADMData handler as usable
-  TinyXMLADMData::Register();
-
   if (argc < 2)
   {
     fprintf(stderr, "Usage: read-adm-bwf <bwf-file>\n");
     exit(1);
   }
 
+  // print library versions (the actual loaded versions, if dynamically linked)
+  printf("Versions:\n%s\n", LoadedVersions::Get().GetVersionsList().c_str());
+  
   // ADM aware WAV file
   ADMRIFFFile file;
 
@@ -60,10 +70,10 @@ int main(int argc, char *argv[])
           // print out information about the object
           printf("  %s\n", obj->ToString().c_str());
         }
+
+        printf("\n");
       }
       else printf("No objects of type '%s'!\n", type);
-
-      printf("\n");
     }
 
     // access the audio of an audio object

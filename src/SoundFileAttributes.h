@@ -6,6 +6,7 @@
 #include <bbcat-base/misc.h>
 #include <bbcat-base/EnhancedFile.h>
 #include <bbcat-base/UniversalTime.h>
+#include <bbcat-base/RefCount.h>
 
 #include <bbcat-dsp/SoundFormatConversions.h>
 
@@ -56,15 +57,11 @@ public:
   SoundFileSamples(const SoundFileSamples *obj);
   virtual ~SoundFileSamples();
 
-  virtual void EnableBackgroundWriting(bool enable = true);
-
-  virtual SoundFileSamples *Duplicate() const {return new SoundFileSamples(this);}
-
   virtual void SetSampleBufferSize(uint_t samples = 256) {samplebufferframes = samples; UpdateData();}
 
   virtual void SetFormat(const SoundFormat *format);
   const SoundFormat *GetFormat() const {return format;}
-  virtual void SetFile(const EnhancedFile *file, uint64_t pos, uint64_t bytes, bool readonly = true);
+  virtual void SetFile(const RefCount<EnhancedFile>& file, uint64_t pos, uint64_t bytes, bool readonly = true);
 
   uint_t   GetStartChannel()             const {return clip.channel;}
   uint_t   GetChannels()                 const {return clip.nchannels;}
@@ -82,6 +79,12 @@ public:
 
   uint64_t GetAbsolutePositionNS()      const {return timebase.GetTime();}
   double   GetAbsolutePositionSeconds() const {return timebase.GetTimeSeconds();}
+
+  uint64_t GetLengthNS()                const {return timebase.Calc(GetSampleLength());}
+  double   GetLengthSeconds()           const {return timebase.CalcSeconds(GetSampleLength());}
+
+  uint64_t GetAbsoluteLengthNS()        const {return timebase.GetTime();}
+  double   GetAbsoluteLengthSeconds()   const {return timebase.GetTimeSeconds();}
 
   const UniversalTime& GetTimeBase()    const {return timebase;}
 
@@ -111,21 +114,18 @@ protected:
   virtual void UpdateData();
   virtual void UpdatePosition() {timebase.Set(GetAbsoluteSamplePosition());}
 
-  virtual bool CreateTempFile();
-
 protected:
-  const SoundFormat *format;
-  UniversalTime     timebase;
-  EnhancedFile      *file;
-  Clip_t            clip;
-  uint64_t          filepos;
-  uint64_t          samplepos;
-  uint64_t          totalsamples;
-  uint64_t          totalbytes;
-  uint8_t           *samplebuffer;
-  uint_t            samplebufferframes;
-  bool              readonly;
-  bool              istempfile;
+  const SoundFormat      *format;
+  UniversalTime          timebase;
+  RefCount<EnhancedFile> fileref;
+  Clip_t                 clip;
+  uint64_t               filepos;
+  uint64_t               samplepos;
+  uint64_t               totalsamples;
+  uint64_t               totalbytes;
+  uint8_t                *samplebuffer;
+  uint_t                 samplebufferframes;
+  bool                   readonly;
 };
 
 BBC_AUDIOTOOLBOX_END

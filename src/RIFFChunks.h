@@ -47,6 +47,8 @@ protected:
   virtual bool WriteChunkData(EnhancedFile *file);
   // return that this chunk changes its behaviour for RIFF64 files
   virtual bool RIFF64Capable() {return true;}
+  // must write chunk
+  virtual bool WriteEmptyChunk() const {return true;}
 };
 
 /*--------------------------------------------------------------------------------*/
@@ -82,6 +84,8 @@ protected:
 protected:
   // dummy read function
   virtual bool ReadChunk(EnhancedFile *file, const RIFFChunkSizeHandler *sizehandler);
+  // must write chunk
+  virtual bool WriteEmptyChunk() const {return true;}
 };
 
 /*--------------------------------------------------------------------------------*/
@@ -94,7 +98,9 @@ protected:
 class RIFFds64Chunk : public RIFFChunk, public RIFFChunkSizeHandler
 {
 public:
-  RIFFds64Chunk(uint32_t chunk_id) : RIFFChunk(chunk_id), RIFFChunkSizeHandler() {}
+  RIFFds64Chunk(uint32_t chunk_id) : RIFFChunk(chunk_id),
+                                     RIFFChunkSizeHandler(),
+                                     tablecount(0) {}
   virtual ~RIFFds64Chunk() {}
 
   // create write data
@@ -110,6 +116,7 @@ public:
   void     SetRIFFSize(uint64_t size);
   void     SetdataSize(uint64_t size);
   void     SetSampleCount(uint64_t count);
+  void     SetTableCount(uint32_t count);
 
   virtual bool     SetChunkSize(uint32_t id, uint64_t length);
   virtual uint64_t GetChunkSize(uint32_t id, uint64_t original_length) const;
@@ -118,6 +125,14 @@ public:
   static void Register();
 
 protected:
+  /*--------------------------------------------------------------------------------*/
+  /** Return ID when writing chunk
+   *
+   * @note can be used to mark chunks as 'JUNK' if they are not required
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual uint32_t GetWriteID() const;
+
   // provider function for this object
   static RIFFChunk *Create(uint32_t id, void *context)
   {
@@ -132,6 +147,11 @@ protected:
   virtual void ByteSwapData(bool writing);
   // always read and process his kind of chunk
   virtual ChunkHandling_t GetChunkHandling() const {return ChunkHandling_ReadChunk;}
+  // return that this chunk changes its behaviour for RIFF64 files
+  virtual bool RIFF64Capable() {return true;}
+
+protected:
+  uint32_t tablecount;
 };
 
 /*--------------------------------------------------------------------------------*/
@@ -284,8 +304,11 @@ protected:
 class RIFFaxmlChunk : public RIFFChunk
 {
 public:
-  RIFFaxmlChunk(uint32_t chunk_id) : RIFFChunk(chunk_id) {}
+  RIFFaxmlChunk(uint32_t chunk_id);
   virtual ~RIFFaxmlChunk() {}
+
+  // this chunk is written *after* data chunk
+  virtual bool WriteChunkBeforeSamples() const {return false;}
 
   // provider function register for this object
   static void Register();
@@ -335,16 +358,33 @@ protected:
   }
 
 protected:
-  // initialise chunk when writing a file
-  virtual bool InitialiseForWriting();
   // perform additional initialisation after chunk read
   virtual bool ReadChunk(EnhancedFile *file, const RIFFChunkSizeHandler *sizehandler);
   // copy sample data from temporary file
   virtual bool WriteChunkData(EnhancedFile *file);
   // return that this chunk changes its behaviour for RIFF64 files
   virtual bool RIFF64Capable() {return true;}
+  // must write chunk
+  virtual bool WriteEmptyChunk() const {return true;}
 };
 
+/*--------------------------------------------------------------------------------*/
+/** User RIFF chunk, can be any id and data
+ */
+/*--------------------------------------------------------------------------------*/
+class UserRIFFChunk: public RIFFChunk
+{
+public:
+  UserRIFFChunk(uint32_t chunk_id, const void *_data, uint64_t _length, bool _beforesamples = false);
+  virtual ~UserRIFFChunk() {}
+
+  // this chunk is written *after* data chunk
+  virtual bool WriteChunkBeforeSamples() const {return beforesamples;}
+
+protected:
+  bool beforesamples;
+};
+  
 /*--------------------------------------------------------------------------------*/
 /** Register all providers from this file
  */

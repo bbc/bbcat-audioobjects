@@ -5,6 +5,7 @@
 #include <bbcat-base/LoadedVersions.h>
 
 #include <bbcat-audioobjects/ADMData.h>
+#include <bbcat-audioobjects/RIFFFile.h>
 
 using namespace bbcat;
 
@@ -17,13 +18,19 @@ BBC_AUDIOTOOLBOX_REQUIRE(bbcat_audioobjects_version);
 // ensure the TinyXMLADMData object file is kept in the application
 BBC_AUDIOTOOLBOX_REQUIRE(TinyXMLADMData);
 
-int main(void)
+int main(int argc, char *argv[])
 {
+  if (argc < 2)
+  {
+    fprintf(stderr, "Usage: write-separate-adm <filename>\n");
+    exit(1);
+  }
+  
   // print library versions (the actual loaded versions, if dynamically linked)
   printf("Versions:\n%s\n", LoadedVersions::Get().GetVersionsList().c_str());
 
-  ADMData *adm;
   // create basic ADM
+  ADMData *adm;
   if ((adm = ADMData::Create()) != NULL)
   {
     ADMData::OBJECTNAMES names;
@@ -40,14 +47,22 @@ int main(void)
     uint_t t, ntracks = 16;
     for (t = 0; t < ntracks; t++)
     {
+      ADMAudioTrack *track;
       std::string trackname;
-
+      
       printf("------------- Track %2u -----------------\n", t + 1);
 
       // create default audioTrackFormat name (used for audioStreamFormat objects as well)
       Printf(trackname, "Track %u", t + 1);
-
+      
       names.trackNumber = t;
+
+      // create audioTrackUID for chna chunk
+      if ((track = adm->CreateTrack(names.trackNumber + 1)) != NULL)
+      {
+        track->SetSampleRate(48000);
+        track->SetBitDepth(24);
+      }
 
       // derive channel and stream names from track name
       names.channelFormatName = trackname;
@@ -126,10 +141,32 @@ int main(void)
 
     // finalise ADM
     adm->Finalise();
-    
+
     // output ADM
-    printf("XML:\n%s", adm->GetAxml().c_str());
+    std::string axml = adm->GetAxml();
+    printf("XML:\n%s", axml.c_str());
+
+    // create simple WAV file
+    RIFFFile file;
+    if (file.Create(argv[1], 48000, 16))
+    {
+      // add the chna and axml chunks from the ADM
+      uint32_t len;
+      const uint8_t *data;
+
+      // add chna chunk
+      if ((data = adm->GetChna(len)) != NULL) file.AddChunk("chna", data, len);
+      else fprintf(stderr, "No chna chunk to add!\n");
+
+      // add axml chunk
+      file.AddChunk("axml", (const uint8_t *)axml.c_str(), axml.size());
+
+      // write everything
+      file.Close();
+    }
+    else fprintf(stderr, "Failed to create file '%s'\n", argv[1]);
   }
+  else fprintf(stderr, "Failed to create ADM - no provider available?\n");
 
   return 0;
 }

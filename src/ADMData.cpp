@@ -17,12 +17,72 @@
 
 BBC_AUDIOTOOLBOX_START
 
-std::vector<ADMData::PROVIDER> ADMData::providerlist;
-
+const std::string ADMData::DefaultStandardDefinitionsFile = EnhancedFile::catpath(BBCAT_AUDIOOBJECTS_DATA_FILES, "standarddefinitions.xml");
 const std::string ADMData::tempidsuffix = "_T";
+bool              ADMData::defaultpuremode = false;
 
-ADMData::ADMData()
+ADMData::ADMData() : puremode(defaultpuremode)
 {
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Return provider list, creating as necessary
+ */
+/*--------------------------------------------------------------------------------*/
+std::vector<ADMData::PROVIDER>& ADMData::GetProviderList()
+{
+  // create here so that this function can be called before this object's static data is constructed
+  static std::vector<PROVIDER> _providerlist;
+  return _providerlist;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Load standard definitions file into ADM
+ */
+/*--------------------------------------------------------------------------------*/
+bool ADMData::LoadStandardDefinitions(const std::string& filename)
+{
+  static const std::string paths[] = {
+    "",
+    ".",
+    BBCAT_AUDIOOBJECTS_DATA_FILES,
+  };
+  std::string filename2;
+  uint_t i;
+  bool success = false;
+
+  // delete any existing objects
+  Delete();
+
+  for (i = 0; i < NUMBEROF(paths); i++)
+  {
+    if (filename != "") filename2 = EnhancedFile::catpath(paths[i], filename);
+    else                filename2 = EnhancedFile::catpath(paths[i], DefaultStandardDefinitionsFile);    // use default filename if none supplied
+
+    if (EnhancedFile::exists(filename2.c_str()))
+    {
+      DEBUG("Found standard definitions file '%s' as '%s'", filename.c_str(), filename2.c_str());
+
+      if (ReadXMLFromFile(filename2.c_str()))
+      {
+        ADMOBJECTS_IT it;
+
+        // set standard def flag on all loaded objects
+        for (it = admobjects.begin(); it != admobjects.end(); ++it)
+        {
+          it->second->SetStandardDefinition();
+        }
+
+        success = true;
+      }
+      else ERROR("Failed to read standard definitions file '%s'", filename2.c_str());
+      break;
+    }
+  }
+
+  if (i == NUMBEROF(paths)) ERROR("Failed to find standard definitions file '%s'", filename.c_str());
+
+  return success;
 }
 
 ADMData::~ADMData()
@@ -51,7 +111,7 @@ void ADMData::Delete()
 /*--------------------------------------------------------------------------------*/
 /** Read ADM data from the chna RIFF chunk
  *
- * @param data ptr to chna chunk data 
+ * @param data ptr to chna chunk data
  * @param len length of chna chunk
  *
  * @return true if data read successfully
@@ -83,7 +143,7 @@ bool ADMData::SetChna(const uint8_t *data, uint_t len)
 
       if ((track = dynamic_cast<ADMAudioTrack *>(Create(ADMAudioTrack::Type, id, ""))) != NULL)
       {
-        ADMVALUE tvalue, pvalue;
+        XMLValue tvalue, pvalue;
 
         track->SetTrackNum(chna.UIDs[i].TrackNum - 1);
 
@@ -93,7 +153,7 @@ bool ADMData::SetChna(const uint8_t *data, uint_t len)
         // trim any zero bytes off the end of the string
         tvalue.value = tvalue.value.substr(0, tvalue.value.find(terminator));
         track->AddValue(tvalue);
-            
+
         pvalue.attr = false;
         pvalue.name = ADMAudioPackFormat::Reference;
         pvalue.value.assign(chna.UIDs[i].PackRef, sizeof(chna.UIDs[i].PackRef));
@@ -115,26 +175,31 @@ bool ADMData::SetChna(const uint8_t *data, uint_t len)
   }
 
   SortTracks();
-    
+
   return success;
 }
 
 /*--------------------------------------------------------------------------------*/
 /** Read ADM data from the axml RIFF chunk
  *
- * @param data ptr to axml chunk data 
- * @param length length of axml data
+ * @param data ptr to axml chunk data (MUST be terminated!)
  *
  * @return true if data read successfully
  */
 /*--------------------------------------------------------------------------------*/
-bool ADMData::SetAxml(const uint8_t *data, uint_t length)
+bool ADMData::SetAxml(const char *data)
 {
-  std::string str;
+  bool success = false;
 
-  str.assign((const char *)data, length);
+  DEBUG3(("Read XML:\n%s", data));
 
-  return SetAxml(str);
+  if (TranslateXML(data))
+  {
+    ConnectReferences();
+    success = true;
+  }
+
+  return success;
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -151,7 +216,7 @@ bool ADMData::SetAxml(const std::string& data)
 
   DEBUG3(("Read XML:\n%s", data.c_str()));
 
-  if (TranslateXML(data))
+  if (TranslateXML(data.c_str()))
   {
     ConnectReferences();
 
@@ -162,19 +227,154 @@ bool ADMData::SetAxml(const std::string& data)
 }
 
 /*--------------------------------------------------------------------------------*/
-/** Read ADM data from the chna and axml RIFF chunks
+/** Load CHNA data from file
  *
- * @param chna ptr to chna chunk data 
- * @param chnalength length of chna data
- * @param axml ptr to axml chunk data 
- * @param axmllength length of axml data
+ * @param filename file containing chna in text form
  *
  * @return true if data read successfully
  */
 /*--------------------------------------------------------------------------------*/
-bool ADMData::Set(const uint8_t *chna, uint_t chnalength, const uint8_t *axml, uint_t axmllength)
+bool ADMData::ReadChnaFromFile(const std::string& filename)
 {
-  return (SetChna(chna, chnalength) && SetAxml(axml, axmllength));
+  EnhancedFile fp;
+  bool success = false;
+
+  if (fp.fopen(filename.c_str()))
+  {
+    char buffer[1024];
+    int l;
+
+    success = true;
+
+    while (success && ((l = fp.readline(buffer, sizeof(buffer) - 1)) != EOF))
+    {
+      if (l > 0)
+      {
+        std::vector<std::string> words;
+
+        SplitString(std::string(buffer), words);
+
+        if (words.size() == 4)
+        {
+          uint_t tracknum;
+
+          if (Evaluate(words[0], tracknum))
+          {
+            if (tracknum)
+            {
+              const std::string& trackuid    = words[1];
+              const std::string& trackformat = words[2];
+              const std::string& packformat  = words[3];
+              ADMAudioTrack *track;
+              std::string id;
+
+              if ((track = dynamic_cast<ADMAudioTrack *>(Create(ADMAudioTrack::Type, trackuid, ""))) != NULL)
+              {
+                XMLValue tvalue, pvalue;
+
+                track->SetTrackNum(tracknum - 1);
+
+                tvalue.attr = false;
+                tvalue.name = ADMAudioTrackFormat::Reference;
+                tvalue.value = trackformat;
+                track->AddValue(tvalue);
+
+                pvalue.attr = false;
+                pvalue.name = ADMAudioPackFormat::Reference;
+                pvalue.value = packformat;
+                track->AddValue(pvalue);
+
+                track->SetValues();
+
+                DEBUG2(("Track %u: Index %u UID '%s' TrackFormatRef '%s' PackFormatRef '%s'",
+                        (uint_t)tracklist.size(),
+                        track->GetTrackNum() + 1,
+                        track->GetID().c_str(),
+                        tvalue.value.c_str(),
+                        pvalue.value.c_str()));
+              }
+              else
+              {
+                ERROR("Failed to create AudioTrack for UID %u", tracknum);
+                success = false;
+              }
+            }
+          }
+          else
+          {
+            ERROR("CHNA line '%s' word 1 ('%s') should be a track number", buffer, words[0].c_str());
+            success = false;
+          }
+        }
+        else
+        {
+          ERROR("CHNA line '%s' requires 4 words", buffer);
+          success = false;
+        }
+      }
+    }
+
+    fp.fclose();
+
+    SortTracks();
+
+    if (success) ConnectReferences();
+  }
+
+  return success;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Load ADM data from file
+ *
+ * @param filename file containing XML
+ *
+ * @return true if data read successfully
+ */
+/*--------------------------------------------------------------------------------*/
+bool ADMData::ReadXMLFromFile(const std::string& filename)
+{
+  EnhancedFile fp;
+  bool success = false;
+
+  if (fp.fopen(filename.c_str()))
+  {
+    fp.fseek(0, SEEK_END);
+    off_t len = fp.ftell();
+    fp.rewind();
+
+    char *buffer;
+    if ((buffer = new char[len + 1]) != NULL)
+    {
+      len = fp.fread(buffer, sizeof(char), len);
+      buffer[len] = 0;
+
+      success = SetAxml(buffer);
+
+      delete[] buffer;
+    }
+    else ERROR("Failed to allocate %lu chars for file '%s'", (ulong_t)(len + 1), filename.c_str());
+
+    fp.fclose();
+  }
+  else ERROR("Failed to open file '%s' for reading", filename.c_str());
+
+  return success;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Read ADM data from the chna and axml RIFF chunks
+ *
+ * @param chna ptr to chna chunk data
+ * @param chnalength length of chna data
+ * @param axml ptr to axml chunk data (MUST be terminated like a string) 
+ *
+ * @return true if data read successfully
+ */
+/*--------------------------------------------------------------------------------*/
+bool ADMData::Set(const uint8_t *chna, uint_t chnalength, const char *axml)
+{
+  return (SetChna(chna, chnalength) && SetAxml(axml));
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -188,7 +388,7 @@ bool ADMData::Set(const uint8_t *chna, uint_t chnalength, const uint8_t *axml, u
 uint8_t *ADMData::GetChna(uint32_t& len) const
 {
   CHNA_CHUNK *p = NULL;
-  uint_t nuids = tracklist.size();
+  uint_t nuids = (uint_t)tracklist.size();
 
 #if CHNA_FIXED_UIDS_LOWER > 0
   nuids = (nuids <= CHNA_FIXED_UIDS_LOWER) ? CHNA_FIXED_UIDS_LOWER : CHNA_FIXED_UIDS_UPPER;
@@ -200,14 +400,14 @@ uint8_t *ADMData::GetChna(uint32_t& len) const
   {
     std::vector<bool> uniquetracks; // list of unique tracks
     uint_t i;
-    
+
     // allocate maximum number of tracks
     uniquetracks.resize(tracklist.size());
-    
+
     // populate structure
     p->TrackCount = 0;
     p->UIDCount   = 0;
-    
+
     for (i = 0; (i < tracklist.size()) && (p->UIDCount < nuids); i++)
     {
       const ADMAudioTrack *track = tracklist[i];
@@ -215,7 +415,7 @@ uint8_t *ADMData::GetChna(uint32_t& len) const
 
       // test to see if uniquetracks array needs expanding
       if (tr >= uniquetracks.size()) uniquetracks.resize(tr + 1);
-      
+
       // if this is a new track (i.e. one not previously used),increment TrackCount
       if (!uniquetracks[tr])
       {
@@ -242,7 +442,7 @@ uint8_t *ADMData::GetChna(uint32_t& len) const
       {
         strncpy(p->UIDs[i].PackRef, packref->GetID().c_str(), sizeof(p->UIDs[i].PackRef));
       }
-        
+
       p->UIDCount++;
 
       DEBUG2(("Track %u/%u: Index %u UID '%s' TrackFormatRef '%s' PackFormatRef '%s'",
@@ -271,20 +471,7 @@ std::string ADMData::GetAxml(const std::string& indent, const std::string& eol, 
 {
   std::string str;
 
-  Printf(str,
-         "%s<?xml version=\"1.0\" encoding=\"UTF-8\"?>%s",
-         CreateIndent(indent, ind_level).c_str(), eol.c_str());
-
-  Printf(str,
-         "%s<ebuCoreMain xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns=\"urn:ebu:metadata-schema:ebuCore_2014\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" schema=\"EBU_CORE_20140201.xsd\" xml:lang=\"en\">%s",
-         CreateIndent(indent, ind_level).c_str(), eol.c_str()); ind_level++;
-
   GenerateXML(str, indent, eol, ind_level);
-
-  ind_level--;
-  Printf(str,
-         "%s</ebuCoreMain>%s",
-         CreateIndent(indent, ind_level).c_str(), eol.c_str());
 
   DEBUG3(("Generated XML:\n%s", str.c_str()));
 
@@ -295,8 +482,9 @@ std::string ADMData::GetAxml(const std::string& indent, const std::string& eol, 
 /** Create an ADM capable of decoding supplied XML as axml chunk
  */
 /*--------------------------------------------------------------------------------*/
-ADMData *ADMData::Create()
+ADMData *ADMData::Create(const std::string& standarddefinitionsfile)
 {
+  const std::vector<PROVIDER>& providerlist = GetProviderList();
   ADMData *data = NULL;
   uint_t i;
 
@@ -304,10 +492,38 @@ ADMData *ADMData::Create()
   {
     const PROVIDER& provider = providerlist[i];
 
-    if ((data = (*provider.fn)(provider.context)) != NULL) break;
+    if ((data = (*provider.fn)(standarddefinitionsfile, provider.context)) != NULL) break;
   }
 
   return data;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Finalise ADM
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMData::Finalise()
+{
+  std::vector<ADMObject *> channelformats;
+  uint_t i;
+
+  DEBUG1(("Sorting tracks..."));
+  SortTracks();
+
+  // sort channel formats in time order
+  DEBUG1(("Sorting block formats in all channel formats..."));
+  GetWritableObjects(ADMAudioChannelFormat::Type, channelformats);
+  for (i = 0; i < channelformats.size(); i++)
+  {
+    ADMAudioChannelFormat *cf = dynamic_cast<ADMAudioChannelFormat *>(channelformats[i]);
+    if (cf) cf->SortBlockFormats();
+  }
+  
+  DEBUG2(("Connecting references..."));
+  ConnectReferences();
+
+  DEBUG3(("Changing temporary IDs..."));
+  ChangeTemporaryIDs();
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -316,11 +532,8 @@ ADMData *ADMData::Create()
 /*--------------------------------------------------------------------------------*/
 void ADMData::RegisterProvider(CREATOR fn, void *context)
 {
-  PROVIDER provider =
-  {
-    .fn      = fn,
-    .context = context,
-  };
+  std::vector<PROVIDER>& providerlist = GetProviderList();
+  PROVIDER provider = {fn, context};
 
   providerlist.push_back(provider);
 }
@@ -353,7 +566,6 @@ bool ADMData::ValidType(const std::string& type) const
           (type == ADMAudioContent::Type) ||
           (type == ADMAudioObject::Type) ||
           (type == ADMAudioPackFormat::Type) ||
-          (type == ADMAudioBlockFormat::Type) ||
           (type == ADMAudioChannelFormat::Type) ||
           (type == ADMAudioStreamFormat::Type) ||
           (type == ADMAudioTrackFormat::Type) ||
@@ -378,20 +590,26 @@ ADMObject *ADMData::Create(const std::string& type, const std::string& id, const
   {
     ADMOBJECTS_CIT it;
     // if id is empty, create one
-    std::string uuid = type + "/" + ((id != "") ? id : CreateID(type));
+    std::string id1  = (!id.empty() ? id : CreateID(type));
+    std::string uuid = type + "/" + id1;
 
     // ensure the id doesn't already exist
     if ((it = admobjects.find(uuid)) == admobjects.end())
     {
-      if      (type == ADMAudioProgramme::Type)     obj = new ADMAudioProgramme(*this, id, name);
-      else if (type == ADMAudioContent::Type)       obj = new ADMAudioContent(*this, id, name);
-      else if (type == ADMAudioObject::Type)        obj = new ADMAudioObject(*this, id, name);
-      else if (type == ADMAudioPackFormat::Type)    obj = new ADMAudioPackFormat(*this, id, name);
-      else if (type == ADMAudioBlockFormat::Type)   obj = new ADMAudioBlockFormat(*this, id, name);
-      else if (type == ADMAudioChannelFormat::Type) obj = new ADMAudioChannelFormat(*this, id, name);
-      else if (type == ADMAudioStreamFormat::Type)  obj = new ADMAudioStreamFormat(*this, id, name);
-      else if (type == ADMAudioTrackFormat::Type)   obj = new ADMAudioTrackFormat(*this, id, name);
-      else if (type == ADMAudioTrack::Type)         obj = new ADMAudioTrack(*this, id, name);
+      DEBUG3(("Creating %s ID %s Name %s UUID %s", type.c_str(), id1.c_str(), name.c_str(), uuid.c_str())); 
+
+      if      (type == ADMAudioProgramme::Type)     obj = new ADMAudioProgramme(*this, id1, name);
+      else if (type == ADMAudioContent::Type)       obj = new ADMAudioContent(*this, id1, name);
+      else if (type == ADMAudioObject::Type)        obj = new ADMAudioObject(*this, id1, name);
+      else if (type == ADMAudioPackFormat::Type)    obj = new ADMAudioPackFormat(*this, id1, name);
+      else if (type == ADMAudioChannelFormat::Type) obj = new ADMAudioChannelFormat(*this, id1, name);
+      else if (type == ADMAudioStreamFormat::Type)  obj = new ADMAudioStreamFormat(*this, id1, name);
+      else if (type == ADMAudioTrackFormat::Type)   obj = new ADMAudioTrackFormat(*this, id1, name);
+      else if (type == ADMAudioTrack::Type)         obj = new ADMAudioTrack(*this, id1);
+      else
+      {
+        ERROR("Cannot create type '%s'", type.c_str());
+      }
     }
     else obj = it->second;
   }
@@ -405,7 +623,7 @@ ADMObject *ADMData::Create(const std::string& type, const std::string& id, const
  * @param type object type
  * @param format C-style format string
  * @param start starting index
- * 
+ *
  * @return unique ID
  */
 /*--------------------------------------------------------------------------------*/
@@ -419,7 +637,7 @@ std::string ADMData::FindUniqueID(const std::string& type, const std::string& fo
   while (true)
   {
     std::string testid;
-      
+
     Printf(testid, format.c_str(), ++n);
 
     // test this ID
@@ -460,12 +678,12 @@ std::string ADMData::CreateID(const std::string& type)
     if      (type == ADMAudioProgramme::Type)     {format = ADMAudioProgramme::IDPrefix     + "%04x"; start = 0x1000;}
     else if (type == ADMAudioContent::Type)       {format = ADMAudioContent::IDPrefix       + "%04x"; start = 0x1000;}
     else if (type == ADMAudioObject::Type)        {format = ADMAudioObject::IDPrefix        + "%04x"; start = 0x1000;}
-    else if (type == ADMAudioPackFormat::Type)    {format = ADMAudioPackFormat::IDPrefix    + "%08u" + tempidsuffix; start = uniqueids[type];}    // temporary
-    else if (type == ADMAudioBlockFormat::Type)   {format = ADMAudioBlockFormat::IDPrefix   + "%08u" + tempidsuffix; start = uniqueids[type];}    // temporary
-    else if (type == ADMAudioChannelFormat::Type) {format = ADMAudioChannelFormat::IDPrefix + "%08u" + tempidsuffix; start = uniqueids[type];}    // temporary
-    else if (type == ADMAudioStreamFormat::Type)  {format = ADMAudioStreamFormat::IDPrefix  + "%08u" + tempidsuffix; start = uniqueids[type];}    // temporary
-    else if (type == ADMAudioTrackFormat::Type)   {format = ADMAudioTrackFormat::IDPrefix   + "%08u" + tempidsuffix; start = uniqueids[type];}    // temporary
-    else if (type == ADMAudioTrack::Type)         format = ADMAudioTrack::IDPrefix          + "%08u";
+    else if (type == ADMAudioPackFormat::Type)    {format = ADMAudioPackFormat::IDPrefix    + "%08x" + tempidsuffix; start = uniqueids[type];}    // temporary
+    else if (type == ADMAudioBlockFormat::Type)   {format = ADMAudioBlockFormat::IDPrefix   + "%08x" + tempidsuffix; start = uniqueids[type];}    // temporary
+    else if (type == ADMAudioChannelFormat::Type) {format = ADMAudioChannelFormat::IDPrefix + "%08x" + tempidsuffix; start = uniqueids[type];}    // temporary
+    else if (type == ADMAudioStreamFormat::Type)  {format = ADMAudioStreamFormat::IDPrefix  + "%08x" + tempidsuffix; start = uniqueids[type];}    // temporary
+    else if (type == ADMAudioTrackFormat::Type)   {format = ADMAudioTrackFormat::IDPrefix   + "%08x" + tempidsuffix; start = uniqueids[type];}    // temporary
+    else if (type == ADMAudioTrack::Type)         format = ADMAudioTrack::IDPrefix          + "%08x";
 
     if ((type == ADMAudioBlockFormat::Type) && start)
     {
@@ -476,6 +694,8 @@ std::string ADMData::CreateID(const std::string& type)
     }
     else id = FindUniqueID(type, format, start);
   }
+
+  DEBUG3(("Created ID %s for type %s", id.c_str(), type.c_str())); 
 
   return id;
 }
@@ -536,7 +756,7 @@ void ADMData::ChangeTemporaryID(ADMObject *obj, std::map<ADMObject *,bool>& map)
   if (map.find(obj) == map.end())
   {
     std::vector<ADMObject::REFERENCEDOBJECT> objects;
-    ADMObject::ADMVALUES values;
+    XMLValues values;
     const std::string& id = obj->GetID();
     uint_t i;
 
@@ -559,7 +779,7 @@ void ADMData::ChangeTemporaryID(ADMObject *obj, std::map<ADMObject *,bool>& map)
     {
       ChangeTemporaryID(objects[i].obj, map);
     }
-  }  
+  }
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -568,17 +788,31 @@ void ADMData::ChangeTemporaryID(ADMObject *obj, std::map<ADMObject *,bool>& map)
 /*--------------------------------------------------------------------------------*/
 void ADMData::ChangeTemporaryIDs()
 {
+  // list of types to start changing ID's from
+  // NOTE: all programme types are processed, THEN all content, THEN all objects, etc.
+  static const std::string types[] =
+  {
+    ADMAudioProgramme::Type,
+    ADMAudioContent::Type,
+    ADMAudioObject::Type,
+    ADMAudioPackFormat::Type,
+  };
   std::map<ADMObject *,bool> map;
   ADMOBJECTS_IT it;
-
-  for (it = admobjects.begin(); it != admobjects.end(); ++it)
+  uint_t i;
+  
+  // cycle through each of the types above
+  for (i = 0; i < NUMBEROF(types); i++)
   {
-    ADMObject *obj = it->second;
-    
-    if (obj->GetType() == ADMAudioProgramme::Type)
+    for (it = admobjects.begin(); it != admobjects.end(); ++it)
     {
-      // start with audioProgrammes
-      ChangeTemporaryID(obj, map);
+      ADMObject *obj = it->second;
+
+      if (obj->GetType() == types[i])
+      {
+        // change ID then move down hierarchy
+        ChangeTemporaryID(obj, map);
+      }
     }
   }
 }
@@ -670,7 +904,7 @@ ADMAudioPackFormat *ADMData::CreatePackFormat(const std::string& name, ADMAudioO
 /*--------------------------------------------------------------------------------*/
 /** Create audioTrack object
  *
- * @param name name of object
+ * @param trackNum track number (0-based)
  * @param object audioObject object to attach this object to or NULL
  *
  * @note ID will be create automatically
@@ -678,12 +912,14 @@ ADMAudioPackFormat *ADMData::CreatePackFormat(const std::string& name, ADMAudioO
  * @return ADMAudioTrack object
  */
 /*--------------------------------------------------------------------------------*/
-ADMAudioTrack *ADMData::CreateTrack(const std::string& name, ADMAudioObject *object)
+ADMAudioTrack *ADMData::CreateTrack(uint_t trackNum, ADMAudioObject *object)
 {
   ADMAudioTrack *track;
 
-  if ((track = new ADMAudioTrack(*this, CreateID(ADMAudioTrack::Type), name)) != NULL)
+  if ((track = new ADMAudioTrack(*this, CreateID(ADMAudioTrack::Type))) != NULL)
   {
+    track->SetTrackNum(trackNum);
+    
     if (object) object->Add(track);
   }
 
@@ -718,24 +954,23 @@ ADMAudioChannelFormat *ADMData::CreateChannelFormat(const std::string& name, ADM
 /*--------------------------------------------------------------------------------*/
 /** Create audioBlockFormat object
  *
- * @param name name of object
- * @param channelFormat audioChannelFormat object to attach this object to or NULL
- *
- * @note ID will be create automatically
+ * @param channelformat optional channel format to add the new block to
  *
  * @return ADMAudioBlockFormat object
+ *
+ * @note audioBlockFormat object MUST be added to an audioChannelFormat to be useful (but can be added after this call)!
  */
 /*--------------------------------------------------------------------------------*/
-ADMAudioBlockFormat *ADMData::CreateBlockFormat(const std::string& name, ADMAudioChannelFormat *channelFormat)
+ADMAudioBlockFormat *ADMData::CreateBlockFormat(ADMAudioChannelFormat *channelformat)
 {
-  ADMAudioBlockFormat *blockFormat;
+  ADMAudioBlockFormat *blockformat;
 
-  if ((blockFormat = new ADMAudioBlockFormat(*this, CreateID(ADMAudioBlockFormat::Type), name)) != NULL)
+  if ((blockformat = new ADMAudioBlockFormat) != NULL)
   {
-    if (channelFormat) channelFormat->Add(blockFormat);
+    if (channelformat) channelformat->Add(blockformat);
   }
 
-  return blockFormat;
+  return blockformat;
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -810,8 +1045,8 @@ ADMObject *ADMData::Parse(const std::string& type, void *userdata)
 
   if ((obj = Create(type, header.id, header.name)) != NULL)
   {
-    ParseValues(obj, type, userdata);
-    PostParse(obj, type, userdata);
+    ParseValues(obj, userdata);
+    PostParse(obj, userdata);
 
     obj->SetValues();
   }
@@ -825,7 +1060,7 @@ ADMObject *ADMData::Parse(const std::string& type, void *userdata)
  * @param value a name/value pair specifying object type and name
  */
 /*--------------------------------------------------------------------------------*/
-ADMObject *ADMData::GetReference(const ADMVALUE& value)
+ADMObject *ADMData::GetReference(const XMLValue& value)
 {
   ADMObject *obj = NULL;
   ADMOBJECTS_CIT it;
@@ -896,6 +1131,153 @@ void ADMData::ConnectReferences()
 }
 
 /*--------------------------------------------------------------------------------*/
+/** Generate a mapping from objects of type <type1> to/from objects of type <type2>
+ *
+ * @param refmap map to be populated
+ * @param type1 first type (ADMAudioXXX:TYPE>
+ * @param type2 second type (ADMAudioXXX:TYPE>
+ * @param reversed false for type1 -> type2, true for type2 -> type1
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMData::GenerateReferenceMap(ADMREFERENCEMAP& refmap, const std::string& type1, const std::string& type2, bool reversed) const
+{
+  ADMOBJECTS_CIT it;
+  uint_t i;
+
+  for (it = admobjects.begin(); it != admobjects.end(); ++it)
+  {
+    const ADMObject *obj1 = it->second;
+
+    if (obj1->GetType() == type1)
+    {
+      std::vector<const ADMObject *> list1;
+
+      list1.push_back(obj1);
+
+      // find all other objects it references
+      GetReferencedObjects(list1);
+
+      // for each object in list1 of type <type2>, add it to a list for obj1
+      for (i = 0; i < list1.size(); i++)
+      {
+        const ADMObject *obj2 = list1[i];
+
+        if (obj1->GetType() == type2)
+        {
+          const ADMObject *objA = reversed ? obj2 : obj1;
+          const ADMObject *objB = reversed ? obj1 : obj2;
+          std::vector<const ADMObject *>& list2 = refmap[objA];
+
+          // if obj2 is not in list2, add it
+          if (std::find(list2.begin(), list2.end(), objB) == list2.end()) list2.push_back(objB);
+        }
+      }
+    }
+  }
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Update audio object limits
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMData::UpdateAudioObjectLimits()
+{
+  ADMREFERENCEMAP channelformats;
+  ADMOBJECTS_IT it;
+  uint_t i;
+
+  // generate mapping from channel formats -> audio objects
+  GenerateReferenceMap(channelformats, ADMAudioObject::Type, ADMAudioChannelFormat::Type, true);
+
+  for (it = admobjects.begin(); it != admobjects.end(); ++it)
+  {
+    ADMAudioObject *audioobj;
+    const ADMObject *obj = it->second;
+
+    // for each audio object
+    if (((audioobj = const_cast<ADMAudioObject *>(dynamic_cast<const ADMAudioObject *>(obj))) != NULL) &&
+        !(audioobj->StartTimeSet() || audioobj->DurationSet())) // don't update audio object limits if they have been explicitly set
+    {
+      std::vector<const ADMObject *> list;
+      const uint64_t originalstart = audioobj->GetStartTime();
+      uint64_t start = originalstart;
+      uint64_t end   = start;
+
+      list.push_back(obj);
+
+      // find all other objects it references
+      GetReferencedObjects(list);
+
+      // scan for block formats and find their limits
+      bool first   = true;
+      bool canmove = true;
+      for (i = 0; i < list.size(); i++)
+      {
+        const ADMObject *obj = list[i];
+        const ADMAudioBlockFormat *blockformat;
+
+        if ((blockformat = dynamic_cast<const ADMAudioBlockFormat *>(obj)) != NULL)
+        {
+          // block limits are relative to audio object
+          uint64_t bstart = blockformat->GetStartTime(audioobj);
+          uint64_t bend   = blockformat->GetEndTime(audioobj);
+
+          // update start and end times
+          start = first ? bstart : MIN(start, bstart);
+          end   = first ? bend   : MAX(end, bend);
+
+          first = false;
+        }
+
+        if ((obj->GetType() == ADMAudioChannelFormat::Type) &&
+            (channelformats.find(obj) != channelformats.end()) &&
+            (channelformats[obj].size() > 1))
+        {
+          // unable to move this audio object because a channel format used by this audio object
+          // is used by other audio objects
+          DEBUG2(("Cannot move object '%s', channel format '%s' is used by %u audio objects",
+                  audioobj->GetName().c_str(),
+                  obj->GetName().c_str(),
+                  (uint_t)channelformats[obj].size()));
+          canmove = false;
+        }
+      }
+
+      // if unable to move audio object, set the new start as the original start
+      if (!canmove) start = originalstart;
+
+      DEBUG2(("Updating object '%s' start %lu -> %lu end %lu -> %lu (canmove: %s)",
+              audioobj->GetName().c_str(),
+              (ulong_t)audioobj->GetStartTime(), (ulong_t)start,
+              (ulong_t)audioobj->GetEndTime(),   (ulong_t)end,
+              canmove ? "yes" : "no"));
+
+      audioobj->SetStartTime(start);
+      audioobj->SetEndTime(end);
+
+      if (start > originalstart)
+      {
+        uint64_t diff = start - originalstart;
+
+        DEBUG2(("Shifting all block formats by %lu", (ulong_t)diff));
+
+        // modify every block format so that the first one starts at zero
+        for (i = 0; i < list.size(); i++)
+        {
+          ADMAudioBlockFormat *blockformat;
+
+          if ((blockformat = const_cast<ADMAudioBlockFormat *>(dynamic_cast<const ADMAudioBlockFormat *>(list[i]))) != NULL)
+          {
+            // move all block formats *back* by the same amount the audio object moves *forward*
+            blockformat->SetRTime(blockformat->GetRTime() - diff);
+          }
+        }
+      }
+    }
+  }
+}
+
+/*--------------------------------------------------------------------------------*/
 /** Get list of objects of specified type
  *
  * @param type audioXXX object type
@@ -909,6 +1291,28 @@ void ADMData::GetObjects(const std::string& type, std::vector<const ADMObject *>
   for (it = admobjects.begin(); it != admobjects.end(); ++it)
   {
     const ADMObject *obj = it->second;
+
+    if (obj->GetType() == type)
+    {
+      list.push_back(obj);
+    }
+  }
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Get list of writable objects of specified type
+ *
+ * @param type audioXXX object type
+ * @param list list to be populated
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMData::GetWritableObjects(const std::string& type, std::vector<ADMObject *>& list) const
+{
+  ADMOBJECTS_CIT it;
+
+  for (it = admobjects.begin(); it != admobjects.end(); ++it)
+  {
+    ADMObject *obj = it->second;
 
     if (obj->GetType() == type)
     {
@@ -1067,9 +1471,9 @@ void ADMData::Dump(std::string& str, const ADMObject *obj, const std::string& in
 void ADMData::Dump(const ADMObject *obj, std::map<const ADMObject *,bool>& map, DUMPCONTEXT& context) const
 {
   std::vector<ADMObject::REFERENCEDOBJECT> objects;
-  ADMObject::ADMVALUES values;
+  XMLValues values;
   std::string& str = context.str;
-  std::string  indent; 
+  std::string  indent;
   uint_t i;
 
   // mark this object is generated
@@ -1085,29 +1489,29 @@ void ADMData::Dump(const ADMObject *obj, std::map<const ADMObject *,bool>& map, 
   {
     Printf(str, " / %s", obj->GetName().c_str());
   }
-  
+
   str    += context.eol;
   indent += context.indent;
 
   // output attributes
   for (i = 0; i < values.size(); i++)
   {
-    const ADMVALUE& value = values[i];
+    const XMLValue& value = values[i];
 
     if (value.attr)
     {
       Printf(str, "%s%s: %s%s", indent.c_str(), value.name.c_str(), value.value.c_str(), context.eol.c_str());
     }
   }
-  
+
   // output values
   for (i = 0; i < values.size(); i++)
   {
-    const ADMVALUE& value = values[i];
+    const XMLValue& value = values[i];
 
     if (!value.attr)
     {
-      ADMObject::ADMATTRS::const_iterator it;
+      XMLValue::ATTRS::const_iterator it;
 
       Printf(str, "%s%s", indent.c_str(), value.name.c_str());
 
@@ -1152,6 +1556,32 @@ void ADMData::Dump(const ADMObject *obj, std::map<const ADMObject *,bool>& map, 
 }
 
 /*--------------------------------------------------------------------------------*/
+/** Append string to XML context
+ *
+ * @param xmlcontext user supplied argument representing context data
+ * @param str string to be appended/counted
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMData::AppendXML(void *xmlcontext, const std::string& str) const
+{
+  if (str.length())
+  {
+    TEXTXML& xml = *(TEXTXML *)xmlcontext;
+
+    // copy string to destination, if one specified
+    if      (xml.destination.str) *xml.destination.str += str;
+    else if (xml.destination.buf &&
+             ((xml.length + str.length()) <= xml.destination.buflen)) strcpy(xml.destination.buf + xml.length, str.c_str());
+  
+    // update length
+    xml.length += str.length();
+
+    // update flag to indicate whether buffer ends with an eol 
+    xml.eollast = (xml.eol.length() && (str.length() >= xml.eol.length()) && (str.substr(str.length() - xml.eol.length()) == xml.eol));
+  }
+}
+
+/*--------------------------------------------------------------------------------*/
 /** Start XML
  *
  * @param xmlcontext user supplied argument representing context data
@@ -1165,12 +1595,15 @@ void ADMData::StartXML(void *xmlcontext, const std::string& version, const std::
 {
   TEXTXML& xml = *(TEXTXML *)xmlcontext;
 
-  Printf(xml.str,
+  std::string str;
+  Printf(str,
          "%s<?xml version=\"%s\" encoding=\"%s\"?>%s",
          CreateIndent(xml.indent, xml.ind_level).c_str(),
          version.c_str(),
          encoding.c_str(),
          xml.eol.c_str());
+
+  AppendXML(xmlcontext, str);
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -1189,20 +1622,21 @@ void ADMData::OpenXMLObject(void *xmlcontext, const std::string& name) const
   // ensure any previous object is properly marked ready for data
   if (xml.stack.size() && xml.opened)
   {
-    xml.str   += ">";
+    AppendXML(xmlcontext, ">");
     xml.opened = false;
   }
 
   // add a newline if last bit of string isn't an eol
-  if (xml.eol.length() &&
-      (xml.str.length() >= xml.eol.length()) &&
-      (xml.str.substr(xml.str.length() - xml.eol.length()) != xml.eol)) xml.str += xml.eol;
+  if (!xml.eollast) AppendXML(xmlcontext, xml.eol);
 
-  Printf(xml.str,
+  std::string str;
+  Printf(str,
          "%s<%s",
-         CreateIndent(xml.indent, xml.ind_level + xml.stack.size()).c_str(),
-         name.c_str()); 
+         CreateIndent(xml.indent, xml.ind_level + (uint_t)xml.stack.size()).c_str(),
+         name.c_str());
 
+  AppendXML(xmlcontext, str);
+  
   // stack this object name (for closing)
   xml.stack.push_back(name);
   xml.opened = true;
@@ -1220,9 +1654,10 @@ void ADMData::OpenXMLObject(void *xmlcontext, const std::string& name) const
 /*--------------------------------------------------------------------------------*/
 void ADMData::AddXMLAttribute(void *xmlcontext, const std::string& name, const std::string& value) const
 {
-  TEXTXML& xml = *(TEXTXML *)xmlcontext;
+  std::string str;
+  Printf(str, " %s=\"%s\"", name.c_str(), value.c_str());
 
-  Printf(xml.str, " %s=\"%s\"", name.c_str(), value.c_str());
+  AppendXML(xmlcontext, str);
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -1241,11 +1676,11 @@ void ADMData::SetXMLData(void *xmlcontext, const std::string& data) const
   // ensure any object is marked ready for data
   if (xml.stack.size() && xml.opened)
   {
-    xml.str   += ">";
+    AppendXML(xmlcontext, ">");
     xml.opened = false;
   }
 
-  xml.str += data;
+  AppendXML(xmlcontext, data);
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -1263,13 +1698,16 @@ void ADMData::CloseXMLObject(void *xmlcontext) const
   if (xml.stack.size() && xml.opened)
   {
     // object is empty
-    xml.str   += " />" + xml.eol;
+    AppendXML(xmlcontext, " />" + xml.eol);
     xml.opened = false;
   }
   else
   {
-    if ((xml.str.length() >= xml.eol.length()) && (xml.str.substr(xml.str.length() - xml.eol.length()) == xml.eol)) xml.str += CreateIndent(xml.indent, xml.ind_level + xml.stack.size() - 1);
-    Printf(xml.str, "</%s>%s", xml.stack.back().c_str(), xml.eol.c_str());
+    if (xml.eollast) AppendXML(xmlcontext, CreateIndent(xml.indent, xml.ind_level + (uint_t)xml.stack.size() - 1));
+
+    std::string str;
+    Printf(str, "</%s>%s", xml.stack.back().c_str(), xml.eol.c_str());
+    AppendXML(xmlcontext, str);
   }
 
   xml.stack.pop_back();
@@ -1283,20 +1721,104 @@ void ADMData::CloseXMLObject(void *xmlcontext) const
  * @param eol end-of-line string
  * @param level initial indentation level
  *
+ * @return total length of XML
+ *
  * @note for other XML implementaions, this function can be overridden
  */
 /*--------------------------------------------------------------------------------*/
-void ADMData::GenerateXML(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level) const
+uint64_t ADMData::GenerateXML(std::string& str, const std::string& indent, const std::string& eol, uint_t ind_level, bool complete) const
 {
   TEXTXML context;
+
+  // clear destination data
+  memset(&context.destination, 0, sizeof(context.destination));
+
+  // set string destination to use
+  context.destination.str = &str;
 
   context.indent    = indent;
   context.eol       = eol;
   context.ind_level = ind_level;
-
+  context.length    = 0;
+  context.opened    = false;
+  context.complete  = complete;
+  context.eollast   = false;
+  
   GenerateXML((void *)&context);
 
-  str = context.str;
+  return context.length;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Create XML representation of ADM
+ *
+ * @param buf buffer to store XML in (or NULL to just get the length)
+ * @param buflen maximum length of buf (excluding terminator)
+ * @param indent indentation for each level of objects
+ * @param eol end-of-line string
+ * @param level initial indentation level
+ *
+ * @return total length of XML
+ *
+ * @note for other XML implementaions, this function can be overridden
+ */
+/*--------------------------------------------------------------------------------*/
+uint64_t ADMData::GenerateXMLBuffer(uint8_t *buf, uint64_t buflen, const std::string& indent, const std::string& eol, uint_t ind_level, bool complete) const
+{
+  TEXTXML context;
+
+  // clear destination data
+  memset(&context.destination, 0, sizeof(context.destination));
+
+  // set string destination to use
+  context.destination.buf    = (char *)buf;
+  context.destination.buflen = buflen;
+
+  context.indent    = indent;
+  context.eol       = eol;
+  context.ind_level = ind_level;
+  context.length    = 0;
+  context.complete  = complete;
+  context.eollast   = false;
+  
+  GenerateXML((void *)&context);
+
+  return context.length;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** From a list of objects, find all objects that are referenced
+ *
+ * @param list initial list of objects - will be EXPANDED with more objects
+ *
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMData::GetReferencedObjects(std::vector<const ADMObject *>& list) const
+{
+  uint_t i, j;
+
+  // for loop with expanding list which collects referenced objects as it goes
+  for (i = 0; i < list.size(); i++)
+  {
+    std::vector<ADMObject::REFERENCEDOBJECT> objects;
+    const ADMObject *obj = list[i];
+    XMLValues values;
+
+    // collect values and references for this object
+    obj->GetValuesAndReferences(values, objects);
+
+    // for each object, add it to the list if it has not already in the map
+    for (j = 0; j < objects.size(); j++)
+    {
+      const ADMObject::REFERENCEDOBJECT& object = objects[j];
+
+      if (std::find(list.begin(), list.end(), object.obj) == list.end())
+      {
+        // add it to the list to be processed
+        list.push_back(object.obj);
+      }
+    }
+  }
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -1309,11 +1831,40 @@ void ADMData::GenerateXML(std::string& str, const std::string& indent, const std
 /*--------------------------------------------------------------------------------*/
 void ADMData::GenerateXML(void *xmlcontext) const
 {
-  std::vector<const ADMObject *>   list;
-  std::map<const ADMObject *,bool> map;
+  std::vector<const ADMObject *> list;
+  std::string types[] = {
+    ADMAudioProgramme::Type,
+    ADMAudioContent::Type,
+    ADMAudioObject::Type,
+    ADMAudioPackFormat::Type,
+    ADMAudioChannelFormat::Type,
+    ADMAudioStreamFormat::Type,
+    ADMAudioTrackFormat::Type,
+    ADMAudioTrack::Type,
+  };
   ADMOBJECTS_CIT it;
-  uint_t i;
-  
+  uint_t i, j;
+
+  // find ADM programme object and then collect all referenced objects from there
+  for (it = admobjects.begin(); it != admobjects.end(); ++it)
+  {
+    const ADMObject *obj = it->second;
+
+    // start with programme, content and object types
+    // all other types must be referenced by one of the above
+    if ((obj->GetType() == ADMAudioProgramme::Type) ||
+        (obj->GetType() == ADMAudioContent::Type)   ||
+        (obj->GetType() == ADMAudioObject::Type))
+    {
+      if (std::find(list.begin(), list.end(), obj) == list.end())
+      {
+        list.push_back(obj);
+      }
+    }
+  }
+
+  GetReferencedObjects(list);
+
   StartXML(xmlcontext);
   OpenXMLObject(xmlcontext, "ebuCoreMain");
   AddXMLAttribute(xmlcontext, "xmlns:dc", "http://purl.org/dc/elements/1.1/");
@@ -1325,29 +1876,18 @@ void ADMData::GenerateXML(void *xmlcontext) const
   OpenXMLObject(xmlcontext, "format");
   OpenXMLObject(xmlcontext, "audioFormatExtended");
 
-  // find Programme object and start with it
-  for (it = admobjects.begin(); it != admobjects.end(); ++it)
+  for (i = 0; i < NUMBEROF(types); i++)
   {
-    const ADMObject *obj = it->second;
-
-    if (obj->GetType() == ADMAudioProgramme::Type)
+    // find objects of correct type and output them
+    for (j = 0; j < list.size(); j++)
     {
-      map[obj] = true;
-      GenerateXML(obj, list, xmlcontext);
-    }
-  }
+      const ADMObject *obj = list[j];
 
-  // output referenced and child objects if they have been done so yet
-  for (i = 0; i < list.size(); i++)
-  {
-    const ADMObject *obj = list[i];
-
-    // has object been output?
-    if (map.find(obj) == map.end())
-    {
-      // no, output it
-      map[obj] = true;
-      GenerateXML(obj, list, xmlcontext);
+      // can this object be outputted?
+      if (obj->GetType() == types[i])
+      {
+        GenerateXML(obj, xmlcontext);
+      }
     }
   }
 
@@ -1358,126 +1898,151 @@ void ADMData::GenerateXML(void *xmlcontext) const
 }
 
 /*--------------------------------------------------------------------------------*/
-/** Generic XML creation
+/** Add attributes from list of XML values to current object header
  *
- * @param obj ADM object to generate XML for
- * @param list list of ADM objects that will subsequently need XML generating
  * @param xmlcontext user supplied argument representing context data
+ * @param values list of XML values
  *
- * @note for other XML implementaions, this function can be overridden
+ * @note for other XML implementaions, this function MUST be overridden
  */
 /*--------------------------------------------------------------------------------*/
-void ADMData::GenerateXML(const ADMObject *obj, std::vector<const ADMObject *>& list, void *xmlcontext) const
+void ADMData::AddXMLAttributes(void *xmlcontext, const XMLValues& values) const
 {
-  std::vector<ADMObject::REFERENCEDOBJECT> objects;
-  ADMObject::ADMVALUES values;
   uint_t i;
-  bool   emptyobject = true;
-
-  obj->GetValuesAndReferences(values, objects);
-
-  // test to see if this object is 'empty'
-  for (i = 0; emptyobject && (i < values.size()); i++)
-  {
-    emptyobject &= !(!values[i].attr);                          // if any values (non-attribute) found, object cannot be empty
-  }
-  for (i = 0; emptyobject && (i < objects.size()); i++)
-  {
-    emptyobject &= !(objects[i].genref || objects[i].gendata);  // if any references or contained data to be generated, object cannot be empty
-  }
-
-  // start XML object
-  OpenXMLObject(xmlcontext, obj->GetType());
-
+  
   // output attributes
   for (i = 0; i < values.size(); i++)
   {
-    const ADMVALUE& value = values[i];
+    const XMLValue& value = values[i];
 
     if (value.attr)
     {
       AddXMLAttribute(xmlcontext, value.name, value.value);
     }
   }
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Add values (non-attributres) from list of XML values to object
+ *
+ * @param xmlcontext user supplied argument representing context data
+ * @param values list of XML values
+ *
+ * @note for other XML implementaions, this function MUST be overridden
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMData::AddXMLValues(void *xmlcontext, const XMLValues& values) const
+{
+  uint_t i;
   
-  if (!emptyobject)
+  // output values
+  for (i = 0; i < values.size(); i++)
   {
-    // output values
-    for (i = 0; i < values.size(); i++)
+    const XMLValue& value = values[i];
+
+    if (!value.attr)
     {
-      const ADMVALUE& value = values[i];
+      XMLValue::ATTRS::const_iterator it;
 
-      if (!value.attr)
+      OpenXMLObject(xmlcontext, value.name);
+
+      for (it = value.attrs.begin(); it != value.attrs.end(); ++it)
       {
-        ADMObject::ADMATTRS::const_iterator it;
-
-        OpenXMLObject(xmlcontext, value.name);
-
-        for (it = value.attrs.begin(); it != value.attrs.end(); ++it)
-        {
-          AddXMLAttribute(xmlcontext, it->first, it->second);
-        }
-
-        SetXMLData(xmlcontext, value.value);
-        
-        CloseXMLObject(xmlcontext);
+        AddXMLAttribute(xmlcontext, it->first, it->second);
       }
+
+      SetXMLData(xmlcontext, value.value);
+
+      CloseXMLObject(xmlcontext);
     }
-
-    // output references
-    for (i = 0; i < objects.size(); i++)
-    {
-      const ADMObject::REFERENCEDOBJECT& object = objects[i];
-
-      if (object.genref)
-      {
-        // output reference to object.obj
-        OpenXMLObject(xmlcontext, object.obj->GetReference());
-        SetXMLData(xmlcontext, object.obj->GetID());
-        CloseXMLObject(xmlcontext);
-      }
-    }
-
-    // output contained data
-    for (i = 0; i < objects.size(); i++)
-    {
-      const ADMObject::REFERENCEDOBJECT& object = objects[i];
-
-      if (object.gendata)
-      {
-        GenerateXML(object.obj, list, xmlcontext);
-      }
-      else
-      {
-        // object itself needs to be output
-        list.push_back(object.obj);
-      }
-    }
-
-    // end XML object
-    CloseXMLObject(xmlcontext);
-  }
-  else
-  {
-    // end empty XML object
-    CloseXMLObject(xmlcontext);
-
-    // empty object but need to add objects to list to be processed
-    for (i = 0; i < objects.size(); i++)
-    {
-      // object itself needs to be output
-      list.push_back(objects[i].obj);
-    }      
   }
 }
 
 /*--------------------------------------------------------------------------------*/
-/** Generate a textual list of references 
+/** Generic XML creation
+ *
+ * @param obj ADM object to generate XML for
+ * @param xmlcontext user supplied argument representing context data
+ *
+ * @note for other XML implementaions, this function can be overridden
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMData::GenerateXML(const ADMObject *obj, void *xmlcontext) const
+{
+  const TEXTXML& context = *(const TEXTXML *)xmlcontext;
+  
+  if (context.complete || !obj->IsStandardDefinition())
+  {
+    std::vector<ADMObject::REFERENCEDOBJECT> objects;
+    XMLValues values;
+    uint_t    i;
+    bool      emptyobject = true;
+
+    obj->GetValuesAndReferences(values, objects);
+
+    // if object has contained objects, it cannot be empty
+    emptyobject &= (obj->GetContainedObjectCount() == 0);
+    
+    // test to see if this object is 'empty'
+    for (i = 0; emptyobject && (i < values.size()); i++)
+    {
+      emptyobject &= !(!values[i].attr);                            // if any values (non-attribute) found, object cannot be empty
+    }
+    for (i = 0; emptyobject && (i < objects.size()); i++)
+    {
+      emptyobject &= !objects[i].genref;                            // if any references to be generated, object cannot be empty
+    }
+
+    // start XML object
+    OpenXMLObject(xmlcontext, obj->GetType());
+    AddXMLAttributes(xmlcontext, values);
+                     
+    if (!emptyobject)
+    {
+      AddXMLValues(xmlcontext, values);
+                   
+      // output references
+      for (i = 0; i < objects.size(); i++)
+      {
+        const ADMObject::REFERENCEDOBJECT& object = objects[i];
+
+        if (object.genref)
+        {
+          // output reference to object.obj
+          OpenXMLObject(xmlcontext, object.obj->GetReference());
+          SetXMLData(xmlcontext, object.obj->GetID());
+          CloseXMLObject(xmlcontext);
+        }
+      }
+
+      // output contained data
+      ADMObject::CONTAINEDOBJECT object;
+      for (i = 0; obj->GetContainedObject(i, object); i++)
+      {
+        OpenXMLObject(xmlcontext, object.type);
+        AddXMLAttributes(xmlcontext, object.attrs);
+        AddXMLValues(xmlcontext, object.values);
+        CloseXMLObject(xmlcontext);
+      }
+
+      // end XML object
+      CloseXMLObject(xmlcontext);
+    }
+    else
+    {
+      // end empty XML object
+      CloseXMLObject(xmlcontext);
+    }
+  }
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Generate a textual list of references
  *
  * @param str string to be modified
  */
 /*--------------------------------------------------------------------------------*/
-void ADMData::GenerateReferenceList(std::string& str)
+void ADMData::GenerateReferenceList(std::string& str) const
 {
   ADMOBJECTS_CIT it;
 
@@ -1497,22 +2062,17 @@ void ADMData::GenerateReferenceList(std::string& str)
  * @return true if successful
  */
 /*--------------------------------------------------------------------------------*/
-bool ADMData::CreateObjects(const OBJECTNAMES& names)
+bool ADMData::CreateObjects(OBJECTNAMES& names)
 {
-  ADMAudioProgramme     *programme     = NULL;
-  ADMAudioContent       *content       = NULL;
-  ADMAudioObject        *object        = NULL;
-  ADMAudioPackFormat    *packFormat    = NULL;
-  ADMAudioChannelFormat *channelFormat = NULL;
-  ADMAudioStreamFormat  *streamFormat  = NULL;
-  ADMAudioTrackFormat   *trackFormat   = NULL;
-  ADMAudioTrack         *audioTrack    = NULL;
   bool success = true;
 
+  // clear object pointers
+  memset(&names.objects, 0, sizeof(names.objects));
+
   // look up objects and create any that need creating
-  if ((names.programmeName != "") && ((programme = dynamic_cast<ADMAudioProgramme *>(GetWritableObjectByName(names.programmeName, ADMAudioProgramme::Type))) == NULL))
+  if ((names.programmeName != "") && ((names.objects.programme = dynamic_cast<ADMAudioProgramme *>(GetWritableObjectByName(names.programmeName, ADMAudioProgramme::Type))) == NULL))
   {
-    if ((programme = CreateProgramme(names.programmeName)) != NULL)
+    if ((names.objects.programme = CreateProgramme(names.programmeName)) != NULL)
     {
       DEBUG2(("Created programme '%s'", names.programmeName.c_str()));
     }
@@ -1523,9 +2083,9 @@ bool ADMData::CreateObjects(const OBJECTNAMES& names)
     }
   }
 
-  if ((names.contentName != "") && ((content = dynamic_cast<ADMAudioContent *>(GetWritableObjectByName(names.contentName, ADMAudioContent::Type))) == NULL))
+  if ((names.contentName != "") && ((names.objects.content = dynamic_cast<ADMAudioContent *>(GetWritableObjectByName(names.contentName, ADMAudioContent::Type))) == NULL))
   {
-    if ((content = CreateContent(names.contentName)) != NULL)
+    if ((names.objects.content = CreateContent(names.contentName)) != NULL)
     {
       DEBUG2(("Created content '%s'", names.contentName.c_str()));
     }
@@ -1536,9 +2096,9 @@ bool ADMData::CreateObjects(const OBJECTNAMES& names)
     }
   }
 
-  if ((names.objectName != "") && ((object = dynamic_cast<ADMAudioObject *>(GetWritableObjectByName(names.objectName, ADMAudioObject::Type))) == NULL))
+  if ((names.objectName != "") && ((names.objects.object = dynamic_cast<ADMAudioObject *>(GetWritableObjectByName(names.objectName, ADMAudioObject::Type))) == NULL))
   {
-    if ((object = CreateObject(names.objectName)) != NULL)
+    if ((names.objects.object = CreateObject(names.objectName)) != NULL)
     {
       DEBUG2(("Created object '%s'", names.objectName.c_str()));
     }
@@ -1549,13 +2109,11 @@ bool ADMData::CreateObjects(const OBJECTNAMES& names)
     }
   }
 
-  if ((names.packFormatName != "") && ((packFormat = dynamic_cast<ADMAudioPackFormat *>(GetWritableObjectByName(names.packFormatName, ADMAudioPackFormat::Type))) == NULL))
+  if ((names.packFormatName != "") && ((names.objects.packFormat = dynamic_cast<ADMAudioPackFormat *>(GetWritableObjectByName(names.packFormatName, ADMAudioPackFormat::Type))) == NULL))
   {
-    if ((packFormat = CreatePackFormat(names.packFormatName)) != NULL)
+    if ((names.objects.packFormat = CreatePackFormat(names.packFormatName)) != NULL)
     {
-      // set pack type
       DEBUG2(("Created pack format '%s'", names.packFormatName.c_str()));
-      packFormat->SetTypeLabel(ADMObject::TypeLabel_Objects);
     }
     else
     {
@@ -1564,13 +2122,11 @@ bool ADMData::CreateObjects(const OBJECTNAMES& names)
     }
   }
 
-  if ((names.channelFormatName != "") && ((channelFormat = dynamic_cast<ADMAudioChannelFormat *>(GetWritableObjectByName(names.channelFormatName, ADMAudioChannelFormat::Type))) == NULL))
+  if ((names.channelFormatName != "") && ((names.objects.channelFormat = dynamic_cast<ADMAudioChannelFormat *>(GetWritableObjectByName(names.channelFormatName, ADMAudioChannelFormat::Type))) == NULL))
   {
-    if ((channelFormat = CreateChannelFormat(names.channelFormatName)) != NULL)
+    if ((names.objects.channelFormat = CreateChannelFormat(names.channelFormatName)) != NULL)
     {
-      // set channel type
       DEBUG2(("Created channel format '%s'", names.channelFormatName.c_str()));
-      channelFormat->SetTypeLabel(ADMObject::TypeLabel_Objects);
     }
     else
     {
@@ -1579,15 +2135,14 @@ bool ADMData::CreateObjects(const OBJECTNAMES& names)
     }
   }
 
-  if ((names.streamFormatName != "") && ((streamFormat = dynamic_cast<ADMAudioStreamFormat *>(GetWritableObjectByName(names.streamFormatName, ADMAudioStreamFormat::Type))) == NULL))
+  if ((names.streamFormatName != "") && ((names.objects.streamFormat = dynamic_cast<ADMAudioStreamFormat *>(GetWritableObjectByName(names.streamFormatName, ADMAudioStreamFormat::Type))) == NULL))
   {
-    if ((streamFormat = CreateStreamFormat(names.streamFormatName)) != NULL)
+    if ((names.objects.streamFormat = CreateStreamFormat(names.streamFormatName)) != NULL)
     {
       // set stream type (PCM)
       DEBUG2(("Created stream format '%s'", names.streamFormatName.c_str()));
-      streamFormat->SetTypeLabel(ADMObject::TypeLabel_Objects);
-      streamFormat->SetFormatLabel(1);
-      streamFormat->SetFormatDefinition("PCM");
+      names.objects.streamFormat->SetFormatLabel(1);
+      names.objects.streamFormat->SetFormatDefinition("PCM");
     }
     else
     {
@@ -1596,14 +2151,14 @@ bool ADMData::CreateObjects(const OBJECTNAMES& names)
     }
   }
 
-  if ((names.trackFormatName != "") && ((trackFormat = dynamic_cast<ADMAudioTrackFormat *>(GetWritableObjectByName(names.trackFormatName, ADMAudioTrackFormat::Type))) == NULL))
+  if ((names.trackFormatName != "") && ((names.objects.trackFormat = dynamic_cast<ADMAudioTrackFormat *>(GetWritableObjectByName(names.trackFormatName, ADMAudioTrackFormat::Type))) == NULL))
   {
-    if ((trackFormat = CreateTrackFormat(names.trackFormatName)) != NULL)
+    if ((names.objects.trackFormat = CreateTrackFormat(names.trackFormatName)) != NULL)
     {
       // set track type (PCM)
       DEBUG2(("Created track format '%s'", names.trackFormatName.c_str()));
-      trackFormat->SetFormatLabel(1);
-      trackFormat->SetFormatDefinition("PCM");
+      names.objects.trackFormat->SetFormatLabel(1);
+      names.objects.trackFormat->SetFormatDefinition("PCM");
     }
     else
     {
@@ -1614,7 +2169,7 @@ bool ADMData::CreateObjects(const OBJECTNAMES& names)
 
   if (names.trackNumber < tracklist.size())
   {
-    if ((audioTrack = const_cast<ADMAudioTrack *>(tracklist[names.trackNumber])) != NULL)
+    if ((names.objects.audioTrack = const_cast<ADMAudioTrack *>(tracklist[names.trackNumber])) != NULL)
     {
       DEBUG2(("Found track number %u (%u tracks)", names.trackNumber, (uint_t)tracklist.size()));
     }
@@ -1624,32 +2179,33 @@ bool ADMData::CreateObjects(const OBJECTNAMES& names)
     }
   }
 
-#define LINK(master,slave)                          \
-  if (master && slave)                              \
-  {                                                 \
-    if (master->Add(slave))                         \
-    {                                               \
-      DEBUG2(("Connected %s '%s' to %s '%s'",       \
-              slave->GetType().c_str(),             \
-              slave->GetName().c_str(),             \
-              master->GetType().c_str(),            \
-              master->GetName().c_str()));          \
-    }                                               \
-    else                                            \
-    {                                               \
-      ERROR("Failed to connect %s '%s' to %s '%s'", \
-            slave->GetType().c_str(),               \
-            slave->GetName().c_str(),               \
-            master->GetType().c_str(),              \
-            master->GetName().c_str());             \
-      success = false;                              \
-    }                                               \
+#define LINK(master,slave)                                  \
+  if (names.objects.master && names.objects.slave)          \
+  {                                                         \
+    if (names.objects.master->Add(names.objects.slave))     \
+    {                                                       \
+      DEBUG2(("Connected %s '%s' to %s '%s'",               \
+              names.objects.slave->GetType().c_str(),       \
+              names.objects.slave->GetName().c_str(),       \
+              names.objects.master->GetType().c_str(),      \
+              names.objects.master->GetName().c_str()));    \
+    }                                                       \
+    else                                                    \
+    {                                                       \
+      ERROR("Failed to connect %s '%s' to %s '%s'",         \
+            names.objects.slave->GetType().c_str(),         \
+            names.objects.slave->GetName().c_str(),         \
+            names.objects.master->GetType().c_str(),        \
+            names.objects.master->GetName().c_str());       \
+      success = false;                                      \
+    }                                                       \
   }
 
   // link objects
   LINK(packFormat, channelFormat);
   LINK(trackFormat, streamFormat);
   LINK(streamFormat, trackFormat);
+  LINK(streamFormat, packFormat);
   LINK(streamFormat, channelFormat);
   LINK(audioTrack, trackFormat);
   LINK(audioTrack, packFormat);
@@ -1664,7 +2220,18 @@ bool ADMData::CreateObjects(const OBJECTNAMES& names)
   LINK(content, object);
 
   LINK(programme, content);
-  
+
+  if (names.typeLabel != ADMObject::TypeLabel_Unknown)
+  {
+  // set typeLabel for objects that have not had their typeLabel set
+#define SETTYPELABEL(obj) \
+    if (names.objects.obj && (names.objects.obj->GetTypeLabel() == ADMObject::TypeLabel_Unknown)) names.objects.obj->SetTypeLabel(names.typeLabel);
+    SETTYPELABEL(packFormat);
+    SETTYPELABEL(trackFormat);
+    SETTYPELABEL(streamFormat);
+    SETTYPELABEL(channelFormat);
+  }
+
   return success;
 }
 
@@ -1743,6 +2310,9 @@ bool ADMData::CreateFromFile(const char *filename)
               // set pack name from object name
               names.packFormatName = names.objectName;
 
+              // set typeLabel to be used
+              names.typeLabel = ADMObject::TypeLabel_Objects;
+
               // create / connect objects
               CreateObjects(names);
             }
@@ -1773,5 +2343,55 @@ bool ADMData::CreateFromFile(const char *filename)
 
   return success;
 }
+
+#if ENABLE_JSON
+/*--------------------------------------------------------------------------------*/
+/** Return ADM as JSON
+ */
+/*--------------------------------------------------------------------------------*/
+json_spirit::mObject ADMData::ToJSON() const
+{
+  json_spirit::mObject obj;
+  json_spirit::mArray  array;
+
+  // get list of ADMAudioObjects
+  std::vector<const ADMObject *> list;
+  uint_t i;
+
+  GetObjects(ADMAudioObject::Type, list);
+  for (i = 0; i < list.size(); i++)
+  {
+    const ADMAudioObject               *object = static_cast<const ADMAudioObject *>(list[i]);
+    const std::vector<ADMAudioTrack *>& tracks = object->GetTrackRefs();
+    uint_t t;
+
+    for (t = 0; t < tracks.size(); t++)
+    {
+      uint_t trackNum = tracks[t]->GetTrackNum();
+      const std::vector<ADMAudioBlockFormat *> *blockformats = object->GetBlockFormatList(trackNum);
+
+      if (blockformats)
+      {
+        uint_t bid;
+
+        for (bid = 0; bid < blockformats->size(); bid++)
+        {
+          json_spirit::mObject obj;
+
+          obj["object"]   = object->GetID();
+          obj["reltrack"] = (sint_t)trackNum - (sint_t)object->GetStartChannel();
+          (*blockformats)[bid]->ToJSON(obj);
+
+          array.push_back(obj);
+        }
+      }
+    }
+  }
+
+  obj["channels"] = array;
+
+  return obj;
+}
+#endif
 
 BBC_AUDIOTOOLBOX_END

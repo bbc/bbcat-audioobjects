@@ -4,6 +4,8 @@
 #include <vector>
 #include <map>
 
+#include <bbcat-base/RefCount.h>
+
 #include "RIFFChunks.h"
 
 BBC_AUDIOTOOLBOX_START
@@ -32,6 +34,14 @@ public:
   virtual bool Open(const char *filename);
 
   /*--------------------------------------------------------------------------------*/
+  /** Enable/disable background file writing
+   *
+   * @note can be called at any time to enable/disable
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void EnableBackgroundWriting(bool enable);
+
+  /*--------------------------------------------------------------------------------*/
   /** Create a WAVE/RIFF file
    *
    * @param filename filename of file to create
@@ -50,7 +60,7 @@ public:
    * @return true if file is open
    */
   /*--------------------------------------------------------------------------------*/
-  bool IsOpen() const {return (file && (file->isopen()));}
+  bool IsOpen() const {return (fileref.Obj() && fileref.Obj()->isopen());}
 
   /*--------------------------------------------------------------------------------*/
   /** Close file
@@ -68,7 +78,7 @@ public:
    * @return EnhancedFile object (or NULL)
    */
   /*--------------------------------------------------------------------------------*/
-  EnhancedFile *GetFile() {return file;}
+  EnhancedFile *GetFile() {return fileref;}
 
   /// file type enumeration
   enum
@@ -157,7 +167,7 @@ public:
    * @return chunk count
    */
   /*--------------------------------------------------------------------------------*/
-  uint_t GetChunkCount() const {return chunklist.size();}
+  uint_t GetChunkCount() const {return (uint_t)chunklist.size();}
 
   /*--------------------------------------------------------------------------------*/
   /** Return chunk at specifiec index
@@ -183,13 +193,51 @@ public:
   /** Create and add a chunk to a file being written
    *
    * @param id chunk type ID
-   * @param name chunk type name
    *
    * @return pointer to chunk object or NULL
    */
   /*--------------------------------------------------------------------------------*/
   RIFFChunk *AddChunk(uint32_t id);
+
+  /*--------------------------------------------------------------------------------*/
+  /** Create and add a chunk to a file being written
+   *
+   * @param name chunk type name
+   *
+   * @return pointer to chunk object or NULL
+   */
+  /*--------------------------------------------------------------------------------*/
   RIFFChunk *AddChunk(const char *name);
+
+  /*--------------------------------------------------------------------------------*/
+  /** Add a chunk of data to the RIFF file
+   *
+   * @param id chunk type ID
+   * @param data ptr to data for chunk
+   * @param length length of data
+   * @param beforesamples true to place chunk *before* data chunk, false to place it *after*
+   *
+   * @return pointer to chunk or NULL
+   *
+   * @note the data is copied into chunk so passed-in array is not required afterwards
+   */
+  /*--------------------------------------------------------------------------------*/
+  RIFFChunk *AddChunk(uint32_t id, const uint8_t *data, uint64_t length, bool beforesamples = false);
+
+  /*--------------------------------------------------------------------------------*/
+  /** Add a chunk of data to the RIFF file
+   *
+   * @param name chunk type name
+   * @param data ptr to data for chunk
+   * @param length length of data
+   * @param beforesamples true to place chunk *before* data chunk, false to place it *after*
+   *
+   * @return pointer to chunk or NULL
+   *
+   * @note the data is copied into chunk so passed-in array is not required afterwards
+   */
+  /*--------------------------------------------------------------------------------*/
+  RIFFChunk *AddChunk(const char *name, const uint8_t *data, uint64_t length, bool beforesamples = false);
 
   /*--------------------------------------------------------------------------------*/
   /** Return chunk specified by chunk ID
@@ -281,6 +329,20 @@ protected:
   virtual bool PostReadChunks() {return true;}
 
   /*--------------------------------------------------------------------------------*/
+  /** Optional stage to create extra chunks when writing WAV files
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual bool CreateExtraChunks() {return true;}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Write all chunks necessary
+   *
+   * @param closing true if file is closing and so chunks can be written after data chunk
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void WriteChunks(bool closing);
+
+  /*--------------------------------------------------------------------------------*/
   /** Overrideable called whenever sample position changes
    */
   /*--------------------------------------------------------------------------------*/
@@ -290,14 +352,14 @@ protected:
   typedef std::map<uint32_t, RIFFChunk *> ChunkMap_t;
 
 protected:
-  EnhancedFile      *file;
-  uint8_t           filetype;
-  SoundFormat       *fileformat;
-  SoundFileSamples  *filesamples;
-  bool              writing;
-
-  ChunkList_t       chunklist;
-  ChunkMap_t        chunkmap;
+  RefCount<EnhancedFile> fileref;
+  uint8_t                filetype;
+  SoundFormat            *fileformat;
+  SoundFileSamples       *filesamples;
+  ChunkList_t            chunklist;
+  ChunkMap_t             chunkmap;
+  bool                   writing;
+  bool                   backgroundwriting;
 };
 
 BBC_AUDIOTOOLBOX_END

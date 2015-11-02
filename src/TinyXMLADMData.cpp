@@ -8,9 +8,13 @@
 
 BBC_AUDIOTOOLBOX_START
 
-TinyXMLADMData::TinyXMLADMData()
+BBC_AUDIOTOOLBOX_KEEP(TinyXMLADMData);
+
+const bool TinyXMLADMData::registered = TinyXMLADMData::Register();
+
+TinyXMLADMData::TinyXMLADMData(const std::string& standarddefinitionsfile) : ADMData()
 {
-  // no special construction required
+  LoadStandardDefinitions(standarddefinitionsfile);
 }
 
 TinyXMLADMData::~TinyXMLADMData()
@@ -19,19 +23,39 @@ TinyXMLADMData::~TinyXMLADMData()
 }
 
 /*--------------------------------------------------------------------------------*/
-/** Required implementation of XML translation
+/** Register function - this is called automatically
  */
 /*--------------------------------------------------------------------------------*/
-bool TinyXMLADMData::TranslateXML(const std::string& data)
+bool TinyXMLADMData::Register()
+{
+  static bool registered = false;
+  if (!registered) {
+    RegisterProvider(&__Creator);
+    registered = true;
+  }
+
+  return registered;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Decode XML string as ADM
+ *
+ * @param data ptr to string containing ADM XML (MUST be terminated)
+ *
+ * @return true if XML decoded correctly
+ */
+/*--------------------------------------------------------------------------------*/
+bool TinyXMLADMData::TranslateXML(const char *data)
 {
   TiXmlDocument doc;
   const TiXmlNode *node;
   bool success = false;
 
-  DEBUG3(("XML: %s", data.c_str()));
+  DEBUG3(("XML: %s", data));
+
+  doc.Parse(data);
 
   // dig to correct location of audioFormatExtended section
-  doc.Parse(data.c_str());
   if ((node = FindElement(&doc, "ebuCoreMain")) != NULL)
   {
     if ((node = FindElement(node, "coreMetadata")) != NULL)
@@ -50,7 +74,17 @@ bool TinyXMLADMData::TranslateXML(const std::string& data)
     }
     else ERROR("Failed to find coreMetadata element");
   }
-  else ERROR("Failed to find ebuCoreMain element");
+  else if ((node = FindElement(&doc, "ituADM")) != NULL)
+  {
+    if ((node = FindElement(node, "audioFormatExtended")) != NULL)
+    {
+      CollectObjects(node);
+                    
+      success = true;
+    }
+    else ERROR("Failed to find audioFormatExtended element");
+  }
+  else ERROR("Failed to find ebuCoreMain or ituADM elements");
 
   return success;
 }
@@ -68,14 +102,11 @@ void TinyXMLADMData::ParseHeader(ADMHEADER& header, const std::string& type, voi
 {
   const TiXmlNode      *node = (const TiXmlNode *)userdata;
   const TiXmlAttribute *attr; 
-  char dummyid[32];
-
-  // set up dummy, unique ID
-  snprintf(dummyid, sizeof(dummyid) - 1, "%08lx", GetTickCount());
 
   header.type = type;
-  header.id   = dummyid;
-
+  header.id   = "";
+  Printf(header.id, "%08lx", (ulong_t)GetNanosecondTicks());
+  
   for (attr = node->ToElement()->FirstAttribute(); attr; attr = attr->Next())
   {
     std::string attr_name = attr->Name();
@@ -98,21 +129,41 @@ void TinyXMLADMData::ParseHeader(ADMHEADER& header, const std::string& type, voi
   DEBUG2(("Parse header (type='%s', id='%s', name='%s')", header.type.c_str(), header.id.c_str(), header.name.c_str()));
 }
 
-void TinyXMLADMData::ParseValue(ADMObject *obj, const std::string& type, void *userdata)
+/*--------------------------------------------------------------------------------*/
+/** Parse value (and its attributes) into a list of XML values
+ *
+ * @param obj ADM object
+ * @param userdata implementation specific object data
+ */
+/*--------------------------------------------------------------------------------*/
+void TinyXMLADMData::ParseValue(ADMObject *obj, void *userdata)
+{
+  ParseValue(obj->ToString(), obj->GetValues(), userdata);
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Parse value (and its attributes) into a list of XML values
+ *
+ * @param name name of object (for DEBUGGING only)
+ * @param values list of XML values to be added to
+ * @param userdata implementation specific object data
+ */
+/*--------------------------------------------------------------------------------*/
+void TinyXMLADMData::ParseValue(const std::string& name, XMLValues& values, void *userdata)
 {
   const TiXmlNode      *node    = (const TiXmlNode *)userdata;
   const TiXmlNode      *subnode = node->FirstChild();
   const TiXmlAttribute *attr; 
-  ADMVALUE value;
+  XMLValue value;
 
-  UNUSED_PARAMETER(type);
+  UNUSED_PARAMETER(name);
 
   value.attr = false;
   value.name = node->Value();
   if (subnode) value.value = subnode->Value();
 
   DEBUG3(("%s: %s='%s', attrs:",
-          obj->ToString().c_str(),
+          name.c_str(),
           value.name.c_str(), value.value.c_str()));
     
   for (attr = node->ToElement()->FirstAttribute(); attr; attr = attr->Next())
@@ -122,27 +173,37 @@ void TinyXMLADMData::ParseValue(ADMObject *obj, const std::string& type, void *u
     DEBUG3(("\t%s='%s'", attr->Name(), attr->Value()));
   }
 
-  obj->AddValue(value);
+  values.AddValue(value);
 }
 
 /*--------------------------------------------------------------------------------*/
-/** Parse attributes and subnodes as values
+/** Parse attributes into a list of XML values
  *
- * @param obj object to read values from
- * @param type XML type of object
- * @param userdata user suppled data
- *
+ * @param obj ADM object
+ * @param userdata implementation specific object data
  */
 /*--------------------------------------------------------------------------------*/
-void TinyXMLADMData::ParseValues(ADMObject *obj, const std::string& type, void *userdata)
+void TinyXMLADMData::ParseAttributes(ADMObject *obj, void *userdata)
 {
-  // if the supplied ADM object is an AudioChannelFormat, AudioBlockFormat sub-sections will be parsed
-  ADMAudioChannelFormat *channel = dynamic_cast<ADMAudioChannelFormat *>(obj);
-  const TiXmlNode       *node    = (const TiXmlNode *)userdata;
-  const TiXmlAttribute  *attr; 
-  const TiXmlNode       *subnode; 
+  ParseAttributes(obj->ToString(), obj->GetType(), obj->GetValues(), userdata);
+}
 
-  // parse attributes
+/*--------------------------------------------------------------------------------*/
+/** Parse attributes into a list of XML values
+ *
+ * @param name name of object (for DEBUGGING only)
+ * @param type object type - necessary to prevent object name and ID being added
+ * @param values list of XML values to be populated
+ * @param userdata implementation specific object data
+ */
+/*--------------------------------------------------------------------------------*/
+void TinyXMLADMData::ParseAttributes(const std::string& name, const std::string& type, XMLValues& values, void *userdata)
+{
+  const TiXmlNode      *node = (const TiXmlNode *)userdata;
+  const TiXmlAttribute *attr; 
+
+  UNUSED_PARAMETER(name);
+  
   for (attr = node->ToElement()->FirstAttribute(); attr; attr = attr->Next())
   {
     std::string attr_name = attr->Name();
@@ -152,19 +213,67 @@ void TinyXMLADMData::ParseValues(ADMObject *obj, const std::string& type, void *
         (attr_name != (type + "ID")) &&
         (attr_name != "UID"))
     {
-      ADMVALUE value;
+      XMLValue value;
             
       value.attr  = true;
       value.name  = attr_name;
       value.value = attr->Value();
 
-      obj->AddValue(value);
+      values.AddValue(value);
 
       DEBUG3(("%s: %s='%s'",
-              obj->ToString().c_str(),
+              name.c_str(),
               attr_name.c_str(), attr->Value()));
     }
   }
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Parse audioBlockFormat XML object
+ *
+ * @param name parent name (for DEBUGGING only)
+ * @param obj audioBlockFormat object
+ * @param userdata user suppled data
+ */
+/*--------------------------------------------------------------------------------*/
+void TinyXMLADMData::ParseValues(const std::string& name, ADMAudioBlockFormat *obj, void *userdata)
+{
+  const TiXmlNode *node = (const TiXmlNode *)userdata;
+  const TiXmlNode *subnode;
+  XMLValues       values;
+            
+  // parse attributes
+  ParseAttributes(name, obj->GetType(), values, userdata);
+
+  // parse subnode elements and create values from them
+  for (subnode = node->FirstChild(); subnode; subnode = subnode->NextSibling())
+  {
+    if (subnode->Type() == TiXmlNode::TINYXML_ELEMENT)
+    {
+      ParseValue(name, values, (void *)subnode);
+    }
+  }
+  
+  // set values in object
+  obj->SetValues(values);
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Parse attributes and subnodes as values
+ *
+ * @param obj object to read values from
+ * @param userdata user suppled data
+ */
+/*--------------------------------------------------------------------------------*/
+void TinyXMLADMData::ParseValues(ADMObject *obj, void *userdata)
+{
+  // if the supplied ADM object is an AudioChannelFormat, AudioBlockFormat sub-sections will be parsed
+  ADMAudioChannelFormat *channel = dynamic_cast<ADMAudioChannelFormat *>(obj);
+  const TiXmlNode       *node    = (const TiXmlNode *)userdata;
+  const TiXmlNode       *subnode;
+
+  // parse attributes
+  ParseAttributes(obj, userdata);
 
   // parse subnode elements and create values from them
   for (subnode = node->FirstChild(); subnode; subnode = subnode->NextSibling())
@@ -183,15 +292,16 @@ void TinyXMLADMData::ParseValues(ADMObject *obj, const std::string& type, void *
           ADMAudioBlockFormat *block;
 
           // parse this subnode as a section
-          if ((block = dynamic_cast<ADMAudioBlockFormat *>(Parse(name, (void *)subnode))) != NULL)
+          if ((block = new ADMAudioBlockFormat) != NULL)
           {
+            ParseValues(obj->ToString() + ":BlockFormat", block, (void *)subnode);
             channel->Add(block);
           }
           else ERROR("Parsed object was not an AudioBlockFormat object");
         }
         else ERROR("No AudioChannelFormat for found AudioBlockFormat");
       }
-      else ParseValue(obj, type, (void *)subnode);
+      else ParseValue(obj, (void *)subnode);
     }
   }
 }

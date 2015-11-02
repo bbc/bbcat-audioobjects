@@ -92,7 +92,7 @@ public:
   /** Return chunk data length as stored on file (header plus length plus padding if necessary)
    */
   /*--------------------------------------------------------------------------------*/
-  virtual uint64_t GetLengthOnFile() const {return 8 + length + (length & align);}
+  virtual uint64_t GetLengthOnFile() const {return WriteThisChunk() ? 8 + length + (length & align) : 0;}
 
   /*--------------------------------------------------------------------------------*/
   /** Return chunk data (or NULL if data has not yet been read)
@@ -101,10 +101,28 @@ public:
   const uint8_t *GetData() const {return data;}
 
   /*--------------------------------------------------------------------------------*/
+  /** Return chunk data that can be written to
+   */
+  /*--------------------------------------------------------------------------------*/
+  uint8_t *GetDataWritable() {return data;}
+
+  /*--------------------------------------------------------------------------------*/
   /** Delete read data
    */
   /*--------------------------------------------------------------------------------*/
   virtual void DeleteData();
+
+  /*--------------------------------------------------------------------------------*/
+  /** By default, all chunks are written before samples (data chunk)
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual bool WriteChunkBeforeSamples() const {return true;}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Return whether this chunk should be written (empty chunks need not be written)
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual bool WriteThisChunk() const {return (length || WriteEmptyChunk());}
 
   /*--------------------------------------------------------------------------------*/
   /** Write chunk
@@ -119,6 +137,14 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   virtual bool CreateChunkData(const void *_data, uint64_t _length);
+
+  /*--------------------------------------------------------------------------------*/
+  /** Update chunk data for writing
+   *
+   * @note returns false is length is different!
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual bool UpdateChunkData(const void *_data, uint64_t _length);
 
   /*--------------------------------------------------------------------------------*/
   /** Create/update data to the specified size
@@ -167,12 +193,9 @@ public:
 
   /*--------------------------------------------------------------------------------*/
   /** Return ASCII name representation of chunk ID
-   *
-   * @note the return is an allocated string (using CreateString()) and must be freed
-   * @note at some point by calling FreeStrings()
    */
   /*--------------------------------------------------------------------------------*/
-  static const char *GetChunkName(uint32_t id);
+  static std::string GetChunkName(uint32_t id);
 
   /*--------------------------------------------------------------------------------*/
   /** The primary chunk creation function when reading files
@@ -238,6 +261,20 @@ protected:
    */
   /*--------------------------------------------------------------------------------*/
   virtual void ByteSwapData(bool writing = false) {UNUSED_PARAMETER(writing);}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Return ID when writing chunk
+   *
+   * @note can be used to mark chunks as 'JUNK' if they are not required
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual uint32_t GetWriteID() const {return id;}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Return whether to write this chunk even if it is empty (usually false)
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual bool WriteEmptyChunk() const {return false;}
 
   /*--------------------------------------------------------------------------------*/
   /** Write chunk data
@@ -313,6 +350,7 @@ protected:
   uint32_t    id;             ///< chunk ID
   std::string name;           ///< chunk ID as string
   uint64_t    length;         ///< chunk data length
+  uint64_t    extrabytes;     ///< additional bytes to be allocted (and cleared) for chunk data (used for terminators, etc)
   uint64_t    datapos;        ///< chunk data file position
   uint8_t     *data;          ///< chunk data (if read)
   uint8_t     align;          ///< file alignment: 0 for no alignment, 1 for even byte alignment

@@ -18,6 +18,7 @@ std::map<uint32_t, RIFFChunk::PROVIDER> RIFFChunk::providermap;
 /*--------------------------------------------------------------------------------*/
 RIFFChunk::RIFFChunk(uint32_t chunk_id) : id(chunk_id),
                                           length(0),
+                                          extrabytes(0),
                                           datapos(0),
                                           data(NULL),
                                           align(1),
@@ -126,9 +127,12 @@ bool RIFFChunk::ReadData(EnhancedFile *file)
 
   if (!data && length)
   {
-    // allocate data for chunk data
-    if ((data = new uint8_t[length]) != NULL)
+    // allocate data for chunk data (allow extra space at end of chunk for terminators, etc)
+    if ((data = new uint8_t[length + extrabytes]) != NULL)
     {
+      // clear extra data
+      if (extrabytes) memset(data + length, 0, extrabytes);
+      
       // seek to correct position in file (will probably already be there)
       if (file && (file->fseek(datapos, SEEK_SET) == 0))
       {
@@ -167,11 +171,11 @@ bool RIFFChunk::WriteChunk(EnhancedFile *file)
 {
   bool success = CreateWriteData();
 
-  if (success)
+  if (success && WriteThisChunk())
   {
     // if chunk is marked as RIFF64, explicit store 0xffffffff as the length
     const uint32_t maxsize = RIFF_MaxSize;
-    uint32_t data[] = {id, (uint32_t)(riff64 ? maxsize : MIN(length, maxsize))};
+    uint32_t data[] = {GetWriteID(), (uint32_t)(riff64 ? maxsize : MIN(length, maxsize))};
 
     // treat ID as big-endian, length is little-endian
     ByteSwap(data[0], SWAP_FOR_BE);
@@ -216,7 +220,27 @@ bool RIFFChunk::CreateChunkData(const void *_data, uint64_t _length)
   }
 
   length = _length;
-  if (_data && ((data = new uint8_t[length]) != NULL))
+  // include additional storage specified by extrabytes
+  if (_data && ((data = new uint8_t[length + extrabytes]) != NULL))
+  {
+    memcpy(data, _data, length + extrabytes);
+    success = true;
+  }
+
+  return success;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Update chunk data for writing
+ *
+ * @note returns false is length is different!
+ */
+/*--------------------------------------------------------------------------------*/
+bool RIFFChunk::UpdateChunkData(const void *_data, uint64_t _length)
+{
+  bool success = false;
+
+  if (data && (_length == length))
   {
     memcpy(data, _data, length);
     success = true;
@@ -243,8 +267,11 @@ bool RIFFChunk::CreateChunkData(uint64_t _length)
 
     length = _length;
 
-    if ((data = new uint8_t[length]) != NULL)
+    if ((data = new uint8_t[length + extrabytes]) != NULL)
     {
+      // clear extra bytes
+      if (extrabytes) memset(data + length, 0, extrabytes);
+      
       // if old data exists, copy it and then clear the remainder
       if (olddata && oldlength)
       {
@@ -283,6 +310,8 @@ bool RIFFChunk::WriteChunkData(EnhancedFile *file)
     // byte swap JUST before writing!
     ByteSwapData(true);
     success = (file->fwrite(data, 1, length) == length);
+    // now byte swap back
+    ByteSwapData(false);
   }
 
   return success;
@@ -312,11 +341,7 @@ void RIFFChunk::DeleteData()
 /*--------------------------------------------------------------------------------*/
 void RIFFChunk::RegisterProvider(uint32_t id, RIFFChunk *(*fn)(uint32_t id, void *context), void *context)
 {
-  PROVIDER provider =
-  {
-    .fn      = fn,          // creator function
-    .context = context,     // user supplied data for creator
-  };
+  PROVIDER provider = {fn, context};
 
   // save creator against chunk ID
   providermap[id] = provider;
@@ -338,15 +363,12 @@ void RIFFChunk::RegisterProvider(const char *name, RIFFChunk *(*fn)(uint32_t id,
 
 /*--------------------------------------------------------------------------------*/
 /** Return ASCII name representation of chunk ID
- *
- * @note the return is an allocated string (using CreateString()) and must be freed
- * @note at some point by calling FreeStrings()
  */
 /*--------------------------------------------------------------------------------*/
-const char *RIFFChunk::GetChunkName(uint32_t id)
+std::string RIFFChunk::GetChunkName(uint32_t id)
 {
   char array[] = {(char)(id >> 24), (char)(id >> 16), (char)(id >> 8), (char)id};
-  return CreateString(array, sizeof(array));
+  return std::string(array, sizeof(array));
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -452,7 +474,7 @@ RIFFChunk *RIFFChunk::Create(uint32_t id)
 
   if (chunk && !chunk->InitialiseForWriting())
   {
-    ERROR("Failed to initialise chunk '%s' for writing", GetChunkName(id));
+    ERROR("Failed to initialise chunk '%s' for writing", GetChunkName(id).c_str());
     delete chunk;
     chunk = NULL;
   }
