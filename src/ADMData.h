@@ -233,7 +233,7 @@ public:
   /*--------------------------------------------------------------------------------*/
   /** Create audioTrack object
    *
-   * @param name name of object
+   * @param trackNum track number (0-based)
    * @param object audioObject object to attach this object to or NULL
    *
    * @note ID will be create automatically
@@ -241,7 +241,7 @@ public:
    * @return ADMAudioTrack object
    */
   /*--------------------------------------------------------------------------------*/
-  ADMAudioTrack *CreateTrack(const std::string& name, ADMAudioObject *object = NULL);
+  ADMAudioTrack *CreateTrack(uint_t trackNum = 0, ADMAudioObject *object = NULL);
 
   /*--------------------------------------------------------------------------------*/
   /** Create audioChannelFormat object

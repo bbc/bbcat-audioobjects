@@ -69,9 +69,8 @@ bool ADMRIFFFile::CreateExtraChunks()
       Printf(name, "Track %u", i + 1);
 
       // create chna track data
-      if ((track = adm->CreateTrack(name)) != NULL)
+      if ((track = adm->CreateTrack(i)) != NULL)
       {
-        track->SetTrackNum(i);
         track->SetSampleRate(GetSampleRate());
         track->SetBitDepth(GetBitsPerSample());
       }
@@ -384,15 +383,12 @@ bool ADMRIFFFile::PostReadChunks()
               {
                 ADMAudioChannelFormat *channelFormat = channelFormatRefs[j];
                 ADMAudioTrack *track;
-                std::string name;
 
                 // create track
-                Printf(name, "Track %u", j + 1);
-                if ((track = adm->CreateTrack(name)) != NULL)
+                if ((track = adm->CreateTrack(j)) != NULL)
                 {
                   uint_t k;
 
-                  track->SetTrackNum(j);
                   track->Add(packFormat);
 
                   // find stream format that points to the correct channel format and use that to find the trackFormat

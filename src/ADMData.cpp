@@ -605,7 +605,7 @@ ADMObject *ADMData::Create(const std::string& type, const std::string& id, const
       else if (type == ADMAudioChannelFormat::Type) obj = new ADMAudioChannelFormat(*this, id1, name);
       else if (type == ADMAudioStreamFormat::Type)  obj = new ADMAudioStreamFormat(*this, id1, name);
       else if (type == ADMAudioTrackFormat::Type)   obj = new ADMAudioTrackFormat(*this, id1, name);
-      else if (type == ADMAudioTrack::Type)         obj = new ADMAudioTrack(*this, id1, name);
+      else if (type == ADMAudioTrack::Type)         obj = new ADMAudioTrack(*this, id1);
       else
       {
         ERROR("Cannot create type '%s'", type.c_str());
@@ -904,7 +904,7 @@ ADMAudioPackFormat *ADMData::CreatePackFormat(const std::string& name, ADMAudioO
 /*--------------------------------------------------------------------------------*/
 /** Create audioTrack object
  *
- * @param name name of object
+ * @param trackNum track number (0-based)
  * @param object audioObject object to attach this object to or NULL
  *
  * @note ID will be create automatically
@@ -912,12 +912,14 @@ ADMAudioPackFormat *ADMData::CreatePackFormat(const std::string& name, ADMAudioO
  * @return ADMAudioTrack object
  */
 /*--------------------------------------------------------------------------------*/
-ADMAudioTrack *ADMData::CreateTrack(const std::string& name, ADMAudioObject *object)
+ADMAudioTrack *ADMData::CreateTrack(uint_t trackNum, ADMAudioObject *object)
 {
   ADMAudioTrack *track;
 
-  if ((track = new ADMAudioTrack(*this, CreateID(ADMAudioTrack::Type), name)) != NULL)
+  if ((track = new ADMAudioTrack(*this, CreateID(ADMAudioTrack::Type))) != NULL)
   {
+    track->SetTrackNum(trackNum);
+    
     if (object) object->Add(track);
   }
 
