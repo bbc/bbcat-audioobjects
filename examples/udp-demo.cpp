@@ -5,6 +5,11 @@
 #include <signal.h>
 #include <errno.h>
 
+#ifndef TARGET_OS_WINDOWS
+// for usleep()
+#include <unistd.h>
+#endif
+
 #include <vector>
 
 #include <bbcat-base/LoadedVersions.h>
