@@ -752,8 +752,8 @@ public:
    * @note type passed to base constructor is fixed by static member variable Type 
    */
   /*--------------------------------------------------------------------------------*/
-  ADMAudioTrack(ADMData& _owner, const std::string& _id, const std::string& _name) :
-    ADMObject(_owner, _id, _name),
+  ADMAudioTrack(ADMData& _owner, const std::string& _id) :
+    ADMObject(_owner, _id, ""),
     trackNum(0),
     sampleRate(0),
     bitDepth(0) {Register();}
