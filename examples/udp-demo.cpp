@@ -5,6 +5,9 @@
 #include <signal.h>
 #include <errno.h>
 
+// for system detection
+#include <bbcat-base/OSCompiler.h>
+
 #ifndef TARGET_OS_WINDOWS
 // for usleep()
 #include <unistd.h>

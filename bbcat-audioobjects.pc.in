@@ -9,7 +9,7 @@ Name: bbcat-audioobjects-@BBCAT_AUDIOOBJECTS_MAJORMINOR@
 Description: Audio Objects library
 Requires.private: @BBCAT_AUDIOOBJECTS_PKG_DEPS@
 Version: @VERSION@
-Libs: -L${libdir} -lbbcat-audioobjects-@BBCAT_AUDIOOBJECTS_MAJORMINOR@
-Cflags: -I${includedir}
+Libs: -L${libdir} -lbbcat-audioobjects-@BBCAT_AUDIOOBJECTS_MAJORMINOR@  @BBCAT_GLOBAL_AUDIOOBJECTS_LIBS@
+Cflags: -I${includedir} @BBCAT_GLOBAL_AUDIOOBJECTS_CFLAGS@
 
 

@@ -11,17 +11,14 @@ libbbcat_audioobjects_@BBCAT_AUDIOOBJECTS_MAJORMINOR@_la_LIBADD =	\
 	$(BBCAT_BASE_LIBS)												\
 	$(BBCAT_DSP_LIBS)												\
 	$(BBCAT_CONTROL_LIBS)											\
-	$(TINYXML_LIBS)													\
-	$(PTHREAD_LIBS)
+	$(TINYXML_LIBS)
 
 libbbcat_audioobjects_@BBCAT_AUDIOOBJECTS_MAJORMINOR@_la_CPPFLAGS =	\
 	$(BBCAT_BASE_CFLAGS)											\
 	$(BBCAT_DSP_CFLAGS)												\
 	$(BBCAT_CONTROL_CFLAGS)											\
 	$(BBCAT_AUDIOOBJECTS_CFLAGS)									\
-	$(BBCAT_GLOBAL_AUDIOOBJECTS_CFLAGS)								\
-	$(TINYXML_CFLAGS)												\
-	$(PTHREAD_CFLAGS)
+	$(TINYXML_CFLAGS)
 
 libbbcat_audioobjects_@BBCAT_AUDIOOBJECTS_MAJORMINOR@_la_SOURCES =	\
 	ADMAudioFileSamples.cpp											\

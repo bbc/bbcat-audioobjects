@@ -45,21 +45,7 @@ if test "x$exec_prefix" = "xNONE" ; then
   exec_prefix=$prefix
 fi
 
-BBCAT_GLOBAL_AUDIOOBJECTS_CFLAGS="$BBCAT_GLOBAL_AUDIOOBJECTS_CFLAGS -DBBCAT_AUDIOOBJECTS_DATA_FILES=\\\"${prefix}/share/$PACKAGE\\\""
-AC_SUBST(BBCAT_GLOBAL_AUDIOOBJECTS_CFLAGS)
-
-# Check if we should disable optimization  (./configure --disable-opt)
-AC_MSG_CHECKING(whether to disable optimization)
-AC_ARG_ENABLE(opt, AS_HELP_STRING([--disable-opt], [disable optimzation]), DISABLE_OPTIMIZATION="yes", DISABLE_OPTIMIZATION="no")
-if test "x${DISABLE_OPTIMIZATION}" = "xyes"; then
-  CFLAGS="$CFLAGS -O0"
-  CXXFLAGS="$CXXFLAGS -O0"
-  AC_MSG_RESULT(yes)
-else
-  AC_MSG_RESULT(no)
-fi
-AC_SUBST(CFLAGS)
-AC_SUBST(CXXFLAGS)
+BBCAT_AUDIOOBJECTS_CFLAGS="$BBCAT_AUDIOOBJECTS_CFLAGS -DBBCAT_AUDIOOBJECTS_DATA_FILES=\\\"${prefix}/share/$PACKAGE\\\""
 
 dnl bbcat-base is required
 BBCAT_BASE_VER="0.1.2.0"
@@ -110,43 +96,27 @@ if test "x${HAVE_TINYXML}" != xyes ; then
   AC_MSG_ERROR([tinyxml >= $TINYXML_VER is required])
 fi
 
-AC_ARG_WITH([thread],
-    AS_HELP_STRING([--with-thread=IMPL],[use threading library {auto,pthread,gthread,win32,none} [[default=auto]]]),
-    [],
-    [with_thread=auto])
+BBCAT_AUDIOOBJECTS_CFLAGS="$BBCAT_AUDIOOBJECTS_CFLAGS $TINYXML_CFLAGS"
+BBCAT_AUDIOOBJECTS_LIBS="$BBCAT_AUDIOOBJECTS_LIBS $TINYXML_LIBS"
 
-AC_MSG_CHECKING([threading implementation to use])
-if test "x${with_thread}" = "xauto" ; then
-  case $host_os in
-    mingw* | pw32*)
-      with_thread=win32
-      ;;
-    *)
-      with_thread=pthread
-      ;;
-  esac
+BBCAT_GLOBAL_AUDIOOBJECTS_CFLAGS="$BBCAT_AUDIOOBJECTS_CFLAGS"
+BBCAT_GLOBAL_AUDIOOBJECTS_LIBS="$BBCAT_AUDIOOBJECTS_LIBS"
+
+AC_SUBST(BBCAT_GLOBAL_AUDIOOBJECTS_CFLAGS)
+AC_SUBST(BBCAT_GLOBAL_AUDIOOBJECTS_LIBS)
+
+# Check if we should disable optimization  (./configure --disable-opt)
+AC_MSG_CHECKING(whether to disable optimization)
+AC_ARG_ENABLE(opt, AS_HELP_STRING([--disable-opt], [disable optimzation]), DISABLE_OPTIMIZATION="yes", DISABLE_OPTIMIZATION="no")
+if test "x${DISABLE_OPTIMIZATION}" = "xyes"; then
+  CFLAGS="$CFLAGS -O0"
+  CXXFLAGS="$CXXFLAGS -O0"
+  AC_MSG_RESULT(yes)
+else
+  AC_MSG_RESULT(no)
 fi
-AC_MSG_RESULT([$with_thread])
-
-THREAD_IMPL=${with_thread}
-AC_SUBST(THREAD_IMPL)
-
-if test "x${with_thread}" = "xpthread" ; then
-  case "$host_os" in
-    *)
-      PTHREAD_CFLAGS=
-      PTHREAD_LIBS=-lpthread
-      ;;
-  esac
-  AC_SUBST(PTHREAD_CFLAGS)
-  AC_SUBST(PTHREAD_LIBS)
-fi
-
-if test "x${with_thread}" = "xgthread" ; then
-  PKG_CHECK_MODULES(GTHREAD, gthread-2.0, HAVE_GTHREAD=yes, HAVE_GTHREAD=no)
-  AC_SUBST(GTHREAD_LIBS)
-  AC_SUBST(GTHREAD_CFLAGS)
-fi
+AC_SUBST(CFLAGS)
+AC_SUBST(CXXFLAGS)
 
 AC_APPEND_SUPPORTED_CFLAGS(BBCAT_AUDIOOBJECTS_CFLAGS, [-Wall])
 AC_APPEND_SUPPORTED_CFLAGS(BBCAT_AUDIOOBJECTS_CFLAGS, [-Werror])
