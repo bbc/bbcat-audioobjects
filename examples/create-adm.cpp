@@ -42,7 +42,7 @@ int main(void)
     {
       std::string trackname;
 
-      DEBUG("------------- Track %2u -----------------", t + 1);
+      printf("------------- Track %2u -----------------\n", t + 1);
 
       // create default audioTrackFormat name (used for audioStreamFormat objects as well)
       Printf(trackname, "Track %u", t + 1);
@@ -114,13 +114,13 @@ int main(void)
             // set object parameters
             bf->GetObjectParameters() = params;
           }
-          else ERROR("Failed to create audioBlockFormat (t: %u, i: %u)", t, i);
+          else fprintf(stderr, "Failed to create audioBlockFormat (t: %u, i: %u)\n", t, i);
         }
       }
       else
       {
         // this will only occur in the case of an error
-        ERROR("Unable to find channel format '%s'", names.channelFormatName.c_str());
+        fprintf(stderr, "Unable to find channel format '%s'\n", names.channelFormatName.c_str());
       }
     }
 

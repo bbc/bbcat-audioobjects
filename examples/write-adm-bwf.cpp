@@ -55,7 +55,7 @@ int main(void)
       {
         std::string trackname;
 
-        DEBUG("------------- Track %2u -----------------", t + 1);
+        printf("------------- Track %2u -----------------\n", t + 1);
 
         // create default audioTrackFormat name (used for audioStreamFormat objects as well)
         Printf(trackname, "Track %u", t + 1);

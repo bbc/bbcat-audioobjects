@@ -2,10 +2,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <bbcat-base/LoadedVersions.h>
+
 #include <bbcat-audioobjects/ADMData.h>
 #include <bbcat-audioobjects/RIFFFile.h>
 
 using namespace bbcat;
+
+// ensure the version numbers of the linked libraries and registered
+BBC_AUDIOTOOLBOX_REQUIRE(bbcat_base_version);
+BBC_AUDIOTOOLBOX_REQUIRE(bbcat_dsp_version);
+BBC_AUDIOTOOLBOX_REQUIRE(bbcat_control_version);
+BBC_AUDIOTOOLBOX_REQUIRE(bbcat_audioobjects_version);
+
+// ensure the TinyXMLADMData object file is kept in the application
+BBC_AUDIOTOOLBOX_REQUIRE(TinyXMLADMData);
 
 int main(int argc, char *argv[])
 {
@@ -15,6 +26,9 @@ int main(int argc, char *argv[])
     exit(1);
   }
   
+  // print library versions (the actual loaded versions, if dynamically linked)
+  printf("Versions:\n%s\n", LoadedVersions::Get().GetVersionsList().c_str());
+
   // create basic ADM
   ADMData *adm;
   if ((adm = ADMData::Create()) != NULL)
@@ -36,7 +50,7 @@ int main(int argc, char *argv[])
       ADMAudioTrack *track;
       std::string trackname;
       
-      DEBUG("------------- Track %2u -----------------", t + 1);
+      printf("------------- Track %2u -----------------\n", t + 1);
 
       // create default audioTrackFormat name (used for audioStreamFormat objects as well)
       Printf(trackname, "Track %u", t + 1);
@@ -115,13 +129,13 @@ int main(int argc, char *argv[])
             // set object parameters
             bf->GetObjectParameters() = params;
           }
-          else ERROR("Failed to create audioBlockFormat (t: %u, i: %u)", t, i);
+          else fprintf(stderr, "Failed to create audioBlockFormat (t: %u, i: %u)\n", t, i);
         }
       }
       else
       {
         // this will only occur in the case of an error
-        ERROR("Unable to find channel format '%s'", names.channelFormatName.c_str());
+        fprintf(stderr, "Unable to find channel format '%s'\n", names.channelFormatName.c_str());
       }
     }
 
@@ -142,7 +156,7 @@ int main(int argc, char *argv[])
 
       // add chna chunk
       if ((data = adm->GetChna(len)) != NULL) file.AddChunk("chna", data, len);
-      else ERROR("No chna chunk to add!");
+      else fprintf(stderr, "No chna chunk to add!\n");
 
       // add axml chunk
       file.AddChunk("axml", (const uint8_t *)axml.c_str(), axml.size());
@@ -150,8 +164,9 @@ int main(int argc, char *argv[])
       // write everything
       file.Close();
     }
-    else ERROR("Failed to create file '%s'\n", argv[1]);
+    else fprintf(stderr, "Failed to create file '%s'\n", argv[1]);
   }
+  else fprintf(stderr, "Failed to create ADM - no provider available?\n");
 
   return 0;
 }
