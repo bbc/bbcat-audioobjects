@@ -263,7 +263,7 @@ void RIFFds64Chunk::SetSampleCount(uint64_t count)
   }
 }
 
-void RIFFds64Chunk::SetTableCount(uint64_t count)
+void RIFFds64Chunk::SetTableCount(uint32_t count)
 {
   if (data && (count != GetTableCount()))
   {

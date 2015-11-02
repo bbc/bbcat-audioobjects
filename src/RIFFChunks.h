@@ -116,7 +116,7 @@ public:
   void     SetRIFFSize(uint64_t size);
   void     SetdataSize(uint64_t size);
   void     SetSampleCount(uint64_t count);
-  void     SetTableCount(uint64_t count);
+  void     SetTableCount(uint32_t count);
 
   virtual bool     SetChunkSize(uint32_t id, uint64_t length);
   virtual uint64_t GetChunkSize(uint32_t id, uint64_t original_length) const;
@@ -151,7 +151,7 @@ protected:
   virtual bool RIFF64Capable() {return true;}
 
 protected:
-  uint_t tablecount;
+  uint32_t tablecount;
 };
 
 /*--------------------------------------------------------------------------------*/
