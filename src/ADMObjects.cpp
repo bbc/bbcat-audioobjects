@@ -753,8 +753,8 @@ void ADMAudioTrack::GetValuesAndReferences(XMLValues& objvalues, std::vector<REF
   value.SetAttribute("sampleRate", sampleRate); objvalues.push_back(value);
   value.SetAttribute("bitDepth",   bitDepth);   objvalues.push_back(value);
 
-  // only record references for later output
-  object.genref  = false;
+  // output references to objects
+  object.genref = true;
 
   for (i = 0; i < trackformatrefs.size(); i++)
   {
