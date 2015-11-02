@@ -126,3 +126,4 @@ With the examples built:
 ./write-adm-bwf
 ./read-adm-bwf adm-bwf.wav
 ./create-adm
+./write-separate-adm adm-bwf-2.wav

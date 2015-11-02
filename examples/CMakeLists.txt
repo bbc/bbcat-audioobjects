@@ -78,6 +78,9 @@ TARGET_LINK_LIBRARIES(read-adm-bwf bbcat-base bbcat-dsp bbcat-control bbcat-audi
 ADD_EXECUTABLE(create-adm create-adm.cpp)
 TARGET_LINK_LIBRARIES(create-adm bbcat-base bbcat-dsp bbcat-control bbcat-audioobjects)
 
+ADD_EXECUTABLE(write-separate-adm write-separate-adm.cpp)
+TARGET_LINK_LIBRARIES(write-separate-adm bbcat-base bbcat-dsp bbcat-control bbcat-audioobjects)
+
 ADD_EXECUTABLE(udp-demo udp-demo.cpp)
 TARGET_LINK_LIBRARIES(udp-demo bbcat-base)
 
