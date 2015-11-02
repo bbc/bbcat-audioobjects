@@ -204,10 +204,7 @@ bool RIFFFile::Create(const char *filename, uint32_t samplerate, uint_t nchannel
               ds64->SetTableCount((uint_t)chunklist.size() - 5);        // none of the above chunks need a table entry (RIFF and data chunks have dedicated entries in the ds64 chunk)
             }
 
-            WriteChunks(file, false);
-
-            // now switch to background writing mode if enabled
-            file->EnableBackground(backgroundwriting);
+            WriteChunks(false);
 
             success  = true;
           }
@@ -225,13 +222,20 @@ bool RIFFFile::Create(const char *filename, uint32_t samplerate, uint_t nchannel
 }
 
 /*--------------------------------------------------------------------------------*/
-/** Write chunk data
+/** Write all chunks necessary
+ *
+ * @param closing true if file is closing and so chunks can be written after data chunk
  */
 /*--------------------------------------------------------------------------------*/
-void RIFFFile::WriteChunks(EnhancedFile *file, bool closing)
+void RIFFFile::WriteChunks(bool closing)
 {
+  EnhancedFile   *file  = fileref;
+  BackgroundFile *bfile = dynamic_cast<BackgroundFile *>(file);
   RIFFChunk *chunk;
   uint_t i;
+
+  // ensure file writing is foreground for this purpose
+  if (bfile) bfile->EnableBackground(false);
 
   file->rewind();
 
@@ -278,6 +282,12 @@ void RIFFFile::WriteChunks(EnhancedFile *file, bool closing)
       }
     }
   }
+
+  if (!closing && bfile)
+  {
+    // now switch to background writing mode if enabled
+    bfile->EnableBackground(backgroundwriting);
+  }
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -297,7 +307,6 @@ void RIFFFile::Close(bool abortwrite)
   {
     if (writing && !abortwrite)
     {
-      BackgroundFile *bfile = dynamic_cast<BackgroundFile *>(fileref.Obj());
       RIFFds64Chunk  *ds64  = dynamic_cast<RIFFds64Chunk *>(GetChunk(ds64_ID));
       RIFFChunk      *chunk;
       const uint64_t maxsize = RIFFChunk::RIFF_MaxSize; // max size of chunks and file before switching to RF64
@@ -363,11 +372,8 @@ void RIFFFile::Close(bool abortwrite)
       // set total length of RIFF chunk
       chunkmap[RIFF_ID]->CreateChunkData(NULL, totalbytes);
 
-      // just before writing all chunks again, switch to foreground mode
-      if (bfile) bfile->EnableBackground(false);
-
       // write/re-write all chunks
-      WriteChunks(file, true);
+      WriteChunks(true);
 
       DEBUG1(("Closed file '%s'", file->getfilename().c_str()));
     }
@@ -393,7 +399,6 @@ void RIFFFile::Close(bool abortwrite)
 /** Create and add a chunk to a file being written
  *
  * @param id chunk type ID
- * @param name chunk type name
  *
  * @return pointer to chunk object or NULL
  */
@@ -449,9 +454,88 @@ RIFFChunk *RIFFFile::AddChunk(uint32_t id)
   return chunk;
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Create and add a chunk to a file being written
+ *
+ * @param name chunk type name
+ *
+ * @return pointer to chunk object or NULL
+ */
+/*--------------------------------------------------------------------------------*/
 RIFFChunk *RIFFFile::AddChunk(const char *name)
 {
   return AddChunk(IFFID(name));
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Add a chunk of data to the RIFF file
+ *
+ * @param id chunk type ID
+ * @param data ptr to data for chunk
+ * @param length length of data
+ * @param beforesamples true to place chunk *before* data chunk, false to place it *after*
+ *
+ * @return pointer to chunk or NULL
+ *
+ * @note the data is copied into chunk so passed-in array is not required afterwards
+ */
+/*--------------------------------------------------------------------------------*/
+RIFFChunk *RIFFFile::AddChunk(uint32_t id, const uint8_t *data, uint64_t length, bool beforesamples)
+{
+  RIFFChunk *chunk;
+
+  if (beforesamples && filesamples && (filesamples->GetSamplePosition() != 0))
+  {
+    // create ASCII name from ID
+    char _name[] = {(char)(id >> 24), (char)(id >> 16), (char)(id >> 8), (char)id};
+    std::string name;
+    
+    name.assign(_name, sizeof(_name));
+
+    DEBUG("Warning: add chunk '%s' before samples requested when samples written, moving to after samples", name.c_str());
+    
+    beforesamples = false;
+  }
+  
+  if ((chunk = new UserRIFFChunk(id, data, length, beforesamples)) != NULL)
+  {
+    // ensure data is valid
+    if (chunk->GetData())
+    {
+      // add chunk to list
+      chunklist.push_back(chunk);
+      chunkmap[chunk->GetID()] = chunk;
+
+      // if chunk needs to go to *before* samples, chunks need to be re-written
+      if (IsOpen() && beforesamples) WriteChunks(false);
+    }
+    else
+    {
+      ERROR("Failed to copy data for chunk %08x", (uint_t)id);
+      delete chunk;
+      chunk = NULL;
+    }
+  }
+
+  return chunk;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Add a chunk of data to the RIFF file
+ *
+ * @param name chunk type name
+ * @param data ptr to data for chunk
+ * @param length length of data
+ * @param beforesamples true to place chunk *before* data chunk, false to place it *after*
+ *
+ * @return pointer to chunk or NULL
+ *
+ * @note the data is copied into chunk so passed-in array is not required afterwards
+ */
+/*--------------------------------------------------------------------------------*/
+RIFFChunk *RIFFFile::AddChunk(const char *name, const uint8_t *data, uint64_t length, bool beforesamples)
+{
+  return AddChunk(IFFID(name), data, length, beforesamples);
 }
 
 BBC_AUDIOTOOLBOX_END

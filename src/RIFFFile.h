@@ -167,7 +167,7 @@ public:
    * @return chunk count
    */
   /*--------------------------------------------------------------------------------*/
-  uint_t GetChunkCount() const {return (uint_t)chunklist.size();}
+  uint_t GetChunkCount() const {return chunklist.size();}
 
   /*--------------------------------------------------------------------------------*/
   /** Return chunk at specifiec index
@@ -193,13 +193,51 @@ public:
   /** Create and add a chunk to a file being written
    *
    * @param id chunk type ID
-   * @param name chunk type name
    *
    * @return pointer to chunk object or NULL
    */
   /*--------------------------------------------------------------------------------*/
   RIFFChunk *AddChunk(uint32_t id);
+
+  /*--------------------------------------------------------------------------------*/
+  /** Create and add a chunk to a file being written
+   *
+   * @param name chunk type name
+   *
+   * @return pointer to chunk object or NULL
+   */
+  /*--------------------------------------------------------------------------------*/
   RIFFChunk *AddChunk(const char *name);
+
+  /*--------------------------------------------------------------------------------*/
+  /** Add a chunk of data to the RIFF file
+   *
+   * @param id chunk type ID
+   * @param data ptr to data for chunk
+   * @param length length of data
+   * @param beforesamples true to place chunk *before* data chunk, false to place it *after*
+   *
+   * @return pointer to chunk or NULL
+   *
+   * @note the data is copied into chunk so passed-in array is not required afterwards
+   */
+  /*--------------------------------------------------------------------------------*/
+  RIFFChunk *AddChunk(uint32_t id, const uint8_t *data, uint64_t length, bool beforesamples = false);
+
+  /*--------------------------------------------------------------------------------*/
+  /** Add a chunk of data to the RIFF file
+   *
+   * @param name chunk type name
+   * @param data ptr to data for chunk
+   * @param length length of data
+   * @param beforesamples true to place chunk *before* data chunk, false to place it *after*
+   *
+   * @return pointer to chunk or NULL
+   *
+   * @note the data is copied into chunk so passed-in array is not required afterwards
+   */
+  /*--------------------------------------------------------------------------------*/
+  RIFFChunk *AddChunk(const char *name, const uint8_t *data, uint64_t length, bool beforesamples = false);
 
   /*--------------------------------------------------------------------------------*/
   /** Return chunk specified by chunk ID
@@ -297,10 +335,12 @@ protected:
   virtual bool CreateExtraChunks() {return true;}
 
   /*--------------------------------------------------------------------------------*/
-  /** Write chunk data
+  /** Write all chunks necessary
+   *
+   * @param closing true if file is closing and so chunks can be written after data chunk
    */
   /*--------------------------------------------------------------------------------*/
-  virtual void WriteChunks(EnhancedFile *file, bool closing);
+  virtual void WriteChunks(bool closing);
 
   /*--------------------------------------------------------------------------------*/
   /** Overrideable called whenever sample position changes

@@ -116,7 +116,7 @@ public:
   void     SetRIFFSize(uint64_t size);
   void     SetdataSize(uint64_t size);
   void     SetSampleCount(uint64_t count);
-  void     SetTableCount(uint_t count);
+  void     SetTableCount(uint64_t count);
 
   virtual bool     SetChunkSize(uint32_t id, uint64_t length);
   virtual uint64_t GetChunkSize(uint32_t id, uint64_t original_length) const;
@@ -368,6 +368,23 @@ protected:
   virtual bool WriteEmptyChunk() const {return true;}
 };
 
+/*--------------------------------------------------------------------------------*/
+/** User RIFF chunk, can be any id and data
+ */
+/*--------------------------------------------------------------------------------*/
+class UserRIFFChunk: public RIFFChunk
+{
+public:
+  UserRIFFChunk(uint32_t chunk_id, const void *_data, uint64_t _length, bool _beforesamples = false);
+  virtual ~UserRIFFChunk() {}
+
+  // this chunk is written *after* data chunk
+  virtual bool WriteChunkBeforeSamples() const {return beforesamples;}
+
+protected:
+  bool beforesamples;
+};
+  
 /*--------------------------------------------------------------------------------*/
 /** Register all providers from this file
  */

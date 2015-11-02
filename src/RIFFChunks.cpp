@@ -263,7 +263,7 @@ void RIFFds64Chunk::SetSampleCount(uint64_t count)
   }
 }
 
-void RIFFds64Chunk::SetTableCount(uint_t count)
+void RIFFds64Chunk::SetTableCount(uint64_t count)
 {
   if (data && (count != GetTableCount()))
   {
@@ -852,6 +852,12 @@ void RIFFdataChunk::Register()
 }
 
 /*----------------------------------------------------------------------------------------------------*/
+
+UserRIFFChunk::UserRIFFChunk(uint32_t chunk_id, const void *_data, uint64_t _length, bool _beforesamples) : RIFFChunk(chunk_id),
+                                                                                                            beforesamples(_beforesamples)
+{
+  CreateChunkData(_data, _length);
+}
 
 /*--------------------------------------------------------------------------------*/
 /** Register all providers from this file
