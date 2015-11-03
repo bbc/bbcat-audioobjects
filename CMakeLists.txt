@@ -21,10 +21,19 @@ add_definitions(${BBCAT_CONTROL_FLAGS})
 find_package(TinyXML REQUIRED)
 include_directories(${TinyXML_INCLUDE_DIRS})
 
+# set include directories for storing in .cmake file
 set(GLOBAL_INCLUDE_DIRS
 	${BBCAT_CONTROL_INCLUDE_DIRS}
 	${INSTALL_INCLUDE_DIR}
 	${TINYXML_INCLUDE_DIRS})
+
+# set library directories for storing in .cmake file
+set(GLOBAL_LIB_DIRS
+	${BBCAT_CONTROL_LIB_DIRS}
+	${INSTALL_LIB_DIR})
+
+# set library directories for linking
+link_directories(${GLOBAL_LIB_DIRS})
 
 set(GLOBAL_FLAGS
 	${BBCAT_CONTROL_FLAGS})
