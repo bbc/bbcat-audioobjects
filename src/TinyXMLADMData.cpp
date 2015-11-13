@@ -3,7 +3,7 @@
 
 #include <tinyxml.h>
 
-#define DEBUG_LEVEL 1
+#define BBCDEBUG_LEVEL 1
 #include "TinyXMLADMData.h"
 
 BBC_AUDIOTOOLBOX_START
@@ -51,7 +51,7 @@ bool TinyXMLADMData::TranslateXML(const char *data)
   const TiXmlNode *node;
   bool success = false;
 
-  DEBUG3(("XML: %s", data));
+  BBCDEBUG3(("XML: %s", data));
 
   doc.Parse(data);
 
@@ -68,11 +68,11 @@ bool TinyXMLADMData::TranslateXML(const char *data)
                     
           success = true;
         }
-        else ERROR("Failed to find audioFormatExtended element");
+        else BBCERROR("Failed to find audioFormatExtended element");
       }
-      else ERROR("Failed to find format element");
+      else BBCERROR("Failed to find format element");
     }
-    else ERROR("Failed to find coreMetadata element");
+    else BBCERROR("Failed to find coreMetadata element");
   }
   else if ((node = FindElement(&doc, "ituADM")) != NULL)
   {
@@ -93,13 +93,13 @@ bool TinyXMLADMData::TranslateXML(const char *data)
 
                 success = true;
             }
-            else ERROR("Failed to find audioFormatExtended element");
+            else BBCERROR("Failed to find audioFormatExtended element");
         }
-        else ERROR("Failed to find format element");
+        else BBCERROR("Failed to find format element");
     }
-    else ERROR("Failed to find audioFormatExtended element");
+    else BBCERROR("Failed to find audioFormatExtended element");
   }
-  else ERROR("Failed to find ebuCoreMain or ituADM elements");
+  else BBCERROR("Failed to find ebuCoreMain or ituADM elements");
 
   return success;
 }
@@ -141,7 +141,7 @@ void TinyXMLADMData::ParseHeader(ADMHEADER& header, const std::string& type, voi
     }
   }
 
-  DEBUG2(("Parse header (type='%s', id='%s', name='%s')", header.type.c_str(), header.id.c_str(), header.name.c_str()));
+  BBCDEBUG2(("Parse header (type='%s', id='%s', name='%s')", header.type.c_str(), header.id.c_str(), header.name.c_str()));
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -159,7 +159,7 @@ void TinyXMLADMData::ParseValue(ADMObject *obj, void *userdata)
 /*--------------------------------------------------------------------------------*/
 /** Parse value (and its attributes) into a list of XML values
  *
- * @param name name of object (for DEBUGGING only)
+ * @param name name of object (for BBCDEBUGGING only)
  * @param values list of XML values to be added to
  * @param userdata implementation specific object data
  */
@@ -177,7 +177,7 @@ void TinyXMLADMData::ParseValue(const std::string& name, XMLValues& values, void
   value.name = node->Value();
   if (subnode) value.value = subnode->Value();
 
-  DEBUG3(("%s: %s='%s', attrs:",
+  BBCDEBUG3(("%s: %s='%s', attrs:",
           name.c_str(),
           value.name.c_str(), value.value.c_str()));
     
@@ -185,7 +185,7 @@ void TinyXMLADMData::ParseValue(const std::string& name, XMLValues& values, void
   {
     value.attrs[attr->Name()] = attr->Value();
 
-    DEBUG3(("\t%s='%s'", attr->Name(), attr->Value()));
+    BBCDEBUG3(("\t%s='%s'", attr->Name(), attr->Value()));
   }
 
   values.AddValue(value);
@@ -206,7 +206,7 @@ void TinyXMLADMData::ParseAttributes(ADMObject *obj, void *userdata)
 /*--------------------------------------------------------------------------------*/
 /** Parse attributes into a list of XML values
  *
- * @param name name of object (for DEBUGGING only)
+ * @param name name of object (for BBCDEBUGGING only)
  * @param type object type - necessary to prevent object name and ID being added
  * @param values list of XML values to be populated
  * @param userdata implementation specific object data
@@ -236,7 +236,7 @@ void TinyXMLADMData::ParseAttributes(const std::string& name, const std::string&
 
       values.AddValue(value);
 
-      DEBUG3(("%s: %s='%s'",
+      BBCDEBUG3(("%s: %s='%s'",
               name.c_str(),
               attr_name.c_str(), attr->Value()));
     }
@@ -246,7 +246,7 @@ void TinyXMLADMData::ParseAttributes(const std::string& name, const std::string&
 /*--------------------------------------------------------------------------------*/
 /** Parse audioBlockFormat XML object
  *
- * @param name parent name (for DEBUGGING only)
+ * @param name parent name (for BBCDEBUGGING only)
  * @param obj audioBlockFormat object
  * @param userdata user suppled data
  */
@@ -312,9 +312,9 @@ void TinyXMLADMData::ParseValues(ADMObject *obj, void *userdata)
             ParseValues(obj->ToString() + ":BlockFormat", block, (void *)subnode);
             channel->Add(block);
           }
-          else ERROR("Parsed object was not an AudioBlockFormat object");
+          else BBCERROR("Parsed object was not an AudioBlockFormat object");
         }
-        else ERROR("No AudioChannelFormat for found AudioBlockFormat");
+        else BBCERROR("No AudioChannelFormat for found AudioBlockFormat");
       }
       else ParseValue(obj, (void *)subnode);
     }

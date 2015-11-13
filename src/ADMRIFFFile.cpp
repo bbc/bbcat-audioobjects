@@ -3,7 +3,7 @@
 
 #include <string>
 
-#define DEBUG_LEVEL 1
+#define BBCDEBUG_LEVEL 1
 #include <bbcat-base/PerformanceMonitor.h>
 
 #include "ADMRIFFFile.h"
@@ -38,7 +38,7 @@ bool ADMRIFFFile::Open(const char *filename, const std::string& standarddefiniti
   {
     success = RIFFFile::Open(filename);
   }
-  else ERROR("No providers for ADM XML decoding!");
+  else BBCERROR("No providers for ADM XML decoding!");
 
   return success;
 }
@@ -86,7 +86,7 @@ bool ADMRIFFFile::CreateExtraChunks()
       }
       else
       {
-        ERROR("Unable to create ADM structure from '%s'", admfile.c_str());
+        BBCERROR("Unable to create ADM structure from '%s'", admfile.c_str());
         success = false;
       }
     }
@@ -99,12 +99,12 @@ bool ADMRIFFFile::CreateExtraChunks()
       {
         success &= chunk->CreateChunkData(chna, chnalen);
       }
-      else ERROR("Failed to add chna chunk");
+      else BBCERROR("Failed to add chna chunk");
 
       // don't need the raw data any more
       delete[] chna;
     }
-    else ERROR("No chna data available");
+    else BBCERROR("No chna data available");
 
     success &= (AddChunk(axml_ID) != NULL);
   }
@@ -130,7 +130,7 @@ bool ADMRIFFFile::CreateADM(const std::string& standarddefinitionsfile)
     {
       success = true;
     }
-    else ERROR("No providers for ADM XML decoding!");
+    else BBCERROR("No providers for ADM XML decoding!");
   }
 
   return success;
@@ -188,9 +188,9 @@ void ADMRIFFFile::Close(bool abortwrite)
     uint32_t  chnalen;
     uint8_t   *chna;
 
-    DEBUG1(("Finalising ADM for '%s'...", file->getfilename().c_str()));
+    BBCDEBUG1(("Finalising ADM for '%s'...", file->getfilename().c_str()));
 
-    DEBUG1(("Finishing all blockformats"));
+    BBCDEBUG1(("Finishing all blockformats"));
 
     // complete BlockFormats on all channels
     for (i = 0; i < cursors.size(); i++)
@@ -205,7 +205,7 @@ void ADMRIFFFile::Close(bool abortwrite)
     // update audio object time limits
     adm->UpdateAudioObjectLimits();
 
-    DEBUG1(("Creating ADM RIFF chunks"));
+    BBCDEBUG1(("Creating ADM RIFF chunks"));
 
     // get ADM object to create chna chunk
     if ((chna = adm->GetChna(chnalen)) != NULL)
@@ -213,14 +213,14 @@ void ADMRIFFFile::Close(bool abortwrite)
       // and add it to the RIFF file
       if ((chunk = GetChunk(chna_ID)) != NULL)
       {
-        if (!chunk->UpdateChunkData(chna, chnalen)) ERROR("Failed to update chna data (possibly length has changed)");
+        if (!chunk->UpdateChunkData(chna, chnalen)) BBCERROR("Failed to update chna data (possibly length has changed)");
       }
-      else ERROR("Failed to add chna chunk");
+      else BBCERROR("Failed to add chna chunk");
 
       // don't need the raw data any more
       delete[] chna;
     }
-    else ERROR("No chna data available");
+    else BBCERROR("No chna data available");
 
     // add axml chunk
     if ((chunk = GetChunk(axml_ID)) != NULL)
@@ -228,18 +228,18 @@ void ADMRIFFFile::Close(bool abortwrite)
       // first, calculate size of ADM (to save lots of memory allocations)
       uint64_t admlen = adm->GenerateXMLBuffer(NULL, 0);
 
-      DEBUG1(("ADM size is %lu bytes", (ulong_t)admlen));
+      BBCDEBUG1(("ADM size is %lu bytes", (ulong_t)admlen));
       
       // allocate chunk data
       if (chunk->CreateChunkData(admlen))
       {
         // finally, generate XML into buffer
         uint64_t admlen1 = adm->GenerateXMLBuffer(chunk->GetDataWritable(), admlen);
-        if (admlen1 != admlen) ERROR("Generating axml data for real resulted in different size (%lu vs %lu)", (ulong_t)admlen1, (ulong_t)admlen);
+        if (admlen1 != admlen) BBCERROR("Generating axml data for real resulted in different size (%lu vs %lu)", (ulong_t)admlen1, (ulong_t)admlen);
       }
-      else ERROR("Failed to allocate %lu bytes for axml data", (ulong_t)admlen);
+      else BBCERROR("Failed to allocate %lu bytes for axml data", (ulong_t)admlen);
     }
-    else ERROR("Failed to add axml chunk");
+    else BBCERROR("Failed to add axml chunk");
   }
 
   // write chunks and close file
@@ -308,41 +308,41 @@ bool ADMRIFFFile::PostReadChunks()
       // decode chunks
       success = adm->Set(chna->GetData(), (uint_t)chna->GetLength(), (const char *)axml->GetData());
 
-#if DEBUG_LEVEL >= 4
+#if BBCDEBUG_LEVEL >= 4
       { // dump ADM as text
         std::string str;
         adm->Dump(str);
 
-        DEBUG("%s", str.c_str());
+        BBCDEBUG("%s", str.c_str());
       }
 
       { // dump ADM as XML
         std::string str;
         adm->GenerateXML(str);
 
-        DEBUG("%s", str.c_str());
+        BBCDEBUG("%s", str.c_str());
       }
 
-      DEBUG("Audio objects:");
+      BBCDEBUG("Audio objects:");
       std::vector<const ADMObject *> list;
       adm->GetObjects(ADMAudioObject::Type, list);
       uint_t i;
       for (i = 0; i < list.size(); i++)
       {
-        DEBUG("%s", list[i]->ToString().c_str());
+        BBCDEBUG("%s", list[i]->ToString().c_str());
       }
 #endif
     }
     // test for different types of failure
     else if (!adm)
     {
-      ERROR("Cannot decode ADM, no ADM decoder available");
+      BBCERROR("Cannot decode ADM, no ADM decoder available");
       success = false;
     }
     else if (!chna || !axml)
     {
       // acceptable failure - chna and/or axml chunk not specified - not an ADM compatible BWF file but open anyway
-      DEBUG("Warning: no chna/axml chunks!");
+      BBCDEBUG("Warning: no chna/axml chunks!");
 
       // if no chna supplied, create default channel mapping using standard definitions
       if (adm && !chna)
@@ -373,7 +373,7 @@ bool ADMRIFFFile::PostReadChunks()
             {
               uint_t j;
 
-              DEBUG("Found pack format '%s' ('%s') for %u channels", packFormat->GetName().c_str(), packFormat->GetID().c_str(), GetChannels());
+              BBCDEBUG("Found pack format '%s' ('%s') for %u channels", packFormat->GetName().c_str(), packFormat->GetID().c_str(), GetChannels());
 
               // add pack format to audio object
               if (object) object->Add(packFormat);
@@ -405,8 +405,8 @@ bool ADMRIFFFile::PostReadChunks()
                       // get track format ref
                       ADMAudioTrackFormat *trackFormat = streamFormat->GetTrackFormatRefs()[0];
 
-                      DEBUG("Found stream format '%s' ('%s') which refs channel format '%s' ('%s')", streamFormat->GetName().c_str(), streamFormat->GetID().c_str(), channelFormat->GetName().c_str(), channelFormat->GetID().c_str());
-                      DEBUG("Found stream format '%s' ('%s') which refs track   format '%s' ('%s')", streamFormat->GetName().c_str(), streamFormat->GetID().c_str(), trackFormat->GetName().c_str(), trackFormat->GetID().c_str());
+                      BBCDEBUG("Found stream format '%s' ('%s') which refs channel format '%s' ('%s')", streamFormat->GetName().c_str(), streamFormat->GetID().c_str(), channelFormat->GetName().c_str(), channelFormat->GetID().c_str());
+                      BBCDEBUG("Found stream format '%s' ('%s') which refs track   format '%s' ('%s')", streamFormat->GetName().c_str(), streamFormat->GetID().c_str(), trackFormat->GetName().c_str(), trackFormat->GetID().c_str());
 
                       // add track format to track
                       track->Add(trackFormat);
@@ -426,7 +426,7 @@ bool ADMRIFFFile::PostReadChunks()
         // set default time limits on audio object
         if (object && filesamples)
         {
-          DEBUG("Setting duration to %luns", (ulong_t)filesamples->GetLengthNS());
+          BBCDEBUG("Setting duration to %luns", (ulong_t)filesamples->GetLengthNS());
           object->SetDuration(filesamples->GetLengthNS());
         }
       }
@@ -435,8 +435,8 @@ bool ADMRIFFFile::PostReadChunks()
     }
     else {
       // unacceptible failures: empty chna or empty axml chunks
-      if (chna && !chna->GetData()) ERROR("Cannot decode ADM, chna chunk not available");
-      if (axml && !axml->GetData()) ERROR("Cannot decode ADM, axml chunk not available");
+      if (chna && !chna->GetData()) BBCERROR("Cannot decode ADM, chna chunk not available");
+      if (axml && !axml->GetData()) BBCERROR("Cannot decode ADM, axml chunk not available");
       success = false;
     }
 

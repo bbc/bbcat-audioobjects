@@ -4,7 +4,7 @@
 
 #include <algorithm>
 
-#define DEBUG_LEVEL 1
+#define BBCDEBUG_LEVEL 1
 #include <bbcat-base/EnhancedFile.h>
 
 #include "ADMData.h"
@@ -63,7 +63,7 @@ bool ADMData::LoadStandardDefinitions(const std::string& filename)
 
     if (EnhancedFile::exists(filename2.c_str()))
     {
-      DEBUG("Found standard definitions file '%s' as '%s'", filename.c_str(), filename2.c_str());
+      BBCDEBUG("Found standard definitions file '%s' as '%s'", filename.c_str(), filename2.c_str());
 
       if (ReadXMLFromFile(filename2.c_str()))
       {
@@ -77,12 +77,12 @@ bool ADMData::LoadStandardDefinitions(const std::string& filename)
 
         success = true;
       }
-      else ERROR("Failed to read standard definitions file '%s'", filename2.c_str());
+      else BBCERROR("Failed to read standard definitions file '%s'", filename2.c_str());
       break;
     }
   }
 
-  if (i == NUMBEROF(paths)) ERROR("Failed to find standard definitions file '%s'", filename.c_str());
+  if (i == NUMBEROF(paths)) BBCERROR("Failed to find standard definitions file '%s'", filename.c_str());
 
   return success;
 }
@@ -129,7 +129,7 @@ bool ADMData::SetChna(const uint8_t *data, uint_t len)
   // create string with a single 0 byte in it to detect terminators
   terminator.push_back(0);
 
-  if (maxuids < chna.UIDCount) ERROR("Warning: chna specifies %u UIDs but chunk has only length for %u", (uint_t)chna.UIDCount, maxuids);
+  if (maxuids < chna.UIDCount) BBCERROR("Warning: chna specifies %u UIDs but chunk has only length for %u", (uint_t)chna.UIDCount, maxuids);
 
   uint16_t i;
   for (i = 0; (i < chna.UIDCount) && (i < maxuids); i++)
@@ -165,14 +165,14 @@ bool ADMData::SetChna(const uint8_t *data, uint_t len)
 
         track->SetValues();
 
-        DEBUG2(("Track %u/%u: Index %u UID '%s' TrackFormatRef '%s' PackFormatRef '%s'",
+        BBCDEBUG2(("Track %u/%u: Index %u UID '%s' TrackFormatRef '%s' PackFormatRef '%s'",
                 i, (uint_t)tracklist.size(),
                 track->GetTrackNum() + 1,
                 track->GetID().c_str(),
                 tvalue.value.c_str(),
                 pvalue.value.c_str()));
       }
-      else ERROR("Failed to create AudioTrack for UID %u", i);
+      else BBCERROR("Failed to create AudioTrack for UID %u", i);
     }
   }
 
@@ -193,7 +193,7 @@ bool ADMData::SetAxml(const char *data)
 {
   bool success = false;
 
-  DEBUG3(("Read XML:\n%s", data));
+  BBCDEBUG3(("Read XML:\n%s", data));
 
   if (TranslateXML(data))
   {
@@ -216,7 +216,7 @@ bool ADMData::SetAxml(const std::string& data)
 {
   bool success = false;
 
-  DEBUG3(("Read XML:\n%s", data.c_str()));
+  BBCDEBUG3(("Read XML:\n%s", data.c_str()));
 
   if (TranslateXML(data.c_str()))
   {
@@ -288,7 +288,7 @@ bool ADMData::ReadChnaFromFile(const std::string& filename)
 
                 track->SetValues();
 
-                DEBUG2(("Track %u: Index %u UID '%s' TrackFormatRef '%s' PackFormatRef '%s'",
+                BBCDEBUG2(("Track %u: Index %u UID '%s' TrackFormatRef '%s' PackFormatRef '%s'",
                         (uint_t)tracklist.size(),
                         track->GetTrackNum() + 1,
                         track->GetID().c_str(),
@@ -297,20 +297,20 @@ bool ADMData::ReadChnaFromFile(const std::string& filename)
               }
               else
               {
-                ERROR("Failed to create AudioTrack for UID %u", tracknum);
+                BBCERROR("Failed to create AudioTrack for UID %u", tracknum);
                 success = false;
               }
             }
           }
           else
           {
-            ERROR("CHNA line '%s' word 1 ('%s') should be a track number", buffer, words[0].c_str());
+            BBCERROR("CHNA line '%s' word 1 ('%s') should be a track number", buffer, words[0].c_str());
             success = false;
           }
         }
         else
         {
-          ERROR("CHNA line '%s' requires 4 words", buffer);
+          BBCERROR("CHNA line '%s' requires 4 words", buffer);
           success = false;
         }
       }
@@ -355,11 +355,11 @@ bool ADMData::ReadXMLFromFile(const std::string& filename)
 
       delete[] buffer;
     }
-    else ERROR("Failed to allocate %lu chars for file '%s'", (ulong_t)(len + 1), filename.c_str());
+    else BBCERROR("Failed to allocate %lu chars for file '%s'", (ulong_t)(len + 1), filename.c_str());
 
     fp.fclose();
   }
-  else ERROR("Failed to open file '%s' for reading", filename.c_str());
+  else BBCERROR("Failed to open file '%s' for reading", filename.c_str());
 
   return success;
 }
@@ -447,7 +447,7 @@ uint8_t *ADMData::GetChna(uint32_t& len) const
 
       p->UIDCount++;
 
-      DEBUG2(("Track %u/%u: Index %u UID '%s' TrackFormatRef '%s' PackFormatRef '%s'",
+      BBCDEBUG2(("Track %u/%u: Index %u UID '%s' TrackFormatRef '%s' PackFormatRef '%s'",
               i, (uint_t)tracklist.size(),
               track->GetTrackNum() + 1,
               track->GetID().c_str(),
@@ -475,7 +475,7 @@ std::string ADMData::GetAxml(const std::string& indent, const std::string& eol, 
 
   GenerateXML(str, indent, eol, ind_level);
 
-  DEBUG3(("Generated XML:\n%s", str.c_str()));
+  BBCDEBUG3(("Generated XML:\n%s", str.c_str()));
 
   return str;
 }
@@ -509,11 +509,11 @@ void ADMData::Finalise()
   std::vector<ADMObject *> channelformats;
   uint_t i;
 
-  DEBUG1(("Sorting tracks..."));
+  BBCDEBUG1(("Sorting tracks..."));
   SortTracks();
 
   // sort channel formats in time order
-  DEBUG1(("Sorting block formats in all channel formats..."));
+  BBCDEBUG1(("Sorting block formats in all channel formats..."));
   GetWritableObjects(ADMAudioChannelFormat::Type, channelformats);
   for (i = 0; i < channelformats.size(); i++)
   {
@@ -521,10 +521,10 @@ void ADMData::Finalise()
     if (cf) cf->SortBlockFormats();
   }
   
-  DEBUG2(("Connecting references..."));
+  BBCDEBUG2(("Connecting references..."));
   ConnectReferences();
 
-  DEBUG3(("Changing temporary IDs..."));
+  BBCDEBUG3(("Changing temporary IDs..."));
   ChangeTemporaryIDs();
 }
 
@@ -598,7 +598,7 @@ ADMObject *ADMData::Create(const std::string& type, const std::string& id, const
     // ensure the id doesn't already exist
     if ((it = admobjects.find(uuid)) == admobjects.end())
     {
-      DEBUG3(("Creating %s ID %s Name %s UUID %s", type.c_str(), id1.c_str(), name.c_str(), uuid.c_str())); 
+      BBCDEBUG3(("Creating %s ID %s Name %s UUID %s", type.c_str(), id1.c_str(), name.c_str(), uuid.c_str())); 
 
       if      (type == ADMAudioProgramme::Type)     obj = new ADMAudioProgramme(*this, id1, name);
       else if (type == ADMAudioContent::Type)       obj = new ADMAudioContent(*this, id1, name);
@@ -610,7 +610,7 @@ ADMObject *ADMData::Create(const std::string& type, const std::string& id, const
       else if (type == ADMAudioTrack::Type)         obj = new ADMAudioTrack(*this, id1);
       else
       {
-        ERROR("Cannot create type '%s'", type.c_str());
+        BBCERROR("Cannot create type '%s'", type.c_str());
       }
     }
     else obj = it->second;
@@ -645,14 +645,14 @@ std::string ADMData::FindUniqueID(const std::string& type, const std::string& fo
     // test this ID
     if ((it = admobjects.find(type + "/" + testid)) == admobjects.end())
     {
-      DEBUG4(("ID '%s' is unique", (type + "/" + testid).c_str()));
+      BBCDEBUG4(("ID '%s' is unique", (type + "/" + testid).c_str()));
       // ID not already in list -> must be unique
       id = testid;
       // save ID number
       uniqueids[type] = n;
       break;
     }
-    else DEBUG4(("ID '%s' is *not* unique", (type + "/" + testid).c_str()));
+    else BBCDEBUG4(("ID '%s' is *not* unique", (type + "/" + testid).c_str()));
   }
 
   return id;
@@ -697,7 +697,7 @@ std::string ADMData::CreateID(const std::string& type)
     else id = FindUniqueID(type, format, start);
   }
 
-  DEBUG3(("Created ID %s for type %s", id.c_str(), type.c_str())); 
+  BBCDEBUG3(("Created ID %s for type %s", id.c_str(), type.c_str())); 
 
   return id;
 }
@@ -733,13 +733,13 @@ void ADMData::ChangeID(ADMObject *obj, const std::string& id, uint_t start)
     // test to ensure explicit ID is not already used
     else if (admobjects.find(obj->GetType() + "/" + id) != admobjects.end())
     {
-      DEBUG1(("ID '%s' already exists for type '%s'!", id.c_str(), obj->GetType().c_str()));
+      BBCDEBUG1(("ID '%s' already exists for type '%s'!", id.c_str(), obj->GetType().c_str()));
       newid = FindUniqueID(obj->GetType(), id + "_%02x", 0);
     }
     // else just update object's ID
     else newid = id;
 
-    DEBUG3(("Change object<%016lx>'s ID from '%s' to '%s' (from '%s') (name '%s')", (ulong_t)obj, obj->GetID().c_str(), newid.c_str(), id.c_str(), obj->GetName().c_str()));
+    BBCDEBUG3(("Change object<%016lx>'s ID from '%s' to '%s' (from '%s') (name '%s')", (ulong_t)obj, obj->GetID().c_str(), newid.c_str(), id.c_str(), obj->GetName().c_str()));
 
     obj->SetUpdatedID(newid);
 
@@ -1087,11 +1087,11 @@ ADMObject *ADMData::GetReference(const XMLValue& value)
   if ((it = admobjects.find(uuid)) != admobjects.end()) obj = it->second;
   else
   {
-#if DEBUG_LEVEL >= 4
-    DEBUG1(("Failed to find reference '%s', object list:", uuid.c_str()));
+#if BBCDEBUG_LEVEL >= 4
+    BBCDEBUG1(("Failed to find reference '%s', object list:", uuid.c_str()));
     for (it = admobjects.begin(); it != admobjects.end(); ++it)
     {
-      DEBUG1(("\t%s / %s (%u / %u)%s", it->first.c_str(), uuid.c_str(), (uint_t)it->first.size(), (uint_t)uuid.size(), (it->first == uuid) ? " *" : ""));
+      BBCDEBUG1(("\t%s / %s (%u / %u)%s", it->first.c_str(), uuid.c_str(), (uint_t)it->first.size(), (uint_t)uuid.size(), (it->first == uuid) ? " *" : ""));
     }
 #endif
   }
@@ -1107,13 +1107,13 @@ void ADMData::SortTracks()
 {
   sort(tracklist.begin(), tracklist.end(), ADMAudioTrack::Compare);
 
-#if DEBUG_LEVEL >= 4
+#if BBCDEBUG_LEVEL >= 4
   std::vector<const ADMAudioTrack *>::const_iterator it;
 
-  DEBUG1(("%lu tracks:", tracklist.size()));
+  BBCDEBUG1(("%lu tracks:", tracklist.size()));
   for (it = tracklist.begin(); it != tracklist.end(); ++it)
   {
-    DEBUG1(("%u: %s", (*it)->GetTrackNum(), (*it)->ToString().c_str()));
+    BBCDEBUG1(("%u: %s", (*it)->GetTrackNum(), (*it)->ToString().c_str()));
   }
 #endif
 }
@@ -1237,7 +1237,7 @@ void ADMData::UpdateAudioObjectLimits()
         {
           // unable to move this audio object because a channel format used by this audio object
           // is used by other audio objects
-          DEBUG2(("Cannot move object '%s', channel format '%s' is used by %u audio objects",
+          BBCDEBUG2(("Cannot move object '%s', channel format '%s' is used by %u audio objects",
                   audioobj->GetName().c_str(),
                   obj->GetName().c_str(),
                   (uint_t)channelformats[obj].size()));
@@ -1248,7 +1248,7 @@ void ADMData::UpdateAudioObjectLimits()
       // if unable to move audio object, set the new start as the original start
       if (!canmove) start = originalstart;
 
-      DEBUG2(("Updating object '%s' start %lu -> %lu end %lu -> %lu (canmove: %s)",
+      BBCDEBUG2(("Updating object '%s' start %lu -> %lu end %lu -> %lu (canmove: %s)",
               audioobj->GetName().c_str(),
               (ulong_t)audioobj->GetStartTime(), (ulong_t)start,
               (ulong_t)audioobj->GetEndTime(),   (ulong_t)end,
@@ -1261,7 +1261,7 @@ void ADMData::UpdateAudioObjectLimits()
       {
         uint64_t diff = start - originalstart;
 
-        DEBUG2(("Shifting all block formats by %lu", (ulong_t)diff));
+        BBCDEBUG2(("Shifting all block formats by %lu", (ulong_t)diff));
 
         // modify every block format so that the first one starts at zero
         for (i = 0; i < list.size(); i++)
@@ -2088,11 +2088,11 @@ bool ADMData::CreateObjects(OBJECTNAMES& names)
   {
     if ((names.objects.programme = CreateProgramme(names.programmeName)) != NULL)
     {
-      DEBUG2(("Created programme '%s'", names.programmeName.c_str()));
+      BBCDEBUG2(("Created programme '%s'", names.programmeName.c_str()));
     }
     else
     {
-      ERROR("Failed to create programme '%s'", names.programmeName.c_str());
+      BBCERROR("Failed to create programme '%s'", names.programmeName.c_str());
       success = false;
     }
   }
@@ -2101,11 +2101,11 @@ bool ADMData::CreateObjects(OBJECTNAMES& names)
   {
     if ((names.objects.content = CreateContent(names.contentName)) != NULL)
     {
-      DEBUG2(("Created content '%s'", names.contentName.c_str()));
+      BBCDEBUG2(("Created content '%s'", names.contentName.c_str()));
     }
     else
     {
-      ERROR("Failed to create content '%s'", names.contentName.c_str());
+      BBCERROR("Failed to create content '%s'", names.contentName.c_str());
       success = false;
     }
   }
@@ -2114,11 +2114,11 @@ bool ADMData::CreateObjects(OBJECTNAMES& names)
   {
     if ((names.objects.object = CreateObject(names.objectName)) != NULL)
     {
-      DEBUG2(("Created object '%s'", names.objectName.c_str()));
+      BBCDEBUG2(("Created object '%s'", names.objectName.c_str()));
     }
     else
     {
-      ERROR("Failed to create object '%s'", names.objectName.c_str());
+      BBCERROR("Failed to create object '%s'", names.objectName.c_str());
       success = false;
     }
   }
@@ -2127,11 +2127,11 @@ bool ADMData::CreateObjects(OBJECTNAMES& names)
   {
     if ((names.objects.packFormat = CreatePackFormat(names.packFormatName)) != NULL)
     {
-      DEBUG2(("Created pack format '%s'", names.packFormatName.c_str()));
+      BBCDEBUG2(("Created pack format '%s'", names.packFormatName.c_str()));
     }
     else
     {
-      ERROR("Failed to create packFormat '%s'", names.packFormatName.c_str());
+      BBCERROR("Failed to create packFormat '%s'", names.packFormatName.c_str());
       success = false;
     }
   }
@@ -2140,11 +2140,11 @@ bool ADMData::CreateObjects(OBJECTNAMES& names)
   {
     if ((names.objects.channelFormat = CreateChannelFormat(names.channelFormatName)) != NULL)
     {
-      DEBUG2(("Created channel format '%s'", names.channelFormatName.c_str()));
+      BBCDEBUG2(("Created channel format '%s'", names.channelFormatName.c_str()));
     }
     else
     {
-      ERROR("Failed to create channelFormat '%s'", names.channelFormatName.c_str());
+      BBCERROR("Failed to create channelFormat '%s'", names.channelFormatName.c_str());
       success = false;
     }
   }
@@ -2154,13 +2154,13 @@ bool ADMData::CreateObjects(OBJECTNAMES& names)
     if ((names.objects.streamFormat = CreateStreamFormat(names.streamFormatName)) != NULL)
     {
       // set stream type (PCM)
-      DEBUG2(("Created stream format '%s'", names.streamFormatName.c_str()));
+      BBCDEBUG2(("Created stream format '%s'", names.streamFormatName.c_str()));
       names.objects.streamFormat->SetFormatLabel(1);
       names.objects.streamFormat->SetFormatDefinition("PCM");
     }
     else
     {
-      ERROR("Failed to create streamFormat '%s'", names.streamFormatName.c_str());
+      BBCERROR("Failed to create streamFormat '%s'", names.streamFormatName.c_str());
       success = false;
     }
   }
@@ -2170,13 +2170,13 @@ bool ADMData::CreateObjects(OBJECTNAMES& names)
     if ((names.objects.trackFormat = CreateTrackFormat(names.trackFormatName)) != NULL)
     {
       // set track type (PCM)
-      DEBUG2(("Created track format '%s'", names.trackFormatName.c_str()));
+      BBCDEBUG2(("Created track format '%s'", names.trackFormatName.c_str()));
       names.objects.trackFormat->SetFormatLabel(1);
       names.objects.trackFormat->SetFormatDefinition("PCM");
     }
     else
     {
-      ERROR("Failed to create trackFormat '%s'", names.trackFormatName.c_str());
+      BBCERROR("Failed to create trackFormat '%s'", names.trackFormatName.c_str());
       success = false;
     }
   }
@@ -2185,11 +2185,11 @@ bool ADMData::CreateObjects(OBJECTNAMES& names)
   {
     if ((names.objects.audioTrack = const_cast<ADMAudioTrack *>(tracklist[names.trackNumber])) != NULL)
     {
-      DEBUG2(("Found track number %u (%u tracks)", names.trackNumber, (uint_t)tracklist.size()));
+      BBCDEBUG2(("Found track number %u (%u tracks)", names.trackNumber, (uint_t)tracklist.size()));
     }
     else
     {
-      ERROR("Failed to find track number %u (%u tracks)", names.trackNumber, (uint_t)tracklist.size());
+      BBCERROR("Failed to find track number %u (%u tracks)", names.trackNumber, (uint_t)tracklist.size());
     }
   }
 
@@ -2198,7 +2198,7 @@ bool ADMData::CreateObjects(OBJECTNAMES& names)
   {                                                         \
     if (names.objects.master->Add(names.objects.slave))     \
     {                                                       \
-      DEBUG2(("Connected %s '%s' to %s '%s'",               \
+      BBCDEBUG2(("Connected %s '%s' to %s '%s'",               \
               names.objects.slave->GetType().c_str(),       \
               names.objects.slave->GetName().c_str(),       \
               names.objects.master->GetType().c_str(),      \
@@ -2206,7 +2206,7 @@ bool ADMData::CreateObjects(OBJECTNAMES& names)
     }                                                       \
     else                                                    \
     {                                                       \
-      ERROR("Failed to connect %s '%s' to %s '%s'",         \
+      BBCERROR("Failed to connect %s '%s' to %s '%s'",         \
             names.objects.slave->GetType().c_str(),         \
             names.objects.slave->GetName().c_str(),         \
             names.objects.master->GetType().c_str(),        \
@@ -2332,19 +2332,19 @@ bool ADMData::CreateFromFile(const char *filename)
             }
             else
             {
-              ERROR("Failed to decode <tr>:<trackname>:<objectname> line");
+              BBCERROR("Failed to decode <tr>:<trackname>:<objectname> line");
               success = false;
             }
           }
           else
           {
-            ERROR("Track %u out of range 1-%u", tr, (uint_t)tracklist.size());
+            BBCERROR("Track %u out of range 1-%u", tr, (uint_t)tracklist.size());
             success = false;
           }
         }
         else
         {
-          ERROR("Failed to extract track number from '%s'", line);
+          BBCERROR("Failed to extract track number from '%s'", line);
           success = false;
         }
       }

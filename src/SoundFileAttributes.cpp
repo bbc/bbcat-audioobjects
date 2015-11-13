@@ -1,7 +1,7 @@
 
 #include <string.h>
 
-#define DEBUG_LEVEL 1
+#define BBCDEBUG_LEVEL 1
 #include "SoundFileAttributes.h"
 
 BBC_AUDIOTOOLBOX_START
@@ -107,7 +107,7 @@ uint_t SoundFileSamples::ReadSamples(uint8_t *buffer, SampleFormat_t type, uint_
 
     if (!frames)
     {
-      DEBUG3(("No sample data left (pos = %lu, nsamples = %lu)!", (ulong_t)samplepos, (ulong_t)clip.nsamples));
+      BBCDEBUG3(("No sample data left (pos = %lu, nsamples = %lu)!", (ulong_t)samplepos, (ulong_t)clip.nsamples));
     }
 
     firstchannel = MIN(firstchannel, clip.nchannels);
@@ -124,16 +124,16 @@ uint_t SoundFileSamples::ReadSamples(uint8_t *buffer, SampleFormat_t type, uint_
         uint_t nframes = MIN(frames, samplebufferframes);
         size_t res;
 
-        DEBUG4(("Seeking to %lu", (ulong_t)(filepos + (clip.start + samplepos) * format->GetBytesPerFrame())));
+        BBCDEBUG4(("Seeking to %lu", (ulong_t)(filepos + (clip.start + samplepos) * format->GetBytesPerFrame())));
         if (file->fseek(filepos + samplepos * format->GetBytesPerFrame(), SEEK_SET) == 0)
         {
-          DEBUG4(("Reading %u x %u bytes", nframes, format->GetBytesPerFrame()));
+          BBCDEBUG4(("Reading %u x %u bytes", nframes, format->GetBytesPerFrame()));
 
           if ((res = file->fread(samplebuffer, format->GetBytesPerFrame(), nframes)) > 0)
           {
             nframes = (uint_t)res;
 
-            DEBUG4(("Read %u frames, extracting channels %u-%u (from 0-%u), converting and copying to destination", nframes, clip.channel + firstchannel, clip.channel + firstchannel + nchannels, format->GetChannels()));
+            BBCDEBUG4(("Read %u frames, extracting channels %u-%u (from 0-%u), converting and copying to destination", nframes, clip.channel + firstchannel, clip.channel + firstchannel + nchannels, format->GetChannels()));
 
             // de-interleave, convert and transfer samples
             TransferSamples(samplebuffer, format->GetSampleFormat(), format->GetSamplesBigEndian(), clip.channel + firstchannel, format->GetChannels(),
@@ -148,18 +148,18 @@ uint_t SoundFileSamples::ReadSamples(uint8_t *buffer, SampleFormat_t type, uint_
           }
           else if (res <= 0)
           {
-            ERROR("Failed to read %u frames (%u bytes) from file, error %s", nframes, nframes * format->GetBytesPerFrame(), strerror(file->ferror()));
+            BBCERROR("Failed to read %u frames (%u bytes) from file, error %s", nframes, nframes * format->GetBytesPerFrame(), strerror(file->ferror()));
             break;
           }
           else
           {
-            DEBUG3(("No data left!"));
+            BBCDEBUG3(("No data left!"));
             break;
           }
         }
         else
         {
-          ERROR("Failed to seek to correct position in file, error %s", strerror(file->ferror()));
+          BBCERROR("Failed to seek to correct position in file, error %s", strerror(file->ferror()));
           n = 0;
           break;
         }
@@ -174,7 +174,7 @@ uint_t SoundFileSamples::ReadSamples(uint8_t *buffer, SampleFormat_t type, uint_
 
     UpdatePosition();
   }
-  else ERROR("No file or sample buffer");
+  else BBCERROR("No file or sample buffer");
 
   return n;
 }
@@ -235,12 +235,12 @@ uint_t SoundFileSamples::WriteSamples(const uint8_t *buffer, SampleFormat_t type
         }
         else if (res <= 0)
         {
-          ERROR("Failed to write %u frames (%u bytes) to file, error %s", nframes, nframes * bpf, strerror(file->ferror()));
+          BBCERROR("Failed to write %u frames (%u bytes) to file, error %s", nframes, nframes * bpf, strerror(file->ferror()));
           break;
         }
         else
         {
-          DEBUG3(("No data left!"));
+          BBCDEBUG3(("No data left!"));
           break;
         }
       }
@@ -254,7 +254,7 @@ uint_t SoundFileSamples::WriteSamples(const uint8_t *buffer, SampleFormat_t type
 
     UpdatePosition();
   }
-  else ERROR("No file or sample buffer");
+  else BBCERROR("No file or sample buffer");
 
   return n;
 }
