@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define DEBUG_LEVEL 1
+#define BBCDEBUG_LEVEL 1
 #include "Playlist.h"
 
 #include "SoundFileAttributes.h"
@@ -171,7 +171,7 @@ bool Playlist::SetPlaybackPosition(uint64_t pos, bool force)
     else
     {
       // fade down first
-      DEBUG2(("Set new position request for position %lu samples", (ulong_t)pos));
+      BBCDEBUG2(("Set new position request for position %lu samples", (ulong_t)pos));
 
       // start fade down
       fadedowncount  = fadesamples;
@@ -244,11 +244,11 @@ uint_t Playlist::ReadSamples(Sample_t *dst, uint_t channel, uint_t channels, uin
     {
       uint_t i, j;
 
-      DEBUG2(("Fading down: %u frames left, coeff %0.3f", fadedowncount, (Sample_t)(fadedowncount - 1) / (Sample_t)fadesamples));
+      BBCDEBUG2(("Fading down: %u frames left, coeff %0.3f", fadedowncount, (Sample_t)(fadedowncount - 1) / (Sample_t)fadesamples));
 
       // fading down, limit to fadedowncount and fade after reading
       nread = GetFile()->ReadSamples(dst, channel, channels, MIN(frames, fadedowncount));
-      DEBUG2(("Read %u/%u/%u frames from file (fadedown)", nread, frames, fadedowncount));
+      BBCDEBUG2(("Read %u/%u/%u frames from file (fadedown)", nread, frames, fadedowncount));
 
       // fade read audio
       for (i = 0; i < nread; i++, fadedowncount--)
@@ -259,7 +259,7 @@ uint_t Playlist::ReadSamples(Sample_t *dst, uint_t channel, uint_t channels, uin
     }
     else if (positionchange)
     {
-      DEBUG2(("Changing position to %lu samples", (ulong_t)newposition));
+      BBCDEBUG2(("Changing position to %lu samples", (ulong_t)newposition));
 
       // actually set the new position now that audio is faded down
       SetPlaybackPositionEx(newposition);
@@ -277,11 +277,11 @@ uint_t Playlist::ReadSamples(Sample_t *dst, uint_t channel, uint_t channels, uin
     {
       uint_t i, j;
 
-      DEBUG2(("Fading up: %u frames left, coeff %0.3f", fadeupcount, (Sample_t)(fadesamples - fadeupcount) / (Sample_t)fadesamples));
+      BBCDEBUG2(("Fading up: %u frames left, coeff %0.3f", fadeupcount, (Sample_t)(fadesamples - fadeupcount) / (Sample_t)fadesamples));
 
       // fading up, limit to fadeupcount and fade after reading
       nread = GetFile()->ReadSamples(dst, channel, channels, MIN(frames, fadeupcount));
-      DEBUG2(("Read %u/%u/%u frames from file (fadeup)", nread, frames, fadeupcount));
+      BBCDEBUG2(("Read %u/%u/%u frames from file (fadeup)", nread, frames, fadeupcount));
 
       // fade read audio
       for (i = 0; i < nread; i++, fadeupcount--)
@@ -292,12 +292,12 @@ uint_t Playlist::ReadSamples(Sample_t *dst, uint_t channel, uint_t channels, uin
     }
     else if (GetFile())
     {
-      DEBUG2(("Reading %u frames from file", frames));
+      BBCDEBUG2(("Reading %u frames from file", frames));
       // no position changes pending, simple read
       nread = GetFile()->ReadSamples(dst, channel, channels, frames);
-      DEBUG2(("Read %u/%u frames from file", nread, frames));
+      BBCDEBUG2(("Read %u/%u frames from file", nread, frames));
     }
-    else ERROR("No file when trying to read samples in Playlist!");
+    else BBCERROR("No file when trying to read samples in Playlist!");
 
     if (!nread) break;
 

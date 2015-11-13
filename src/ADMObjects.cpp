@@ -5,7 +5,7 @@
 #include <map>
 #include <algorithm>
 
-#define DEBUG_LEVEL 1
+#define BBCDEBUG_LEVEL 1
 #include "ADMObjects.h"
 #include "ADMData.h"
 
@@ -80,7 +80,7 @@ void ADMObject::SetTypeLabel(uint_t type)
 {
   if (type != typeLabel)
   {
-    DEBUG2(("%s(%s,%s): Change typeLabel from %04x to %04x", GetType().c_str(), GetName().c_str(), GetID().c_str(), typeLabel, type));
+    BBCDEBUG2(("%s(%s,%s): Change typeLabel from %04x to %04x", GetType().c_str(), GetName().c_str(), GetID().c_str(), typeLabel, type));
 
     typeLabel = type;
 
@@ -107,7 +107,7 @@ void ADMObject::SetTypeDefinition(const std::string& str)
 {
   if (str != typeDefinition)
   {
-    DEBUG2(("%s(%s,%s): Change typeDefinition from '%s' to '%s'", GetType().c_str(), GetName().c_str(), GetID().c_str(), typeDefinition.c_str(), str.c_str()));
+    BBCDEBUG2(("%s(%s,%s): Change typeDefinition from '%s' to '%s'", GetType().c_str(), GetName().c_str(), GetID().c_str(), typeDefinition.c_str(), str.c_str()));
 
     typeDefinition = str;
 
@@ -272,14 +272,14 @@ void ADMObject::SetReferences()
     {
       if (refrejected)
       {
-        ERROR("Reference %s as reference '%s' for %s REJECTED",
+        BBCERROR("Reference %s as reference '%s' for %s REJECTED",
               obj->ToString().c_str(),
               value.value.c_str(),
               ToString().c_str());
       }
       else
       {
-        DEBUG3(("Found %s as reference '%s' for %s",
+        BBCDEBUG3(("Found %s as reference '%s' for %s",
                 obj->ToString().c_str(),
                 value.value.c_str(),
                 ToString().c_str()));
@@ -287,7 +287,7 @@ void ADMObject::SetReferences()
     }
     else
     {
-      ERROR("Cannot find %s reference '%s' for %s",
+      BBCERROR("Cannot find %s reference '%s' for %s",
             value.name.c_str(), value.value.c_str(),
             ToString().c_str());
     }
@@ -660,11 +660,11 @@ ADMAudioChannelFormat *ADMAudioObject::GetChannelFormat(uint_t track) const
         {
           channelFormat = channelformatrefs[0];
         }
-        else ERROR("Incorrect channelformatrefs in '%s' (%u)!", streamformatrefs[0]->ToString().c_str(), (uint_t)channelformatrefs.size());
+        else BBCERROR("Incorrect channelformatrefs in '%s' (%u)!", streamformatrefs[0]->ToString().c_str(), (uint_t)channelformatrefs.size());
       }
-      else ERROR("Incorrect streamformatrefs in '%s' (%u)!", trackformatrefs[0]->ToString().c_str(), (uint_t)streamformatrefs.size());
+      else BBCERROR("Incorrect streamformatrefs in '%s' (%u)!", trackformatrefs[0]->ToString().c_str(), (uint_t)streamformatrefs.size());
     }
-    else ERROR("Incorrect trackformatrefs in '%s' (%u)!", audiotrack.ToString().c_str(), (uint_t)trackformatrefs.size());
+    else BBCERROR("Incorrect trackformatrefs in '%s' (%u)!", audiotrack.ToString().c_str(), (uint_t)trackformatrefs.size());
   }
 
   return channelFormat;
@@ -1238,7 +1238,7 @@ bool ADMAudioChannelFormat::Add(ADMAudioBlockFormat *obj)
   // if the list is empty just append
   if (!n)
   {
-    DEBUG3(("blockformat list is empty: new item appended"));
+    BBCDEBUG3(("blockformat list is empty: new item appended"));
     blockformatrefs.push_back(obj);
   }
   // the most likely place for the new item is on the end so check this first
@@ -1248,7 +1248,7 @@ bool ADMAudioChannelFormat::Add(ADMAudioBlockFormat *obj)
     if (obj != blockformatrefs[n - 1])
     {
       // new object just needs to be appended to list
-      DEBUG3(("New item is beyond last item (%llu >= %llu): new item appended", t, blockformatrefs[n - 1]->GetStartTime()));
+      BBCDEBUG3(("New item is beyond last item (%llu >= %llu): new item appended", t, blockformatrefs[n - 1]->GetStartTime()));
       blockformatrefs.push_back(obj);
     }
   }
@@ -1259,7 +1259,7 @@ bool ADMAudioChannelFormat::Add(ADMAudioBlockFormat *obj)
     if (obj != blockformatrefs[0])
     {
       // new object just needs inserted at the start of the list
-      DEBUG3(("New item is before first item (%llu <= %llu): new item inserted at start", t, blockformatrefs[0]->GetStartTime()));
+      BBCDEBUG3(("New item is before first item (%llu <= %llu): new item inserted at start", t, blockformatrefs[0]->GetStartTime()));
       blockformatrefs.insert(blockformatrefs.begin(), obj);
     }
   }
@@ -1296,7 +1296,7 @@ bool ADMAudioChannelFormat::Add(ADMAudioBlockFormat *obj)
     {
       (void)count;
 
-      DEBUG3(("New item is between indexes %u and %u (%llu <= %llu < %llu) (%u iterations): new item inserted between them", pos, pos + 1, blockformatrefs[pos]->GetStartTime(), t, blockformatrefs[pos + 1]->GetStartTime(), count));
+      BBCDEBUG3(("New item is between indexes %u and %u (%llu <= %llu < %llu) (%u iterations): new item inserted between them", pos, pos + 1, blockformatrefs[pos]->GetStartTime(), t, blockformatrefs[pos + 1]->GetStartTime(), count));
 
       // the new item is between the pos'th and pos+1'th item
       // but insert works by inserting *before* the given position
@@ -1414,7 +1414,7 @@ void ADMAudioBlockFormat::SetValues(XMLValues& values)
 
         if ((attr = value.GetAttribute("coordinate")) != NULL)
         {
-          DEBUG4(("Position type %s value %0.6lf", attr->c_str(), val));
+          BBCDEBUG4(("Position type %s value %0.6lf", attr->c_str(), val));
 
           if      (*attr == "azimuth")   {position.pos.az = val; position.polar = true;}
           else if (*attr == "elevation") {position.pos.el = val; position.polar = true;}
@@ -1424,7 +1424,7 @@ void ADMAudioBlockFormat::SetValues(XMLValues& values)
           else if (*attr == "z")         {position.pos.z  = val; position.polar = false;}
         }
       }
-      else ERROR("Failed to evaluate '%s' as floating point number for position", value.value.c_str());
+      else BBCERROR("Failed to evaluate '%s' as floating point number for position", value.value.c_str());
 
       it = values.erase(it);
     }
@@ -1745,7 +1745,7 @@ bool ADMTrackCursor::Add(const ADMAudioObject *object, bool sort)
   {
     objectlist.push_back(obj);
 
-    DEBUG3(("Cursor<%016lx:%u>: Added object '%s', %u blocks", (ulong_t)this, channel, object->ToString().c_str(), (uint_t)obj.channelformat->GetBlockFormatRefs().size()));
+    BBCDEBUG3(("Cursor<%016lx:%u>: Added object '%s', %u blocks", (ulong_t)this, channel, object->ToString().c_str(), (uint_t)obj.channelformat->GetBlockFormatRefs().size()));
 
     added = true;
   }
@@ -1843,7 +1843,7 @@ uint64_t ADMTrackCursor::GetStartTime() const
 
     if (blockformats.size() > 0)
     {
-      DEBUG3(("Object %u/%u start %lu BlockFormat %u/%u start %lu",
+      BBCDEBUG3(("Object %u/%u start %lu BlockFormat %u/%u start %lu",
               0, (uint_t)objectlist.size(),   (ulong_t)object.object->GetStartTime(),
               0, (uint_t)blockformats.size(), (ulong_t)blockformats[0]->GetStartTime()));
             
@@ -1870,7 +1870,7 @@ uint64_t ADMTrackCursor::GetEndTime() const
 
     if (blockformats.size() > 0)
     {
-      DEBUG3(("Object %u/%u start %lu BlockFormat %u/%u start %lu duration %lu",
+      BBCDEBUG3(("Object %u/%u start %lu BlockFormat %u/%u start %lu duration %lu",
               (uint_t)(objectlist.size() - 1),   (uint_t)objectlist.size(),   (ulong_t)object.object->GetStartTime(),
               (uint_t)(blockformats.size() - 1), (uint_t)blockformats.size(), (ulong_t)blockformats[0]->GetStartTime(), (ulong_t)blockformats[0]->GetDuration()));
 
@@ -1954,7 +1954,7 @@ ADMAudioBlockFormat *ADMTrackCursor::StartBlockFormat(uint64_t t)
     blockindex         = (uint_t)object.channelformat->GetBlockFormatRefs().size() - 1;
     blockformatstarted = true;
 
-    DEBUG3(("Cursor<%016lx:%u>: Created new blockformat %u at %0.3lfs for object '%s', channelformat '%s'", (ulong_t)this, channel, blockindex, (double)t * 1.0e-9, object.object->ToString().c_str(), object.channelformat->ToString().c_str()));
+    BBCDEBUG3(("Cursor<%016lx:%u>: Created new blockformat %u at %0.3lfs for object '%s', channelformat '%s'", (ulong_t)this, channel, blockindex, (double)t * 1.0e-9, object.object->ToString().c_str(), object.channelformat->ToString().c_str()));
   }
 
   return blockformat;
@@ -1974,7 +1974,7 @@ void ADMTrackCursor::EndBlockFormat(uint64_t t)
   
     blockformat->SetEndTime(t, object.object);
 
-    DEBUG3(("Cursor<%016lx:%u>: Completed blockformat %u at %0.3lfs (duration %0.3lfs) for object '%s', channelformat '%s'", (ulong_t)this, channel, blockindex, (double)t * 1.0e-9, (double)blockformat->GetDuration() * 1.0e-9, object.object->ToString().c_str(), object.channelformat->ToString().c_str()));
+    BBCDEBUG3(("Cursor<%016lx:%u>: Completed blockformat %u at %0.3lfs (duration %0.3lfs) for object '%s', channelformat '%s'", (ulong_t)this, channel, blockindex, (double)t * 1.0e-9, (double)blockformat->GetDuration() * 1.0e-9, object.object->ToString().c_str(), object.channelformat->ToString().c_str()));
 
     blockformatstarted = false;
   }
@@ -2008,7 +2008,7 @@ void ADMTrackCursor::SetObjectParameters(const AudioObjectParameters& newparamet
       {
         // new position at same time as original -> just update the parameters
         blockformats[blockindex]->GetObjectParameters() = objparameters;
-        DEBUG2(("Updating channel %u to {'%s'}", channel, blockformats[blockindex]->GetObjectParameters().ToString().c_str()));
+        BBCDEBUG2(("Updating channel %u to {'%s'}", channel, blockformats[blockindex]->GetObjectParameters().ToString().c_str()));
       }
       else
       {
@@ -2018,7 +2018,7 @@ void ADMTrackCursor::SetObjectParameters(const AudioObjectParameters& newparamet
         if ((blockformat = StartBlockFormat(currenttime)) != NULL)
         {
           blockformat->GetObjectParameters() = objparameters;
-          DEBUG2(("Updating channel %u to {'%s'}", channel, blockformats[blockindex]->GetObjectParameters().ToString().c_str()));
+          BBCDEBUG2(("Updating channel %u to {'%s'}", channel, blockformats[blockindex]->GetObjectParameters().ToString().c_str()));
         }
       }
     }
@@ -2100,7 +2100,7 @@ bool ADMTrackCursor::Seek(uint64_t t)
 
     if ((objectindex != oldobjectindex) || (blockindex != oldblockindex))
     {
-      DEBUG4(("Cursor<%016lx:%u>: Moved to object %u/%u ('%s'), block %u/%u at %0.3lfs (parameters '%s')", (ulong_t)this, channel, objectindex, (uint_t)objectlist.size(), objectlist[objectindex].object->ToString().c_str(), blockindex, (uint_t)objectlist[objectindex].channelformat->GetBlockFormatRefs().size(), (double)t * 1.0e-9, objectlist[objectindex].channelformat->GetBlockFormatRefs()[blockindex]->ToString().c_str()));
+      BBCDEBUG4(("Cursor<%016lx:%u>: Moved to object %u/%u ('%s'), block %u/%u at %0.3lfs (parameters '%s')", (ulong_t)this, channel, objectindex, (uint_t)objectlist.size(), objectlist[objectindex].object->ToString().c_str(), blockindex, (uint_t)objectlist[objectindex].channelformat->GetBlockFormatRefs().size(), (double)t * 1.0e-9, objectlist[objectindex].channelformat->GetBlockFormatRefs()[blockindex]->ToString().c_str()));
     }
   }
 

@@ -1,7 +1,7 @@
 
 #include <math.h>
 
-#define DEBUG_LEVEL 3
+#define BBCDEBUG_LEVEL 3
 
 #include <bbcat-base/BackgroundFile.h>
 
@@ -18,12 +18,12 @@ RIFFFile::RIFFFile() : filetype(FileType_Unknown),
 {
   if (sizeof(off_t) < sizeof(uint64_t))
   {
-    ERROR("System does *NOT* support 64-bit files!");
+    BBCERROR("System does *NOT* support 64-bit files!");
   }
 
   if (RIFFChunk::NoProvidersRegistered())
   {
-    DEBUG2(("No RIFF chunk providers registered, registering some..."));
+    BBCDEBUG2(("No RIFF chunk providers registered, registering some..."));
     RegisterRIFFChunkProviders();
   }
 }
@@ -56,13 +56,13 @@ bool RIFFFile::ReadChunks(uint64_t maxlength)
 
       if ((chunk->GetID() == ds64_ID) && ((ds64 = dynamic_cast<const RIFFds64Chunk *>(chunk)) != NULL))
       {
-        DEBUG3(("Found ds64 chunk, will be used to set chunk sizes if necessary"));
+        BBCDEBUG3(("Found ds64 chunk, will be used to set chunk sizes if necessary"));
 
         if (maxlength == RIFFChunk::RIFF_MaxSize)
         {
           maxlength = ds64->GetRIFFSize();
 
-          DEBUG2(("Updated RIFF size to %lu bytes", (ulong_t)maxlength));
+          BBCDEBUG2(("Updated RIFF size to %lu bytes", (ulong_t)maxlength));
         }
       }
 
@@ -71,7 +71,7 @@ bool RIFFFile::ReadChunks(uint64_t maxlength)
         fileformat = dynamic_cast<SoundFormat *>(chunk);
         if (filesamples) filesamples->SetFormat(fileformat);
 
-        DEBUG3(("Found format chunk (%s)", chunk->GetName()));
+        BBCDEBUG3(("Found format chunk (%s)", chunk->GetName()));
       }
 
       if ((dynamic_cast<const SoundFileSamples *>(chunk)) != NULL)
@@ -79,7 +79,7 @@ bool RIFFFile::ReadChunks(uint64_t maxlength)
         filesamples = dynamic_cast<SoundFileSamples *>(chunk);
         if (fileformat) filesamples->SetFormat(fileformat);
 
-        DEBUG3(("Found data chunk (%s)", chunk->GetName()));
+        BBCDEBUG3(("Found data chunk (%s)", chunk->GetName()));
       }
 
       success = ProcessChunk(chunk);
@@ -88,7 +88,7 @@ bool RIFFFile::ReadChunks(uint64_t maxlength)
     if (success)
     {
       success = PostReadChunks();
-      if (!success) ERROR("Failed post read chunks processing");
+      if (!success) BBCERROR("Failed post read chunks processing");
     }
   }
 
@@ -208,11 +208,11 @@ bool RIFFFile::Create(const char *filename, uint32_t samplerate, uint_t nchannel
 
             success  = true;
           }
-          else ERROR("Failed to create extra chunks for file writing");
+          else BBCERROR("Failed to create extra chunks for file writing");
         }
-        else ERROR("No file format and/or file samples chunks created");
+        else BBCERROR("No file format and/or file samples chunks created");
       }
-      else ERROR("Failed to create chunks (failed chunk: %08lx)", (ulong_t)ids[i]);
+      else BBCERROR("Failed to create chunks (failed chunk: %08lx)", (ulong_t)ids[i]);
     }
 
     if (!success) Close();
@@ -256,7 +256,7 @@ void RIFFFile::WriteChunks(bool closing)
     // write chunk if it can be (ALL chunks are re-written on close anyway)
     if ((chunk->GetID() != data_ID) && chunk->WriteChunkBeforeSamples())
     {
-      DEBUG2(("%s: %s chunk '%s' size %lu bytes at %lu (actually %lu bytes)", closing ? "Closing" : "Creating", chunk->WriteThisChunk() ? "Writing" : "SKIPPING", chunk->GetName(), (ulong_t)chunk->GetLength(), (ulong_t)file->ftell(), (ulong_t)chunk->GetLengthOnFile()));
+      BBCDEBUG2(("%s: %s chunk '%s' size %lu bytes at %lu (actually %lu bytes)", closing ? "Closing" : "Creating", chunk->WriteThisChunk() ? "Writing" : "SKIPPING", chunk->GetName(), (ulong_t)chunk->GetLength(), (ulong_t)file->ftell(), (ulong_t)chunk->GetLengthOnFile()));
       chunk->WriteChunk(file);
     }
   }
@@ -264,7 +264,7 @@ void RIFFFile::WriteChunks(bool closing)
   // now write (proto) data chunk
   if ((chunk = GetChunk(data_ID)) != NULL)
   {
-    DEBUG2(("%s: %s chunk '%s' size %lu bytes at %lu (actually %lu bytes)", closing ? "Closing" : "Creating", chunk->WriteThisChunk() ? "Writing" : "SKIPPING", chunk->GetName(), (ulong_t)chunk->GetLength(), (ulong_t)file->ftell(), (ulong_t)chunk->GetLengthOnFile()));
+    BBCDEBUG2(("%s: %s chunk '%s' size %lu bytes at %lu (actually %lu bytes)", closing ? "Closing" : "Creating", chunk->WriteThisChunk() ? "Writing" : "SKIPPING", chunk->GetName(), (ulong_t)chunk->GetLength(), (ulong_t)file->ftell(), (ulong_t)chunk->GetLengthOnFile()));
     chunk->WriteChunk(file);
   }
 
@@ -277,7 +277,7 @@ void RIFFFile::WriteChunks(bool closing)
 
       if ((chunk->GetID() != data_ID) && !chunk->WriteChunkBeforeSamples())
       {
-        DEBUG2(("%s: %s chunk '%s' size %lu bytes at %lu (actually %lu bytes)", closing ? "Closing" : "Creating", chunk->WriteThisChunk() ? "Writing" : "SKIPPING", chunk->GetName(), (ulong_t)chunk->GetLength(), (ulong_t)file->ftell(), (ulong_t)chunk->GetLengthOnFile()));
+        BBCDEBUG2(("%s: %s chunk '%s' size %lu bytes at %lu (actually %lu bytes)", closing ? "Closing" : "Creating", chunk->WriteThisChunk() ? "Writing" : "SKIPPING", chunk->GetName(), (ulong_t)chunk->GetLength(), (ulong_t)file->ftell(), (ulong_t)chunk->GetLengthOnFile()));
         chunk->WriteChunk(file);
       }
     }
@@ -311,7 +311,7 @@ void RIFFFile::Close(bool abortwrite)
       RIFFChunk      *chunk;
       const uint64_t maxsize = RIFFChunk::RIFF_MaxSize; // max size of chunks and file before switching to RF64
 
-      DEBUG1(("Closing file '%s'...", file->getfilename().c_str()));
+      BBCDEBUG1(("Closing file '%s'...", file->getfilename().c_str()));
 
       // now total up all the bytes for each chunk
       uint64_t totalbytes = 0;
@@ -329,7 +329,7 @@ void RIFFFile::Close(bool abortwrite)
         {
           bytes = chunk->GetLengthOnFile();
 
-          DEBUG3(("Chunk '%s' has length %lu bytes", chunk->GetName(), (ulong_t)bytes));
+          BBCDEBUG3(("Chunk '%s' has length %lu bytes", chunk->GetName(), (ulong_t)bytes));
           totalbytes += bytes;
         }
 
@@ -340,10 +340,10 @@ void RIFFFile::Close(bool abortwrite)
             (ds64 && ((chunk->GetID() == RIFF_ID) ||  // RIFF and data chunks should *always* be in the ds64, if it exists
                       (chunk->GetID() == data_ID))))
         {
-          DEBUG3(("Chunk '%s' needs to be in ds64 chunk", chunk->GetName()));
+          BBCDEBUG3(("Chunk '%s' needs to be in ds64 chunk", chunk->GetName()));
           if (ds64)
           {
-            if (!ds64->SetChunkSize(chunk->GetID(), bytes)) ERROR("Failed to set chunk size for '%s' in ds64 chunk", chunk->GetName());
+            if (!ds64->SetChunkSize(chunk->GetID(), bytes)) BBCERROR("Failed to set chunk size for '%s' in ds64 chunk", chunk->GetName());
 
             // set the sample count from the size of the data chunk
             if (chunk->GetID() == data_ID)
@@ -351,14 +351,14 @@ void RIFFFile::Close(bool abortwrite)
               ds64->SetSampleCount(bytes / fileformat->GetBytesPerFrame());
             }
           }
-          else ERROR("ds64 chunk needed but doesn't exist");
+          else BBCERROR("ds64 chunk needed but doesn't exist");
         }
       }
 
       // test whether RIFF64 file is needed
       if (totalbytes >= maxsize)
       {
-        DEBUG1(("Switching file to RF64 type"));
+        BBCDEBUG1(("Switching file to RF64 type"));
 
         // tell each chunk (that's interested) that the file is going to be a RIFF64
         for (i = 0; i < chunklist.size(); i++)
@@ -367,7 +367,7 @@ void RIFFFile::Close(bool abortwrite)
         }
       }
 
-      DEBUG3(("Total size %lu bytes", (ulong_t)totalbytes));
+      BBCDEBUG3(("Total size %lu bytes", (ulong_t)totalbytes));
 
       // set total length of RIFF chunk
       chunkmap[RIFF_ID]->CreateChunkData(NULL, totalbytes);
@@ -375,7 +375,7 @@ void RIFFFile::Close(bool abortwrite)
       // write/re-write all chunks
       WriteChunks(true);
 
-      DEBUG1(("Closed file '%s'", file->getfilename().c_str()));
+      BBCDEBUG1(("Closed file '%s'", file->getfilename().c_str()));
     }
 
     fileref = NULL;
@@ -438,17 +438,17 @@ RIFFChunk *RIFFFile::AddChunk(uint32_t id)
       }
       else
       {
-        ERROR("Failed to create chunk of type '%s'", RIFFChunk::GetChunkName(id).c_str());
+        BBCERROR("Failed to create chunk of type '%s'", RIFFChunk::GetChunkName(id).c_str());
       }
     }
     else
     {
-      ERROR("Cannot create two copies of chunk type '%s'", RIFFChunk::GetChunkName(id).c_str());
+      BBCERROR("Cannot create two copies of chunk type '%s'", RIFFChunk::GetChunkName(id).c_str());
     }
   }
   else
   {
-    ERROR("Cannot add chunk to read only file");
+    BBCERROR("Cannot add chunk to read only file");
   }
 
   return chunk;
@@ -492,7 +492,7 @@ RIFFChunk *RIFFFile::AddChunk(uint32_t id, const uint8_t *data, uint64_t length,
     
     name.assign(_name, sizeof(_name));
 
-    DEBUG("Warning: add chunk '%s' before samples requested when samples written, moving to after samples", name.c_str());
+    BBCDEBUG("Warning: add chunk '%s' before samples requested when samples written, moving to after samples", name.c_str());
     
     beforesamples = false;
   }
@@ -511,7 +511,7 @@ RIFFChunk *RIFFFile::AddChunk(uint32_t id, const uint8_t *data, uint64_t length,
     }
     else
     {
-      ERROR("Failed to copy data for chunk %08x", (uint_t)id);
+      BBCERROR("Failed to copy data for chunk %08x", (uint_t)id);
       delete chunk;
       chunk = NULL;
     }

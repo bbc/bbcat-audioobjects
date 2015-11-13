@@ -2,7 +2,7 @@
 #include <string.h>
 #include <errno.h>
 
-#define DEBUG_LEVEL 1
+#define BBCDEBUG_LEVEL 1
 #include <bbcat-base/ByteSwap.h>
 
 #include "RIFFChunk.h"
@@ -59,20 +59,20 @@ bool RIFFChunk::ReadChunk(EnhancedFile *file, const RIFFChunkSizeHandler *sizeha
     // save file position
     datapos = file->ftell();
 
-    DEBUG2(("Chunk '%s' is %lu bytes long", GetName(), (ulong_t)length));
+    BBCDEBUG2(("Chunk '%s' is %lu bytes long", GetName(), (ulong_t)length));
 
     // Process chunk
     switch (GetChunkHandling())
     {
       default:
       case ChunkHandling_SkipOverChunk:
-        DEBUG2(("Skipping chunk '%s'", GetName()));
+        BBCDEBUG2(("Skipping chunk '%s'", GetName()));
 
         // skip to end of chunk
         if (file->fseek(datapos + length + (length & align), SEEK_SET) == 0) success = true;
         else
         {
-          ERROR("Failed to seek to end of chunk '%s' (position %lu), error %s", GetName(), (ulong_t)(datapos + length), strerror(file->ferror()));
+          BBCERROR("Failed to seek to end of chunk '%s' (position %lu), error %s", GetName(), (ulong_t)(datapos + length), strerror(file->ferror()));
         }
                 
         break;
@@ -83,7 +83,7 @@ bool RIFFChunk::ReadChunk(EnhancedFile *file, const RIFFChunkSizeHandler *sizeha
         break;
 
       case ChunkHandling_ReadChunk:
-        DEBUG2(("Reading and processing chunk '%s'", GetName()));
+        BBCDEBUG2(("Reading and processing chunk '%s'", GetName()));
 
         // read and process chunk
         if (ReadData(file))
@@ -100,17 +100,17 @@ bool RIFFChunk::ReadChunk(EnhancedFile *file, const RIFFChunkSizeHandler *sizeha
         else
         {
           // failed to read data, skip over it for next chunk
-          ERROR("Failed to read %lu bytes of chunk '%s', error %s", (ulong_t)length, GetName(), strerror(file->ferror()));
+          BBCERROR("Failed to read %lu bytes of chunk '%s', error %s", (ulong_t)length, GetName(), strerror(file->ferror()));
 
           if (file->fseek(datapos + length + (length & align), SEEK_SET) != 0)
           {
-            ERROR("Failed to seek to end of chunk '%s' (position %lu) (after chunk read failure), error %s", GetName(), (ulong_t)(datapos + length), strerror(file->ferror()));
+            BBCERROR("Failed to seek to end of chunk '%s' (position %lu) (after chunk read failure), error %s", GetName(), (ulong_t)(datapos + length), strerror(file->ferror()));
           }
         }
         break;
     }
   }
-  else ERROR("Failed to read chunk '%s' length, error %s", GetName(), strerror(file->ferror()));
+  else BBCERROR("Failed to read chunk '%s' length, error %s", GetName(), strerror(file->ferror()));
 
   return success;
 }
@@ -148,11 +148,11 @@ bool RIFFChunk::ReadData(EnhancedFile *file)
           }
           else success = true;
         }
-        else ERROR("Failed to read %lu bytes for chunk '%s' data, error %s", (ulong_t)length, GetName(), strerror(file->ferror()));
+        else BBCERROR("Failed to read %lu bytes for chunk '%s' data, error %s", (ulong_t)length, GetName(), strerror(file->ferror()));
       }
-      else ERROR("Failed to seek to position %lu to read %lu bytes for chunk '%s' data, error %s", (ulong_t)datapos, (ulong_t)length, GetName(), strerror(file->ferror()));
+      else BBCERROR("Failed to seek to position %lu to read %lu bytes for chunk '%s' data, error %s", (ulong_t)datapos, (ulong_t)length, GetName(), strerror(file->ferror()));
     }
-    else ERROR("Failed to allocate %lu bytes for chunk '%s' data", (ulong_t)length, GetName());
+    else BBCERROR("Failed to allocate %lu bytes for chunk '%s' data", (ulong_t)length, GetName());
   }
   else success = true;
 
@@ -198,7 +198,7 @@ bool RIFFChunk::WriteChunk(EnhancedFile *file)
     }
     else
     {
-      ERROR("Failed to write chunk header, error %s", strerror(errno));
+      BBCERROR("Failed to write chunk header, error %s", strerror(errno));
     }
   }
 
@@ -403,12 +403,12 @@ RIFFChunk *RIFFChunk::Create(EnhancedFile *file, const RIFFChunkSizeHandler *siz
 
       if ((chunk = (*provider.fn)(id, provider.context)) != NULL)
       {
-        DEBUG4(("Found provider for chunk '%s'", GetChunkName(id)));
+        BBCDEBUG4(("Found provider for chunk '%s'", GetChunkName(id)));
                 
         // let object handle the rest of the chunk
         if (chunk->ReadChunk(file, sizehandler))
         {
-          DEBUG4(("Read chunk '%s' successfully", GetChunkName(id)));
+          BBCDEBUG4(("Read chunk '%s' successfully", GetChunkName(id)));
                     
           success = true;
         }
@@ -417,7 +417,7 @@ RIFFChunk *RIFFChunk::Create(EnhancedFile *file, const RIFFChunkSizeHandler *siz
     else
     {
       // if no provider is available, use the base-class to provide basic functionality
-      DEBUG2(("No handler found for chunk '%s', creating empty one", GetChunkName(id)));
+      BBCDEBUG2(("No handler found for chunk '%s', creating empty one", GetChunkName(id)));
 
       if ((chunk = new RIFFChunk(id)) != NULL)
       {
@@ -461,20 +461,20 @@ RIFFChunk *RIFFChunk::Create(uint32_t id)
 
     if ((chunk = (*provider.fn)(id, provider.context)) != NULL)
     {
-      DEBUG4(("Found provider for chunk '%s'", GetChunkName(id)));
+      BBCDEBUG4(("Found provider for chunk '%s'", GetChunkName(id)));
     }
   }
   else
   {
     // if no provider is available, use the base-class to provide basic functionality
-    DEBUG2(("No handler found for chunk '%s', creating empty one", GetChunkName(id)));
+    BBCDEBUG2(("No handler found for chunk '%s', creating empty one", GetChunkName(id)));
 
     chunk = new RIFFChunk(id);
   }
 
   if (chunk && !chunk->InitialiseForWriting())
   {
-    ERROR("Failed to initialise chunk '%s' for writing", GetChunkName(id).c_str());
+    BBCERROR("Failed to initialise chunk '%s' for writing", GetChunkName(id).c_str());
     delete chunk;
     chunk = NULL;
   }

@@ -1,5 +1,5 @@
 
-#define DEBUG_LEVEL 1
+#define BBCDEBUG_LEVEL 1
 #include "SoundObjectFile.h"
 
 BBC_AUDIOTOOLBOX_START

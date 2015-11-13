@@ -52,7 +52,7 @@ protected:
   /*--------------------------------------------------------------------------------*/
   /** Parse value (and its attributes) into a list of XML values
    *
-   * @param name name of object (for DEBUGGING only)
+   * @param name name of object (for BBCDEBUGGING only)
    * @param values list of XML values to be added to
    * @param userdata implementation specific object data
    */
@@ -71,7 +71,7 @@ protected:
   /*--------------------------------------------------------------------------------*/
   /** Parse audioBlockFormat XML object
    *
-   * @param name parent name (for DEBUGGING only)
+   * @param name parent name (for BBCDEBUGGING only)
    * @param obj audioBlockFormat object
    * @param userdata user suppled data
    */
@@ -90,7 +90,7 @@ protected:
   /*--------------------------------------------------------------------------------*/
   /** Parse attributes into a list of XML values
    *
-   * @param name name of object (for DEBUGGING only)
+   * @param name name of object (for BBCDEBUGGING only)
    * @param type object type - necessary to prevent object name and ID being added
    * @param values list of XML values to be populated
    * @param userdata implementation specific object data

@@ -97,7 +97,7 @@ const XMLValue* XMLValues::GetValue(const std::string& name) const
     }
   }
 
-  if (!value) DEBUG4(("No value named '%s'!", name.c_str()));
+  if (!value) BBCDEBUG4(("No value named '%s'!", name.c_str()));
 
   return value;
 }

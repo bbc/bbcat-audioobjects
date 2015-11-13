@@ -2,7 +2,7 @@
 #include <string.h>
 #include <errno.h>
 
-#define DEBUG_LEVEL 1
+#define BBCDEBUG_LEVEL 1
 #include <bbcat-base/ByteSwap.h>
 
 #include "RIFFChunks.h"
@@ -380,7 +380,7 @@ uint64_t RIFFds64Chunk::GetChunkSize(uint32_t id, uint64_t original_length) cons
       }
     }
 
-    if (length != original_length) DEBUG2(("Updated chunk size of 0x%08lx to %lu bytes", (ulong_t)id, (ulong_t)length));
+    if (length != original_length) BBCDEBUG2(("Updated chunk size of 0x%08lx to %lu bytes", (ulong_t)id, (ulong_t)length));
   }
 
   return length;
@@ -441,7 +441,7 @@ bool RIFFfmtChunk::ProcessChunkData()
     const WAVEFORMAT_EXTENSIBLE_CHUNK& exchunk = *(const WAVEFORMAT_EXTENSIBLE_CHUNK *)data;
     uint_t _bitspersample = chunk.BitsPerSample;
 
-    DEBUG2(("Reading format data"));
+    BBCDEBUG2(("Reading format data"));
 
     if ((chunk.Format == WAVE_FORMAT_EXTENSIBLE) &&
         (length >= sizeof(exchunk))   &&
@@ -479,7 +479,7 @@ bool RIFFfmtChunk::ProcessChunkData()
 
     success = true;
   }
-  else ERROR("Format is 0x%04x, not PCM", chunk.Format);
+  else BBCERROR("Format is 0x%04x, not PCM", chunk.Format);
 
   return success;
 }
@@ -841,7 +841,7 @@ bool RIFFdataChunk::WriteChunkData(EnhancedFile *file)
   // tell SoundFileSamples about file it needs to write to
   SetFile(file, file->ftell(), length, false);
 
-  if ((success = file->fseek(length, SEEK_CUR) == 0) == false) ERROR("Failed to seek over sample data");
+  if ((success = file->fseek(length, SEEK_CUR) == 0) == false) BBCERROR("Failed to seek over sample data");
 
   return success;
 }

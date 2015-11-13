@@ -1,5 +1,5 @@
 
-#define DEBUG_LEVEL 1
+#define BBCDEBUG_LEVEL 1
 #include "ADMAudioFileSamples.h"
 
 BBC_AUDIOTOOLBOX_START
@@ -10,7 +10,7 @@ ADMAudioFileSamples::ADMAudioFileSamples(const SoundFileSamples *isamples, const
 
   // save initial limits of channels and time
   initialclip = GetClip();
-  DEBUG2(("Initial clip is %lu for %lu, tracks %u for %u", (ulong_t)initialclip.start, (ulong_t)initialclip.nsamples, initialclip.channel, initialclip.nchannels));
+  BBCDEBUG2(("Initial clip is %lu for %lu, tracks %u for %u", (ulong_t)initialclip.start, (ulong_t)initialclip.nsamples, initialclip.channel, initialclip.nchannels));
 
   for (i = 0; i < n; i++)
   {
@@ -26,7 +26,7 @@ ADMAudioFileSamples::ADMAudioFileSamples(const ADMAudioFileSamples *isamples) : 
 
   // save initial limits of channels and time
   initialclip = GetClip();
-  DEBUG2(("Initial clip is %lu for %lu, tracks %u for %u", (ulong_t)initialclip.start, (ulong_t)initialclip.nsamples, initialclip.channel, initialclip.nchannels));
+  BBCDEBUG2(("Initial clip is %lu for %lu, tracks %u for %u", (ulong_t)initialclip.start, (ulong_t)initialclip.nsamples, initialclip.channel, initialclip.nchannels));
 
   for (i = 0; i < isamples->cursors.size(); i++)
   {
@@ -66,7 +66,7 @@ bool ADMAudioFileSamples::Add(const ADMAudioObject *obj)
           endTime   = startTime + obj->GetDuration();
         }
 
-        DEBUG2(("Add object from %lu to %lu on track %u...", (ulong_t)startTime, (ulong_t)endTime, cursor->GetChannel() + 1));
+        BBCDEBUG2(("Add object from %lu to %lu on track %u...", (ulong_t)startTime, (ulong_t)endTime, cursor->GetChannel() + 1));
 
         if (endTime > startTime)
         {
@@ -87,7 +87,7 @@ bool ADMAudioFileSamples::Add(const ADMAudioObject *obj)
         clip.start    = startTime;
         clip.nsamples = endTime - startTime,
 
-        DEBUG2(("...clip now from %lu to %lu", (ulong_t)startTime, (ulong_t)endTime));
+        BBCDEBUG2(("...clip now from %lu to %lu", (ulong_t)startTime, (ulong_t)endTime));
 
         SetClip(clip);
 
