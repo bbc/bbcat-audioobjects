@@ -76,11 +76,26 @@ bool TinyXMLADMData::TranslateXML(const char *data)
   }
   else if ((node = FindElement(&doc, "ituADM")) != NULL)
   {
-    if ((node = FindElement(node, "audioFormatExtended")) != NULL)
+    const TiXmlNode *formatNode;
+    if ((formatNode = FindElement(node, "audioFormatExtended")) != NULL)
     {
-      CollectObjects(node);
+      CollectObjects(formatNode);
                     
       success = true;
+    }
+    else if ((node = FindElement(node, "coreMetadata")) != NULL)
+    {
+        if ((node = FindElement(node, "format")) != NULL)
+        {
+            if ((node = FindElement(node, "audioFormatExtended")) != NULL)
+            {
+                CollectObjects(node);
+
+                success = true;
+            }
+            else ERROR("Failed to find audioFormatExtended element");
+        }
+        else ERROR("Failed to find format element");
     }
     else ERROR("Failed to find audioFormatExtended element");
   }

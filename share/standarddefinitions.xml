@@ -516,7 +516,7 @@
             <position coordinate="distance">1.0</position>
           </audioBlockFormat>
         </audioChannelFormat>
-        <audioChannelFormat audioChannelFormatID="AC_00010022" audioChannelFormatName="TopLeftMId" typeLabel="0001" typeDefinition="DirectSpeakers">
+        <audioChannelFormat audioChannelFormatID="AC_00010022" audioChannelFormatName="TopLeftMid" typeLabel="0001" typeDefinition="DirectSpeakers">
           <audioBlockFormat audioBlockFormatID="AC_00010022_00000001">
             <speakerLabel>urn:itu:bs:2051:0:speaker:U+045</speakerLabel>
             <position coordinate="azimuth">45.0</position>
@@ -696,7 +696,7 @@
           <audioChannelFormatIDRef>AC_00010021</audioChannelFormatIDRef>
           <audioTrackFormatIDRef>AT_00010021_01</audioTrackFormatIDRef>
         </audioStreamFormat>
-        <audioStreamFormat audioStreamFormatID="AS_00010022" audioStreamFormatName="PCM_TopLeftMId" formatLabel="0001" formatDefinition="PCM">
+        <audioStreamFormat audioStreamFormatID="AS_00010022" audioStreamFormatName="PCM_TopLeftMid" formatLabel="0001" formatDefinition="PCM">
           <audioChannelFormatIDRef>AC_00010022</audioChannelFormatIDRef>
           <audioTrackFormatIDRef>AT_00010022_01</audioTrackFormatIDRef>
         </audioStreamFormat>
@@ -819,7 +819,7 @@
         <audioTrackFormat audioTrackFormatID="AT_00010021_01" audioTrackFormatName="PCM_LowFrequencyEffectsR" formatLabel="0001" formatDefinition="PCM">
           <audioStreamFormatIDRef>AS_00010021</audioStreamFormatIDRef>
         </audioTrackFormat>
-        <audioTrackFormat audioTrackFormatID="AT_00010022_01" audioTrackFormatName="PCM_TopLeftMId" formatLabel="0001" formatDefinition="PCM">
+        <audioTrackFormat audioTrackFormatID="AT_00010022_01" audioTrackFormatName="PCM_TopLeftMid" formatLabel="0001" formatDefinition="PCM">
           <audioStreamFormatIDRef>AS_00010022</audioStreamFormatIDRef>
         </audioTrackFormat>
         <audioTrackFormat audioTrackFormatID="AT_00010023_01" audioTrackFormatName="PCM_TopRightMid" formatLabel="0001" formatDefinition="PCM">

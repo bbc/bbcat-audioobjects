@@ -20,8 +20,10 @@ BBC_AUDIOTOOLBOX_START
 const std::string ADMData::DefaultStandardDefinitionsFile = EnhancedFile::catpath(BBCAT_AUDIOOBJECTS_DATA_FILES, "standarddefinitions.xml");
 const std::string ADMData::tempidsuffix = "_T";
 bool              ADMData::defaultpuremode = false;
+bool              ADMData::defaultebuxmlmode = true;
 
-ADMData::ADMData() : puremode(defaultpuremode)
+ADMData::ADMData() : puremode(defaultpuremode),
+                     ebuxmlmode(defaultebuxmlmode)
 {
 }
 
@@ -1866,12 +1868,24 @@ void ADMData::GenerateXML(void *xmlcontext) const
   GetReferencedObjects(list);
 
   StartXML(xmlcontext);
-  OpenXMLObject(xmlcontext, "ebuCoreMain");
-  AddXMLAttribute(xmlcontext, "xmlns:dc", "http://purl.org/dc/elements/1.1/");
-  AddXMLAttribute(xmlcontext, "xmlns", "urn:ebu:metadata-schema:ebuCore_2014");
-  AddXMLAttribute(xmlcontext, "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
-  AddXMLAttribute(xmlcontext, "schema", "EBU_CORE_20140201.xsd");
-  AddXMLAttribute(xmlcontext, "xml:lang", "en");
+
+  if (ebuxmlmode)
+  {
+    // EBU version of XML
+    OpenXMLObject(xmlcontext, "ebuCoreMain");
+    AddXMLAttribute(xmlcontext, "xmlns:dc", "http://purl.org/dc/elements/1.1/");
+    AddXMLAttribute(xmlcontext, "xmlns", "urn:ebu:metadata-schema:ebuCore_2014");
+    AddXMLAttribute(xmlcontext, "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
+    AddXMLAttribute(xmlcontext, "schema", "EBU_CORE_20140201.xsd");
+    AddXMLAttribute(xmlcontext, "xml:lang", "en");
+  }
+  else
+  {
+    // ITU version of XML
+    OpenXMLObject(xmlcontext, "ituADM");
+    AddXMLAttribute(xmlcontext, "xmlns", "urn:metadata-schema:adm");
+  }
+  
   OpenXMLObject(xmlcontext, "coreMetadata");
   OpenXMLObject(xmlcontext, "format");
   OpenXMLObject(xmlcontext, "audioFormatExtended");
