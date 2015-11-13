@@ -118,6 +118,24 @@ public:
   bool InPureMode() const {return puremode;}
 
   /*--------------------------------------------------------------------------------*/
+  /** Set default EBU XML output mode
+   */
+  /*--------------------------------------------------------------------------------*/
+  static void SetDefaultEBUXMLMode(bool enable = true) {defaultebuxmlmode = enable;}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Return whether output mode is EBU or ITU XML
+   */
+  /*--------------------------------------------------------------------------------*/
+  bool EBUXMLMode() const {return ebuxmlmode;}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Set whether output mode is EBU or ITU XML
+   */
+  /*--------------------------------------------------------------------------------*/
+  void SetEBUXMLMode(bool enable = true) {ebuxmlmode = enable;}
+  
+  /*--------------------------------------------------------------------------------*/
   /** Finalise ADM
    */
   /*--------------------------------------------------------------------------------*/
@@ -792,9 +810,11 @@ protected:
   TRACKLIST                    tracklist;
   std::map<std::string,uint_t> uniqueids;
   bool                         puremode;
-
+  bool                         ebuxmlmode;
+  
   static const std::string     tempidsuffix;
   static bool                  defaultpuremode;
+  static bool                  defaultebuxmlmode;
 };
 
 BBC_AUDIOTOOLBOX_END
