@@ -499,27 +499,8 @@ bool RIFFfmtChunk::CreateWriteData()
     chunk.SampleRate     = samplerate;
     chunk.Channels       = channels;
     chunk.BytesPerSecond = samplerate * channels * bytespersample;
-    switch (format)
-    {
-      case SampleFormat_16bit:
-        // ONLY use 16 bit samples if sample format is explicitly 16 bit
-        chunk.BitsPerSample = 16;
-        break;
-
-      case SampleFormat_Float:
-        chunk.BitsPerSample = 32;
-        break;
-
-      case SampleFormat_Double:
-        chunk.BitsPerSample = 64;
-        break;
-
-      default:
-        // ALL other sample formats get stored as 24 bits 
-        chunk.BitsPerSample = 24;
-        break;
-    }
-    chunk.BlockAlign = channels * bytespersample;
+	chunk.BitsPerSample  = bbcat::GetBitsPerSample(format);
+    chunk.BlockAlign     = channels * bytespersample;
 
     length = sizeof(chunk);
     if ((data = new uint8_t[length]) != NULL)
