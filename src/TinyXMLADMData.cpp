@@ -175,11 +175,11 @@ void TinyXMLADMData::ParseValue(const std::string& name, XMLValues& values, void
 
   value.attr = false;
   value.name = node->Value();
-  if (subnode) value.value = subnode->Value();
+  if (subnode && (subnode->Type() != TiXmlNode::TINYXML_ELEMENT)) value.value = subnode->Value();
 
   BBCDEBUG3(("%s: %s='%s', attrs:",
-          name.c_str(),
-          value.name.c_str(), value.value.c_str()));
+             name.c_str(),
+             value.name.c_str(), value.value.c_str()));
     
   for (attr = node->ToElement()->FirstAttribute(); attr; attr = attr->Next())
   {
@@ -188,6 +188,17 @@ void TinyXMLADMData::ParseValue(const std::string& name, XMLValues& values, void
     BBCDEBUG3(("\t%s='%s'", attr->Name(), attr->Value()));
   }
 
+  XMLValues subvalues;
+  for (; subnode; subnode = subnode->NextSibling())
+  {
+    if (subnode->Type() == TiXmlNode::TINYXML_ELEMENT)
+    {
+      ParseValue(name + ":subvalue", subvalues, (void *)subnode);
+    }
+  }
+  // add subvalues to value
+  value.AddSubValues(subvalues);
+  
   values.AddValue(value);
 }
 

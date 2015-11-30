@@ -9,12 +9,44 @@
 
 BBC_AUDIOTOOLBOX_START
 
+class XMLValues;
 class XMLValue
 {
 public:
-  XMLValue() : attr(false) {}
-  ~XMLValue() {}
+  XMLValue();
+  XMLValue(const XMLValue& obj);
+  ~XMLValue();
 
+  /*--------------------------------------------------------------------------------*/
+  /** Assignment operator
+   */
+  /*--------------------------------------------------------------------------------*/
+  XMLValue& operator = (const XMLValue& obj);
+
+  /*--------------------------------------------------------------------------------*/
+  /** Set subvalues list
+   */
+  /*--------------------------------------------------------------------------------*/
+  void SetSubValues(const XMLValues *_subvalues);
+
+  /*--------------------------------------------------------------------------------*/
+  /** Add a set of sub values to the lsit
+   */
+  /*--------------------------------------------------------------------------------*/
+  void AddSubValues(const XMLValues& _subvalues);
+
+  /*--------------------------------------------------------------------------------*/
+  /** Add a single sub value to the lsit
+   */
+  /*--------------------------------------------------------------------------------*/
+  void AddSubValue(const XMLValue& _subvalue);
+
+  /*--------------------------------------------------------------------------------*/
+  /** Return sub value list or NULL
+   */
+  /*--------------------------------------------------------------------------------*/
+  const XMLValues *GetSubValues() const {return subvalues;}
+  
   /*--------------------------------------------------------------------------------*/
   /** Set XMLValue object as a simple XML attribute (name/value pair)
    */
@@ -64,11 +96,11 @@ public:
   // each 'value' can also have a list of attributes (a consequence of XML)
   typedef std::map<std::string,std::string> ATTRS;
 
-  bool        attr;       // true if this value is a simple XML attribute
-  std::string name;       // name of value
-  std::string value;      // value
-  ATTRS       attrs;      // additional attributes (if attr == false)
-
+  bool        attr;         // true if this value is a simple XML attribute
+  std::string name;         // name of value
+  std::string value;        // value
+  ATTRS       attrs;        // additional attributes (if attr == false)
+  
 protected:
   /*--------------------------------------------------------------------------------*/
   /** Set XMLValue object as a XML value (name/value pair) with optional attributes
@@ -81,6 +113,9 @@ protected:
   void SetValueOrAttribute(const std::string& _name, uint_t             _value, bool _attr, const char *format = "%u") {SetValueOrAttribute(_name, StringFrom(_value, format), _attr);}
   void SetValueOrAttribute(const std::string& _name, uint64_t           _value, bool _attr);
   void SetValueOrAttribute(const std::string& _name, double             _value, bool _attr, const char *format = "%0.6lf") {SetValueOrAttribute(_name, StringFrom(_value, format), _attr);}
+
+protected:
+  XMLValues *subvalues;   // list of sub-values  
 };
 
 class XMLValues : public std::vector<XMLValue>
@@ -132,8 +167,7 @@ public:
   bool SetValue(bool& res, const std::string& name);
   bool SetValueTime(uint64_t& res, const std::string& name);
 };
-  
+
 BBC_AUDIOTOOLBOX_END
 
 #endif
-

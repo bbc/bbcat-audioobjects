@@ -1472,7 +1472,7 @@ public:
   /** Set and Get duration
    */
   /*--------------------------------------------------------------------------------*/
-  void     SetDuration(uint64_t t) {duration = t; durationSet = true;}
+  void     SetDuration(uint64_t t) {duration = t; objparameters.SetDuration(t); durationSet = true;}
   uint64_t GetDuration() const {return duration;}
   bool     DurationSet() const {return durationSet;}
 

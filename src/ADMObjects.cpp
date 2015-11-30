@@ -312,13 +312,13 @@ void ADMObject::GetValuesAndReferences(XMLValues& objvalues, std::vector<REFEREN
   {
     if (GetType() == ADMAudioTrack::Type) value.SetAttribute("UID",            GetID());
     else                                  value.SetAttribute(GetType() + "ID", GetID());
-    objvalues.push_back(value);
+    objvalues.AddValue(value);
   }
 
   if (GetName() != "")
   {
     value.SetAttribute(GetType() + "Name", GetName());
-    objvalues.push_back(value);
+    objvalues.AddValue(value);
   }
 
   // add existing list of values/attributes to list
@@ -327,7 +327,7 @@ void ADMObject::GetValuesAndReferences(XMLValues& objvalues, std::vector<REFEREN
     // only add non-empty attributes
     if (full || (it->value != "") || (it->attrs.end() != it->attrs.begin()))
     {
-      objvalues.push_back(*it);
+      objvalues.AddValue(*it);
     }
   }
 
@@ -335,12 +335,12 @@ void ADMObject::GetValuesAndReferences(XMLValues& objvalues, std::vector<REFEREN
   if (full || (typeLabel != 0))
   {
     value.SetAttribute("typeLabel", typeLabel, "%04x");
-    objvalues.push_back(value);
+    objvalues.AddValue(value);
   }
   if (full || (typeDefinition != ""))
   {
     value.SetAttribute("typeDefinition", typeDefinition);
-    objvalues.push_back(value);
+    objvalues.AddValue(value);
   }
 }
 
@@ -390,7 +390,7 @@ void ADMAudioProgramme::GetValuesAndReferences(XMLValues& objvalues, std::vector
   if (full || (language != ""))
   {
     value.SetAttribute("language", language);
-    objvalues.push_back(value);
+    objvalues.AddValue(value);
   }
 
   // references only
@@ -463,7 +463,7 @@ void ADMAudioContent::GetValuesAndReferences(XMLValues& objvalues, std::vector<R
   if (full || (language != ""))
   {
     value.SetAttribute("language", language);
-    objvalues.push_back(value);
+    objvalues.AddValue(value);
   }
 
   // references only
@@ -588,12 +588,12 @@ void ADMAudioObject::GetValuesAndReferences(XMLValues& objvalues, std::vector<RE
   if (full || StartTimeSet())
   {
     value.SetAttribute("startTime", startTime);
-    objvalues.push_back(value);
+    objvalues.AddValue(value);
   }
   if (full || DurationSet())
   {
     value.SetAttribute("duration",  duration);
-    objvalues.push_back(value);
+    objvalues.AddValue(value);
   }
 
   // references only
@@ -748,10 +748,10 @@ void ADMAudioTrack::GetValuesAndReferences(XMLValues& objvalues, std::vector<REF
   // add values/attributes not held in 'values' to list
   if (full)
   {
-    value.SetAttribute("trackNum", trackNum + 1); objvalues.push_back(value);
+    value.SetAttribute("trackNum", trackNum + 1); objvalues.AddValue(value);
   }
-  value.SetAttribute("sampleRate", sampleRate); objvalues.push_back(value);
-  value.SetAttribute("bitDepth",   bitDepth);   objvalues.push_back(value);
+  value.SetAttribute("sampleRate", sampleRate); objvalues.AddValue(value);
+  value.SetAttribute("bitDepth",   bitDepth);   objvalues.AddValue(value);
 
   // output references to objects
   object.genref = true;
@@ -1026,12 +1026,12 @@ void ADMAudioStreamFormat::GetValuesAndReferences(XMLValues& objvalues, std::vec
   if (full || (formatLabel != 0))
   {
     value.SetAttribute("formatLabel", formatLabel, "%04x");
-    objvalues.push_back(value);
+    objvalues.AddValue(value);
   }
   if (full || (formatDefinition != ""))
   {
     value.SetAttribute("formatDefinition", formatDefinition);
-    objvalues.push_back(value);
+    objvalues.AddValue(value);
   }
 
   // generate references only
@@ -1128,12 +1128,12 @@ void ADMAudioTrackFormat::GetValuesAndReferences(XMLValues& objvalues, std::vect
   if (full || (formatLabel != 0))
   {
     value.SetAttribute("formatLabel", formatLabel, "%04x");
-    objvalues.push_back(value);
+    objvalues.AddValue(value);
   }
   if (full || (formatDefinition != ""))
   {
     value.SetAttribute("formatDefinition", formatDefinition);
-    objvalues.push_back(value);
+    objvalues.AddValue(value);
   }
 
   // generate references only
@@ -1395,20 +1395,37 @@ void ADMAudioBlockFormat::SetValues(XMLValues& values)
   XMLValues::iterator it;
   ParameterSet othervalues;
   Position     position;
-
+  bool         cartesian = false;   // if Cartesian member not specified, assume polar
+  
   uint64_t _time;
   if (values.SetValueTime(_time, "rtime"))    SetStartTime(_time);
   if (values.SetValueTime(_time, "duration")) SetDuration(_time);
 
+  // first, find cartesian item and set local variable accordingly
   for (it = values.begin(); it != values.end();)
   {
     const XMLValue& value = *it;
 
+    if (value.name == "Cartesian")
+    {
+      Evaluate(value.value, cartesian);
+
+      it = values.erase(it);
+    }
+    else ++it;
+  }
+
+  position.polar = !cartesian;
+  
+  for (it = values.begin(); it != values.end();)
+  {
+    const XMLValue& value = *it;
+    
     if (value.name == "position")
     {
       double val;
 
-      if (sscanf(value.value.c_str(), "%lf", &val) > 0)
+      if (Evaluate(value.value, val))
       {
         const std::string *attr;
 
@@ -1416,12 +1433,12 @@ void ADMAudioBlockFormat::SetValues(XMLValues& values)
         {
           BBCDEBUG4(("Position type %s value %0.6lf", attr->c_str(), val));
 
-          if      (*attr == "azimuth")   {position.pos.az = val; position.polar = true;}
-          else if (*attr == "elevation") {position.pos.el = val; position.polar = true;}
-          else if (*attr == "distance")  {position.pos.d  = val; position.polar = true;}
-          else if (*attr == "x")         {position.pos.x  = val; position.polar = false;}
-          else if (*attr == "y")         {position.pos.y  = val; position.polar = false;}
-          else if (*attr == "z")         {position.pos.z  = val; position.polar = false;}
+          if      ( position.polar && (*attr == "azimuth"))               {position.pos.az = val;}
+          else if ( position.polar && (*attr == "elevation"))             {position.pos.el = val;}
+          else if ( position.polar && (*attr == "distance"))              {position.pos.d  = val;}
+          else if (!position.polar && ((*attr == "x") || (*attr == "X"))) {position.pos.x  = val;}
+          else if (!position.polar && ((*attr == "y") || (*attr == "Y"))) {position.pos.y  = val;}
+          else if (!position.polar && ((*attr == "z") || (*attr == "Z"))) {position.pos.z  = val;}
         }
       }
       else BBCERROR("Failed to evaluate '%s' as floating point number for position", value.value.c_str());
@@ -1454,7 +1471,7 @@ void ADMAudioBlockFormat::SetValues(XMLValues& values)
     }
     else if (value.name == "width")
     {
-      double val;
+      float val;
 
       if (Evaluate(value.value, val)) objparameters.SetWidth(val);
 
@@ -1462,7 +1479,7 @@ void ADMAudioBlockFormat::SetValues(XMLValues& values)
     }
     else if (value.name == "depth")
     {
-      double val;
+      float val;
 
       if (Evaluate(value.value, val)) objparameters.SetDepth(val);
 
@@ -1470,7 +1487,7 @@ void ADMAudioBlockFormat::SetValues(XMLValues& values)
     }
     else if (value.name == "height")
     {
-      double val;
+      float val;
 
       if (Evaluate(value.value, val)) objparameters.SetHeight(val);
 
@@ -1478,7 +1495,7 @@ void ADMAudioBlockFormat::SetValues(XMLValues& values)
     }
     else if (value.name == "gain")
     {
-      double val;
+      float val;
 
       if (Evaluate(value.value, val)) objparameters.SetGain(val);
 
@@ -1486,7 +1503,7 @@ void ADMAudioBlockFormat::SetValues(XMLValues& values)
     }
     else if (value.name == "diffuse")
     {
-      double val;
+      float val;
 
       if (Evaluate(value.value, val)) objparameters.SetDiffuseness(val);
 
@@ -1496,12 +1513,14 @@ void ADMAudioBlockFormat::SetValues(XMLValues& values)
     {
       bool val;
 
-      if (Evaluate(value.value, val)) objparameters.SetInterpolate(!val);
-
-      { // read interpolationTime, if it exists
+      if (Evaluate(value.value, val))
+      {
         XMLValue::ATTRS::const_iterator it2;
         double fval;
-        
+
+        objparameters.SetInterpolate(!val);
+
+        // read interpolationTime, if it exists
         if (((it2 = value.attrs.find("interpolationTime")) != value.attrs.end()) && Evaluate(it2->second, fval)) objparameters.SetInterpolationTimeS(fval);
       }
       
@@ -1511,8 +1530,82 @@ void ADMAudioBlockFormat::SetValues(XMLValues& values)
     {
       bool val;
 
-      if (Evaluate(value.value, val)) objparameters.SetChannelLock(val);
+      if (Evaluate(value.value, val))
+      {
+        XMLValue::ATTRS::const_iterator it2;
+        float fval;
+        
+        objparameters.SetChannelLock(val);
 
+        // read maxDistance, if it exists
+        if (((it2 = value.attrs.find("maxDistance")) != value.attrs.end()) && Evaluate(it2->second, fval)) objparameters.SetChannelLockMaxDistance(fval);
+      }
+      
+      it = values.erase(it);
+    }
+    else if (value.name == "objectDivergence")
+    {
+      float fval;
+
+      if (Evaluate(value.value, fval))
+      {
+        XMLValue::ATTRS::const_iterator it2;
+        
+        objparameters.SetDivergenceBalance(fval);
+
+        // read maxDistance, if it exists
+        if (((it2 = value.attrs.find("azimuthRange")) != value.attrs.end()) && Evaluate(it2->second, fval)) objparameters.SetDivergenceAzimuth(fval);
+      }
+      
+      it = values.erase(it);
+    }
+    else if (value.name == "screenRef")
+    {
+      bool val;
+
+      if (Evaluate(value.value, val)) objparameters.SetOnScreen(val);
+      
+      it = values.erase(it);
+    }
+    else if (value.name == "zoneExclusion")
+    {
+      const XMLValues *_subvalues = value.GetSubValues();
+
+      // does the zoneExclusion value have subvalues?
+      if (_subvalues)
+      {
+        const XMLValues& subvalues = *_subvalues;
+        uint_t i;
+
+        // iterate through each subvalue of zoneExclusion
+        for (i = 0; i < subvalues.size(); i++)
+        {
+          const XMLValue& value2 = subvalues[i];
+
+          // for zone subvalues, extract the bounds of the excluded zone and add it to the list in the object parameters
+          if (value2.name =="zone")
+          {
+            XMLValue::ATTRS::const_iterator it2;
+            float minx, miny, minz, maxx, maxy, maxz;
+
+            // extract bounds of zone
+            if (((it2 = value2.attrs.find("minX")) != value.attrs.end()) && Evaluate(it2->second, minx) &&
+                ((it2 = value2.attrs.find("minY")) != value.attrs.end()) && Evaluate(it2->second, miny) &&
+                ((it2 = value2.attrs.find("minZ")) != value.attrs.end()) && Evaluate(it2->second, minz) &&
+                ((it2 = value2.attrs.find("maxX")) != value.attrs.end()) && Evaluate(it2->second, maxx) &&
+                ((it2 = value2.attrs.find("maxY")) != value.attrs.end()) && Evaluate(it2->second, maxy) &&
+                ((it2 = value2.attrs.find("maxZ")) != value.attrs.end()) && Evaluate(it2->second, maxz))
+            {
+              // add zone to list in object parameters
+              objparameters.AddExcludedZone(value2.value, minx, miny, minz, maxx, maxy, maxz);
+            }
+            else BBCERROR("Sub-value %u of zoneExclusion invalid", i);
+          }
+          else BBCDEBUG1(("Unrecognized sub-value %u ('%s') of zoneExclusion", i, value2.name.c_str()));
+        }
+      }
+      else BBCDEBUG1(("zoneExclusion value has no sub-values!"));
+      
       it = values.erase(it);
     }
     else // any other parameters -> assume they are part of the supplement information
@@ -1538,85 +1631,117 @@ void ADMAudioBlockFormat::SetValues(XMLValues& values)
 /*--------------------------------------------------------------------------------*/
 void ADMAudioBlockFormat::GetValues(XMLValues& objattrs, XMLValues& objvalues, bool full) const
 {
-  XMLValue value;
-  double   fval;
-  int      ival;
-  bool     bval;
+  double dval;
+  float  fval;
+  int    ival;
+  bool   bval;
 
   // add values/attributes not held in 'values' to list
   if (full || RTimeSet())
   {
+    XMLValue value;
     value.SetAttribute("rtime", rtime);
     objattrs.push_back(value);
   }
   if (full || DurationSet())
   {
+    XMLValue value;
     value.SetAttribute("duration", duration);
     objattrs.push_back(value);
   }
-
+  
   const Position& position = objparameters.GetPosition();
+  {
+    XMLValue value;
+    value.SetValue("Cartesian", !position.polar);
+    objvalues.AddValue(value);
+  }
+
   if (position.polar)
   {
-    value.SetValue("position", position.pos.az);
-    value.SetValueAttribute("coordinate", "azimuth");
-    objvalues.push_back(value);
+    {
+      XMLValue value;
+      value.SetValue("position", position.pos.az);
+      value.SetValueAttribute("coordinate", "azimuth");
+      objvalues.AddValue(value);
+    }
+    
+    {
+      XMLValue value;
+      value.SetValue("position", position.pos.el);
+      value.SetValueAttribute("coordinate", "elevation");
+      objvalues.AddValue(value);
+    }
 
-    value.SetValue("position", position.pos.el);
-    value.SetValueAttribute("coordinate", "elevation");
-    objvalues.push_back(value);
-
-    value.SetValue("position", position.pos.d);
-    value.SetValueAttribute("coordinate", "distance");
-    objvalues.push_back(value);
+    {
+      XMLValue value;
+      value.SetValue("position", position.pos.d);
+      value.SetValueAttribute("coordinate", "distance");
+      objvalues.AddValue(value);
+    }
   }
   else
   {
-    value.SetValue("position", position.pos.x, "%0.10lf");
-    value.SetValueAttribute("coordinate", "x");
-    objvalues.push_back(value);
+    {
+      XMLValue value;
+      value.SetValue("position", position.pos.x, "%0.10lf");
+      value.SetValueAttribute("coordinate", "X");
+      objvalues.AddValue(value);
+    }
 
-    value.SetValue("position", position.pos.y, "%0.10lf");
-    value.SetValueAttribute("coordinate", "y");
-    objvalues.push_back(value);
+    {
+      XMLValue value;
+      value.SetValue("position", position.pos.y, "%0.10lf");
+      value.SetValueAttribute("coordinate", "Y");
+      objvalues.AddValue(value);
+    }
 
-    value.SetValue("position", position.pos.z, "%0.10lf");
-    value.SetValueAttribute("coordinate", "z");
-    objvalues.push_back(value);
+    {
+      XMLValue value;
+      value.SetValue("position", position.pos.z, "%0.10lf");
+      value.SetValueAttribute("coordinate", "Z");
+      objvalues.AddValue(value);
+    }
   }
 
-  if (objparameters.GetGain(fval))
+  if (objparameters.GetGain(dval))
   {
-    value.SetValue("gain", fval, "%0.10lf");
-    objvalues.push_back(value);
+    XMLValue value;
+    value.SetValue("gain", dval, "%0.10lf");
+    objvalues.AddValue(value);
   }
 
   if (objparameters.GetWidth(fval))
   {
-    value.SetValue("width", fval, "%0.10lf");
-    objvalues.push_back(value);
+    XMLValue value;
+    value.SetValue("width", fval, "%0.10f");
+    objvalues.AddValue(value);
   }
 
   if (objparameters.GetDepth(fval))
   {
-    value.SetValue("depth", fval, "%0.10lf");
-    objvalues.push_back(value);
+    XMLValue value;
+    value.SetValue("depth", fval, "%0.10f");
+    objvalues.AddValue(value);
   }
 
   if (objparameters.GetHeight(fval))
   {
-    value.SetValue("height", fval, "%0.10lf");
-    objvalues.push_back(value);
+    XMLValue value;
+    value.SetValue("height", fval, "%0.10f");
+    objvalues.AddValue(value);
   }
 
   if (objparameters.GetDiffuseness(fval))
   {
+    XMLValue value;
     value.SetValue("diffuse", fval);
-    objvalues.push_back(value);
+    objvalues.AddValue(value);
   }
 
   if (objparameters.GetInterpolate(bval))
   {
+    XMLValue value;
     double itime;
     
     value.SetValue("jumpPosition", !bval);    // NOTE: inverted!
@@ -1624,40 +1749,94 @@ void ADMAudioBlockFormat::GetValues(XMLValues& objattrs, XMLValues& objvalues, b
     // set interpolation time
     if (objparameters.GetInterpolationTimeS(itime)) value.SetValueAttribute("interpolationTime", itime);
     
-    objvalues.push_back(value);
+    objvalues.AddValue(value);
   }
 
+  if (objparameters.GetDivergenceBalance(fval))
+  {
+    XMLValue value;
+
+    value.SetValue("objectDivergence", fval);
+
+    if (objparameters.GetDivergenceAzimuth(fval)) value.SetValueAttribute("azimuthRange", fval);
+    
+    objvalues.AddValue(value);
+  }
+  
   if (objparameters.GetInteract(bval))
   {
+    XMLValue value;
     value.SetValue("Interact", bval);
-    objvalues.push_back(value);
+    objvalues.AddValue(value);
   }
 
   if (objparameters.GetChannelLock(bval))
   {
+    XMLValue value;
     value.SetValue("channelLock", bval);
-    objvalues.push_back(value);
+
+    if (objparameters.GetChannelLockMaxDistance(fval))
+    {
+      value.SetValueAttribute("maxDistance", fval);
+    }
+
+    objvalues.AddValue(value);
   }
 
   if (objparameters.GetDialogue(ival))
   {
+    XMLValue value;
     value.SetValue("Dialogue", ival);
-    objvalues.push_back(value);
+    objvalues.AddValue(value);
   }
 
   if (objparameters.GetImportance(ival))
   {
+    XMLValue value;
     value.SetValue("Importance", ival);
-    objvalues.push_back(value);
+    objvalues.AddValue(value);
   }
 
+  // output all excluded zones
+  const AudioObjectParameters::ExcludedZone *zone = objparameters.GetFirstExcludedZone();
+  if (zone)
+  {
+    XMLValue value;
+
+    value.name = "zoneExclusion";
+
+    while (zone)
+    {
+      XMLValue subvalue;
+      Position c1 = zone->GetMinCorner();
+      Position c2 = zone->GetMaxCorner();
+
+      subvalue.name  = "zone";
+      subvalue.value = zone->GetName();
+
+      subvalue.SetValueAttribute("minX", c1.pos.x);
+      subvalue.SetValueAttribute("minY", c1.pos.y);
+      subvalue.SetValueAttribute("minZ", c1.pos.z);
+      subvalue.SetValueAttribute("maxX", c2.pos.x);
+      subvalue.SetValueAttribute("maxY", c2.pos.y);
+      subvalue.SetValueAttribute("maxZ", c2.pos.z);
+
+      value.AddSubValue(subvalue);
+    
+      zone = zone->GetNext();
+    }
+
+    objvalues.AddValue(value);
+  }
+  
   // add all parameters from the supplement information
   const ParameterSet& othervalues = objparameters.GetOtherValues();
   ParameterSet::Iterator it;
   for (it = othervalues.GetBegin(); it != othervalues.GetEnd(); ++it)
   {
+    XMLValue value;
     value.SetValue(it->first, it->second);
-    objvalues.push_back(value);
+    objvalues.AddValue(value);
   }
 }
 

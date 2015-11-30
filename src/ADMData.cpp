@@ -1957,6 +1957,7 @@ void ADMData::AddXMLValues(void *xmlcontext, const XMLValues& values) const
     if (!value.attr)
     {
       XMLValue::ATTRS::const_iterator it;
+      const XMLValues *subvalues;
 
       OpenXMLObject(xmlcontext, value.name);
 
@@ -1965,7 +1966,10 @@ void ADMData::AddXMLValues(void *xmlcontext, const XMLValues& values) const
         AddXMLAttribute(xmlcontext, it->first, it->second);
       }
 
-      SetXMLData(xmlcontext, value.value);
+      // if value has sub-values, output those
+      if ((subvalues = value.GetSubValues()) != NULL) AddXMLValues(xmlcontext, *subvalues);
+      // otherwise output single value
+      else SetXMLData(xmlcontext, value.value);
 
       CloseXMLObject(xmlcontext);
     }

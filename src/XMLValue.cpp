@@ -1,9 +1,93 @@
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "XMLValue.h"
 
 BBC_AUDIOTOOLBOX_START
+
+XMLValue::XMLValue() : attr(false),
+                       subvalues(NULL)
+{
+}
+
+XMLValue::XMLValue(const XMLValue& obj) : attr(false),
+                                          subvalues(NULL)
+{
+  operator = (obj);
+}
+
+XMLValue::~XMLValue()
+{
+  if (subvalues) delete subvalues;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Assignment operator
+ */
+/*--------------------------------------------------------------------------------*/
+XMLValue& XMLValue::operator = (const XMLValue& obj)
+{
+  attr  = obj.attr;
+  name  = obj.name;
+  value = obj.value;
+  attrs = obj.attrs;
+
+  // create/copy set of subvalues
+  SetSubValues(obj.subvalues);
+  
+  return *this;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Set subvalues list
+ */
+/*--------------------------------------------------------------------------------*/
+void XMLValue::SetSubValues(const XMLValues *_subvalues)
+{
+  // try not to delete and re-allocate, use std::vector<> assignment instead
+  if (_subvalues)
+  {
+    // if subvalues list already exists, use assignment to avoid object delete and new
+    if (subvalues) *subvalues = *_subvalues;
+    // else no alternative but to create new object
+    else           subvalues  = new XMLValues(*_subvalues);
+  }
+  // delete existing list of sub values
+  else if (subvalues)
+  {
+    delete subvalues;
+    subvalues = NULL;
+  }
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Add a set of sub values to the lsit
+ */
+/*--------------------------------------------------------------------------------*/
+void XMLValue::AddSubValues(const XMLValues& _subvalues)
+{
+  if (!subvalues) subvalues = new XMLValues;
+  if (subvalues)
+  {
+    uint_t i;
+    for (i = 0; i < _subvalues.size(); i++)
+    {
+      subvalues->AddValue(_subvalues[i]);
+    }
+  }
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Add a single sub value to the lsit
+ */
+/*--------------------------------------------------------------------------------*/
+void XMLValue::AddSubValue(const XMLValue& _subvalue)
+{
+  if (!subvalues) subvalues = new XMLValues;
+  if (subvalues)  subvalues->AddValue(_subvalue);
+}
 
 /*--------------------------------------------------------------------------------*/
 /** Set XMLValue object as a XML value (name/value pair) with optional attributes
