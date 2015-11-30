@@ -2245,8 +2245,6 @@ bool ADMData::CreateObjects(OBJECTNAMES& names)
 #define SETTYPELABEL(obj) \
     if (names.objects.obj && (names.objects.obj->GetTypeLabel() == ADMObject::TypeLabel_Unknown)) names.objects.obj->SetTypeLabel(names.typeLabel);
     SETTYPELABEL(packFormat);
-    SETTYPELABEL(trackFormat);
-    SETTYPELABEL(streamFormat);
     SETTYPELABEL(channelFormat);
   }
 
