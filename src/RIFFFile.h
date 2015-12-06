@@ -187,7 +187,7 @@ public:
    * @return pointer to RIFFChunk object
    */
   /*--------------------------------------------------------------------------------*/
-  RIFFChunk *GetChunk(uint32_t id) {return chunkmap[id];}
+  RIFFChunk *GetChunk(uint32_t id) const;
 
   /*--------------------------------------------------------------------------------*/
   /** Create and add a chunk to a file being written

@@ -12,6 +12,8 @@ BBC_AUDIOTOOLBOX_START
 
 std::map<uint32_t, RIFFChunk::PROVIDER> RIFFChunk::providermap;
 
+const uint64_t RIFFChunk::RIFF_MaxSize = 0xffffffff;
+
 /*--------------------------------------------------------------------------------*/
 /** Constructor - can only be called by static member function!
  */

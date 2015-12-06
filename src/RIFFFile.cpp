@@ -496,7 +496,7 @@ RIFFChunk *RIFFFile::AddChunk(uint32_t id, const uint8_t *data, uint64_t length,
     
     beforesamples = false;
   }
-  
+
   if ((chunk = new UserRIFFChunk(id, data, length, beforesamples)) != NULL)
   {
     // ensure data is valid
@@ -536,6 +536,20 @@ RIFFChunk *RIFFFile::AddChunk(uint32_t id, const uint8_t *data, uint64_t length,
 RIFFChunk *RIFFFile::AddChunk(const char *name, const uint8_t *data, uint64_t length, bool beforesamples)
 {
   return AddChunk(IFFID(name), data, length, beforesamples);
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Return chunk specified by chunk ID
+ *
+ * @param id 32-bit representation of chunk name (big endian)
+ *
+ * @return pointer to RIFFChunk object
+ */
+/*--------------------------------------------------------------------------------*/
+RIFFChunk *RIFFFile::GetChunk(uint32_t id) const
+{
+  ChunkMap_t::const_iterator it;
+  return ((it = chunkmap.find(id)) != chunkmap.end()) ? it->second : NULL;
 }
 
 BBC_AUDIOTOOLBOX_END

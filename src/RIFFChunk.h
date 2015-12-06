@@ -75,10 +75,8 @@ public:
   /*--------------------------------------------------------------------------------*/
   uint64_t       GetLength() const {return length;}
 
-  enum
-  {
-    RIFF_MaxSize = 0xffffffffull,
-  };
+  // maximum chunk size without using ds64
+  static const uint64_t RIFF_MaxSize;
 
   /*--------------------------------------------------------------------------------*/
   /** Tell this chunk that the file is a RIFF64 file
