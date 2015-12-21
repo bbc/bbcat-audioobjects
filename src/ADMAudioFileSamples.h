@@ -2,7 +2,6 @@
 #define __ADM_AUDIO_OBJECT_FILE__
 
 #include "ADMData.h"
-#include "ADMObjects.h"
 #include "SoundObjectFile.h"
 
 BBC_AUDIOTOOLBOX_START

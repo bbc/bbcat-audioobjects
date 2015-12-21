@@ -201,7 +201,7 @@ bool RIFFFile::Create(const char *filename, uint32_t samplerate, uint_t nchannel
             {
               // tell ds64 chunk the maximum number of chunks that might need a table entry
               // this can be calculated from the number of chunks created
-              ds64->SetTableCount((uint_t)chunklist.size() - 5);        // none of the above chunks need a table entry (RIFF and data chunks have dedicated entries in the ds64 chunk)
+              ds64->SetTableCount(chunklist.size() - 5);        // none of the above chunks need a table entry (RIFF and data chunks have dedicated entries in the ds64 chunk)
             }
 
             WriteChunks(false);

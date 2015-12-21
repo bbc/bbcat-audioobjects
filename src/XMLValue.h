@@ -54,10 +54,10 @@ public:
   void SetAttribute(const std::string& _name, const std::string& _value) {SetValueOrAttribute(_name, _value, true);}
   void SetAttribute(const std::string& _name, const char        *_value) {SetValueOrAttribute(_name, _value, true);}
   void SetAttribute(const std::string& _name, bool               _value) {SetValueOrAttribute(_name, _value, true);}
-  void SetAttribute(const std::string& _name, sint_t             _value, const char *format = "%d")     {SetValueOrAttribute(_name, _value, true, format);}
-  void SetAttribute(const std::string& _name, uint_t             _value, const char *format = "%u")     {SetValueOrAttribute(_name, _value, true, format);}
+  void SetAttribute(const std::string& _name, sint_t             _value, const char *format = "")    {SetValueOrAttribute(_name, _value, true, format);}
+  void SetAttribute(const std::string& _name, uint_t             _value, const char *format = "")    {SetValueOrAttribute(_name, _value, true, format);}
   void SetAttribute(const std::string& _name, uint64_t           _value) {SetValueOrAttribute(_name, _value, true);}
-  void SetAttribute(const std::string& _name, double             _value, const char *format = "%0.6lf") {SetValueOrAttribute(_name, _value, true, format);}
+  void SetAttribute(const std::string& _name, double             _value, const char *format = "0.6") {SetValueOrAttribute(_name, _value, true, format);}
 
   /*--------------------------------------------------------------------------------*/
   /** Set XMLValue object as a XML value (name/value pair) with optional attributes
@@ -66,10 +66,10 @@ public:
   void SetValue(const std::string& _name, const std::string& _value) {SetValueOrAttribute(_name, _value, false);}
   void SetValue(const std::string& _name, const char        *_value) {SetValueOrAttribute(_name, _value, false);}
   void SetValue(const std::string& _name, bool               _value) {SetValueOrAttribute(_name, _value, false);}
-  void SetValue(const std::string& _name, sint_t             _value, const char *format = "%d")     {SetValueOrAttribute(_name, _value, false, format);}
-  void SetValue(const std::string& _name, uint_t             _value, const char *format = "%u")     {SetValueOrAttribute(_name, _value, false, format);}
+  void SetValue(const std::string& _name, sint_t             _value, const char *format = "")    {SetValueOrAttribute(_name, _value, false, format);}
+  void SetValue(const std::string& _name, uint_t             _value, const char *format = "")    {SetValueOrAttribute(_name, _value, false, format);}
   void SetValue(const std::string& _name, uint64_t           _value) {SetValueOrAttribute(_name, _value, false);}
-  void SetValue(const std::string& _name, double             _value, const char *format = "%0.6lf") {SetValueOrAttribute(_name, _value, false, format);}
+  void SetValue(const std::string& _name, double             _value, const char *format = "0.6") {SetValueOrAttribute(_name, _value, false, format);}
 
   /*--------------------------------------------------------------------------------*/
   /** Set attribute of XMLValue value object (initialised above)
@@ -78,10 +78,10 @@ public:
   void SetValueAttribute(const std::string& _name, const std::string& _value);
   void SetValueAttribute(const std::string& _name, const char        *_value);
   void SetValueAttribute(const std::string& _name, bool               _value) {SetValueAttribute(_name, StringFrom(_value));}
-  void SetValueAttribute(const std::string& _name, sint_t             _value, const char *format = "%d") {SetValueAttribute(_name, StringFrom(_value, format));}
-  void SetValueAttribute(const std::string& _name, uint_t             _value, const char *format = "%u") {SetValueAttribute(_name, StringFrom(_value, format));}
+  void SetValueAttribute(const std::string& _name, sint_t             _value, const char *format = "")    {SetValueAttribute(_name, StringFrom(_value, format));}
+  void SetValueAttribute(const std::string& _name, uint_t             _value, const char *format = "")    {SetValueAttribute(_name, StringFrom(_value, format));}
   void SetValueAttribute(const std::string& _name, uint64_t           _value);
-  void SetValueAttribute(const std::string& _name, double             _value, const char *format = "%0.6lf") {SetValueAttribute(_name, StringFrom(_value, format));}
+  void SetValueAttribute(const std::string& _name, double             _value, const char *format = "0.6") {SetValueAttribute(_name, StringFrom(_value, format));}
 
   /*--------------------------------------------------------------------------------*/
   /** Return ptr to attributes within specified value with specified name or NULL
@@ -109,10 +109,10 @@ protected:
   void SetValueOrAttribute(const std::string& _name, const std::string& _value, bool _attr);
   void SetValueOrAttribute(const std::string& _name, const char        *_value, bool _attr);
   void SetValueOrAttribute(const std::string& _name, bool               _value, bool _attr) {SetValueOrAttribute(_name, StringFrom(_value), _attr);}
-  void SetValueOrAttribute(const std::string& _name, sint_t             _value, bool _attr, const char *format = "%d") {SetValueOrAttribute(_name, StringFrom(_value, format), _attr);}
-  void SetValueOrAttribute(const std::string& _name, uint_t             _value, bool _attr, const char *format = "%u") {SetValueOrAttribute(_name, StringFrom(_value, format), _attr);}
+  void SetValueOrAttribute(const std::string& _name, sint_t             _value, bool _attr, const char *format = "")    {SetValueOrAttribute(_name, StringFrom(_value, format), _attr);}
+  void SetValueOrAttribute(const std::string& _name, uint_t             _value, bool _attr, const char *format = "")    {SetValueOrAttribute(_name, StringFrom(_value, format), _attr);}
   void SetValueOrAttribute(const std::string& _name, uint64_t           _value, bool _attr);
-  void SetValueOrAttribute(const std::string& _name, double             _value, bool _attr, const char *format = "%0.6lf") {SetValueOrAttribute(_name, StringFrom(_value, format), _attr);}
+  void SetValueOrAttribute(const std::string& _name, double             _value, bool _attr, const char *format = "0.6") {SetValueOrAttribute(_name, StringFrom(_value, format), _attr);}
 
 protected:
   XMLValues *subvalues;   // list of sub-values  

@@ -19,18 +19,18 @@ BBC_AUDIOTOOLBOX_REQUIRE(TinyXMLADMData);
 
 int main(void)
 {
-  // ADM aware WAV file
-  ADMRIFFFile file;
-  const char *filename = "adm-bwf.wav";
-
   // print library versions (the actual loaded versions, if dynamically linked)
   printf("Versions:\n%s\n", LoadedVersions::Get().GetVersionsList().c_str());
 
+  // ADM aware WAV file
+  ADMRIFFFile file;
+  const char *filename = "adm-bwf.wav";
+  
   // IMPORTANT: create basic ADM here - if this is not done, the file will be a plain WAV file!
   file.CreateADM();
 
   // create file
-  if (file.Create(filename, 48000, 16))
+  if (file.Create(filename, 48000, 5))
   {
     ADMData *adm = file.GetADM();
 
@@ -93,7 +93,7 @@ int main(void)
     audio.resize(file.GetChannels());
     double fs = (double)file.GetSampleRate();
     double level = dBToGain(-40.0);
-    uint_t i, j, nsamples = 20 * file.GetSampleRate(), step = file.GetSampleRate() / 10;
+    uint_t i, j, nsamples = 2 * file.GetSampleRate(), step = file.GetSampleRate() / 10;
 
     // write 20s worth samples
     // this is somewhat inefficient since it is only writing one frame at a time!
@@ -115,6 +115,28 @@ int main(void)
           pos.pos.d  = 1.0;
           params.SetPosition(pos);
 
+          // set some extra parameters
+          params.SetWidth((float)j * .2);
+          params.SetDepth((float)j * .4);
+          params.SetHeight((float)j * .3);
+          
+          if (j < 2)
+          {
+            params.SetScreenEdgeLock("azimuth", j ? "right" : "left");
+            params.SetScreenEdgeLock("elevation", j ? "bottom" : "top");
+          }
+          else if (j == 2)
+          {
+            params.AddExcludedZone("left",  -1, -1, -1, -.8, 1, 1);
+            params.AddExcludedZone("right", .8, -1, -1, 1.0, 1, 1);
+          }
+          else
+          {
+            params.SetObjectImportance(5 + j - 3);
+            params.SetChannelImportance(2 + j - 3);
+            params.SetInteract(j != 3);
+            params.SetDisableDucking(j == 3);
+          }
           file.SetObjectParameters(j, params);
         }
       }
@@ -122,11 +144,11 @@ int main(void)
       // create sine waves on each channel
       for (j = 0; j < audio.size(); j++)
       {
-        audio[j] = (float)(level * sin(2.0 * M_PI * 100.0 * (double)i / fs * (double)(1 + j)));
+        audio[j] = level * sin(2.0 * M_PI * 100.0 * (double)i / fs * (double)(1 + j));
       }
 
       // write a frame of audio
-      file.WriteSamples(&audio[0], 0, (uint_t)audio.size(), 1);
+      file.WriteSamples(&audio[0], 0, audio.size(), 1);
     }
 
     file.Close();

@@ -4,6 +4,7 @@ set(_sources
 	ADMData.cpp
 	ADMObjects.cpp
 	ADMRIFFFile.cpp
+	ADMXMLGenerator.cpp
 	Playlist.cpp
 	RIFFChunk.cpp
 	RIFFChunks.cpp
@@ -11,6 +12,7 @@ set(_sources
 	SoundFileAttributes.cpp
 	SoundObjectFile.cpp
 	TinyXMLADMData.cpp
+	XMLADMData.cpp
 	XMLValue.cpp
 	${CMAKE_CURRENT_BINARY_DIR}/version.cpp
 )
@@ -21,6 +23,7 @@ set(_headers
 	ADMData.h
 	ADMObjects.h
 	ADMRIFFFile.h
+	ADMXMLGenerator.h
 	Playlist.h
 	RIFFChunk.h
 	RIFFChunk_Definitions.h
@@ -29,6 +32,7 @@ set(_headers
 	SoundFileAttributes.h
 	SoundObjectFile.h
 	TinyXMLADMData.h
+	XMLADMData.h
 	XMLValue.h
 	${CMAKE_CURRENT_BINARY_DIR}/version.h
 )

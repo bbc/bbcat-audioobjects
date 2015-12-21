@@ -25,6 +25,7 @@ libbbcat_audioobjects_@BBCAT_AUDIOOBJECTS_MAJORMINOR@_la_SOURCES =	\
 	ADMData.cpp														\
 	ADMObjects.cpp													\
 	ADMRIFFFile.cpp													\
+	ADMXMLGenerator.cpp												\
 	Playlist.cpp													\
 	RIFFChunk.cpp													\
 	RIFFChunks.cpp													\
@@ -32,6 +33,7 @@ libbbcat_audioobjects_@BBCAT_AUDIOOBJECTS_MAJORMINOR@_la_SOURCES =	\
 	SoundFileAttributes.cpp											\
 	SoundObjectFile.cpp												\
 	TinyXMLADMData.cpp												\
+	XMLADMData.cpp													\
 	XMLValue.cpp													\
 	version.cpp
 
@@ -40,6 +42,7 @@ pkginclude_HEADERS =							\
 	ADMData.h									\
 	ADMObjects.h								\
 	ADMRIFFFile.h								\
+	ADMXMLGenerator.h							\
 	Playlist.h									\
 	RIFFChunk.h									\
 	RIFFChunk_Definitions.h						\
@@ -49,6 +52,7 @@ pkginclude_HEADERS =							\
 	SoundFileAttributes.h						\
 	SoundObjectFile.h							\
 	TinyXMLADMData.h							\
+	XMLADMData.h								\
 	XMLValue.h									\
 	version.h
 

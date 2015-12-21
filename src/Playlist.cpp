@@ -15,7 +15,11 @@ Playlist::Playlist() : filestartpos(0),
                        fadesamples(100),
                        fadedowncount(0),
                        fadeupcount(0),
+                       autoplay(true),
                        loop_all(false),
+                       loop_file(false),
+                       pause(false),
+                       releaseplayback(false),
                        positionchange(false)
 {
   it = list.begin();
@@ -71,11 +75,13 @@ void Playlist::Clear()
 /*--------------------------------------------------------------------------------*/
 void Playlist::Reset()
 {
-  filestartpos   = 0;           // reset to start of playlist
-  fadedowncount  = 0;           // stop fade down
-  fadeupcount    = fadesamples; // start fade up
-  positionchange = false;       // cancel position change
-
+  filestartpos    = 0;           // reset to start of playlist
+  fadedowncount   = 0;           // stop fade down
+  fadeupcount     = fadesamples; // start fade up
+  positionchange  = false;       // cancel position change
+  pause           = false;       // unpause audio
+  releaseplayback = false;       // clear playback release
+  
   it = list.begin();
   if (it != list.end()) (*it)->SetSamplePosition(0);
 }
@@ -88,13 +94,22 @@ void Playlist::Next()
 {
   if (it != list.end())
   {
-    // move position on by current file's length
-    filestartpos += (*it)->GetSampleLength();
+    // if looping file, don't need to move playlist, just reset back to start of file
+    if (!loop_file)
+    {
+      // move position on by current file's length
+      filestartpos += (*it)->GetSampleLength();
 
-    // advance along list and reset position of file if not at end of list
-    if ((++it) != list.end()) (*it)->SetSamplePosition(0);
-    // else if looping enabled then reset to the start of the list
-    else if (loop_all) Reset();
+      // advance along list and loop back to start if loop_all enabled 
+      if (((++it) == list.end()) && loop_all)
+      {
+        it = list.begin();
+        filestartpos = 0;
+      }
+    }
+    
+    // reset position of file if not at end of list
+    if (it != list.end()) (*it)->SetSamplePosition(0);
   }
 }
 
@@ -153,8 +168,10 @@ bool Playlist::SetPlaybackPosition(uint64_t pos, bool force)
 
   if (!Empty())
   {
-    if (force)
+    if (force || pause)
     {
+      BBCDEBUG2(("Warning: forcing move to %lu", (ulong_t)pos));
+      
       // clear fade down
       fadedowncount = 0;
       // clear any position change request
@@ -194,6 +211,12 @@ bool Playlist::SetPlaybackPositionEx(uint64_t pos)
 {
   bool success = false;
 
+  // if looping is enabled, do not allow movement beyond last sample of playlist
+  uint64_t len = loop_all ? subz<>(playlistlength, (uint64_t)1) : playlistlength;
+
+  // limit position
+  pos = MIN(pos, len); 
+            
   // move back if necessary
   while ((it != list.begin()) && (pos < filestartpos))
   {
@@ -221,6 +244,81 @@ bool Playlist::SetPlaybackPositionEx(uint64_t pos)
 }
 
 /*--------------------------------------------------------------------------------*/
+/** Return current index in playlist
+ */
+/*--------------------------------------------------------------------------------*/
+uint_t Playlist::GetPlaybackIndex() const
+{
+  return it - list.begin();
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Return maximum index in playlist
+ *
+ * @note this is ONE LESS than GetCount() 
+ */
+/*--------------------------------------------------------------------------------*/
+uint_t Playlist::GetPlaybackCount() const
+{
+  return subz<>((uint_t)list.size(), 1U);
+}
+  
+/*--------------------------------------------------------------------------------*/
+/** Move to specified playlist index
+ *
+ * @note setting force to true may cause clicks!
+ * @note setting force to false causes a fade down *before* and a fade up *after*
+ * changing the position which means this doesn't actually change the position straight away!
+ */
+/*--------------------------------------------------------------------------------*/
+bool Playlist::SetPlaybackIndex(uint_t index, bool force)
+{
+  // NO NEED to lock thread here
+  bool success = false;
+
+  if (!Empty())
+  {
+    uint64_t pos = 0;
+    uint_t   i;
+
+    index = MIN(index, GetPlaybackCount());
+
+    // find position of start of specified file
+    for (i = 0; i < index; i++)
+    {
+      pos += list[i]->GetSampleLength();
+    }
+
+    BBCDEBUG2(("SetPlaybackIndex %u pos %lu", index, (ulong_t)pos));
+  
+    // now just request change of position
+    success = SetPlaybackPosition(pos, force);
+
+    releaseplayback = true;
+  }
+
+  return success;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Pause/unpause audio
+ */
+/*--------------------------------------------------------------------------------*/
+void Playlist::PauseAudio(bool enable)
+{
+  if (enable != pause)
+  {
+    ThreadLock lock(tlock);
+
+    // either fade up or down
+    if (pause) fadeupcount   = fadesamples;
+    else       fadedowncount = fadesamples;
+
+    pause = enable;
+  }
+}
+
+/*--------------------------------------------------------------------------------*/
 /** Read samples into buffer
  *
  * @param dst destination sample buffer
@@ -238,74 +336,96 @@ uint_t Playlist::ReadSamples(Sample_t *dst, uint_t channel, uint_t channels, uin
 
   while (!AtEnd() && frames)
   {
+    SoundFileSamples *file = GetFile();
     uint_t nread = 0;
+    bool   playallowed = (autoplay || file->GetSamplePosition() || positionchange);
 
-    if (fadedowncount)
+    if (!playallowed && !releaseplayback)
     {
-      uint_t i, j;
-
-      BBCDEBUG2(("Fading down: %u frames left, coeff %0.3f", fadedowncount, (Sample_t)(fadedowncount - 1) / (Sample_t)fadesamples));
-
-      // fading down, limit to fadedowncount and fade after reading
-      nread = GetFile()->ReadSamples(dst, channel, channels, MIN(frames, fadedowncount));
-      BBCDEBUG2(("Read %u/%u/%u frames from file (fadedown)", nread, frames, fadedowncount));
-
-      // fade read audio
-      for (i = 0; i < nread; i++, fadedowncount--)
+      // file playback cannot be started yet -> fill remainder of buffer with zeros
+      nread = frames;
+      memset(dst, 0, nread * channels * sizeof(*dst));
+    }
+    else
+    {
+      // clear trigger play flag if it was used to release playback
+      releaseplayback &= (playallowed || pause);
+      
+      if (fadedowncount)
       {
-        Sample_t mul = (Sample_t)(fadedowncount - 1) / (Sample_t)fadesamples;
-        for (j = 0; j < channels; j++) dst[i * channels + j] *= mul;
+        uint_t i, j;
+
+        BBCDEBUG3(("Fading down: %u frames left, coeff %0.3f", fadedowncount, (Sample_t)(fadedowncount - 1) / (Sample_t)fadesamples));
+
+        // fading down, limit to fadedowncount and fade after reading
+        nread = file->ReadSamples(dst, channel, channels, MIN(frames, fadedowncount));
+        BBCDEBUG3(("Read %u/%u/%u frames from file (fadedown)", nread, frames, fadedowncount));
+
+        // fade read audio
+        for (i = 0; i < nread; i++, fadedowncount--)
+        {
+          Sample_t mul = (Sample_t)(fadedowncount - 1) / (Sample_t)fadesamples;
+          for (j = 0; j < channels; j++) dst[i * channels + j] *= mul;
+        }
+      }
+      else if (pause)
+      {
+        // audio is paused, fill remainder of buffer with zeros
+        nread = frames;
+        memset(dst, 0, nread * channels * sizeof(*dst));
+      }
+      else if (positionchange)
+      {
+        BBCDEBUG3(("Changing position to %lu samples", (ulong_t)newposition));
+
+        // actually set the new position now that audio is faded down
+        SetPlaybackPositionEx(newposition);
+
+        // clear change request
+        positionchange = false;
+
+        // start fadeup
+        fadeupcount = fadesamples;
+
+        // force loop around
+        continue;
+      }
+      else if (fadeupcount)
+      {
+        uint_t i, j;
+
+        BBCDEBUG3(("Fading up: %u frames left, coeff %0.3f", fadeupcount, (Sample_t)(fadesamples - fadeupcount) / (Sample_t)fadesamples));
+
+        // fading up, limit to fadeupcount and fade after reading
+        nread = file->ReadSamples(dst, channel, channels, MIN(frames, fadeupcount));
+        BBCDEBUG3(("Read %u/%u/%u frames from file (fadeup)", nread, frames, fadeupcount));
+
+        // fade read audio
+        for (i = 0; i < nread; i++, fadeupcount--)
+        {
+          Sample_t mul = (Sample_t)(fadesamples - fadeupcount) / (Sample_t)fadesamples;
+          for (j = 0; j < channels; j++) dst[i * channels + j] *= mul;
+        }
+      }
+      else
+      {
+        BBCDEBUG3(("Reading %u frames from file", frames));
+        // no position changes pending, simple read
+        nread = file->ReadSamples(dst, channel, channels, frames);
+        BBCDEBUG3(("Read %u/%u frames from file", nread, frames));
       }
     }
-    else if (positionchange)
-    {
-      BBCDEBUG2(("Changing position to %lu samples", (ulong_t)newposition));
-
-      // actually set the new position now that audio is faded down
-      SetPlaybackPositionEx(newposition);
-
-      // clear change request
-      positionchange = false;
-
-      // start fadeup
-      fadeupcount = fadesamples;
-
-      // force loop around
-      continue;
-    }
-    else if (fadeupcount)
-    {
-      uint_t i, j;
-
-      BBCDEBUG2(("Fading up: %u frames left, coeff %0.3f", fadeupcount, (Sample_t)(fadesamples - fadeupcount) / (Sample_t)fadesamples));
-
-      // fading up, limit to fadeupcount and fade after reading
-      nread = GetFile()->ReadSamples(dst, channel, channels, MIN(frames, fadeupcount));
-      BBCDEBUG2(("Read %u/%u/%u frames from file (fadeup)", nread, frames, fadeupcount));
-
-      // fade read audio
-      for (i = 0; i < nread; i++, fadeupcount--)
-      {
-        Sample_t mul = (Sample_t)(fadesamples - fadeupcount) / (Sample_t)fadesamples;
-        for (j = 0; j < channels; j++) dst[i * channels + j] *= mul;
-      }
-    }
-    else if (GetFile())
-    {
-      BBCDEBUG2(("Reading %u frames from file", frames));
-      // no position changes pending, simple read
-      nread = GetFile()->ReadSamples(dst, channel, channels, frames);
-      BBCDEBUG2(("Read %u/%u frames from file", nread, frames));
-    }
-    else BBCERROR("No file when trying to read samples in Playlist!");
-
-    if (!nread) break;
-
+    
+    // if reached the end of the file, move onto next one
+    if (!nread) Next();
+      
     dst     += nread * channels;
     frames  -= nread;
     nframes += nread;
   }
 
+  BBCDEBUG3(("Total %u frames returned", nframes));
+  
   return nframes;
 }
 

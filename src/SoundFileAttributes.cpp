@@ -103,7 +103,7 @@ uint_t SoundFileSamples::ReadSamples(uint8_t *buffer, SampleFormat_t type, uint_
 
   if (file && file->isopen() && samplebuffer)
   {
-    frames = (uint_t)MIN((uint64_t)frames, clip.nsamples - samplepos);
+    frames = MIN(frames, clip.nsamples - samplepos);
 
     if (!frames)
     {
@@ -131,7 +131,7 @@ uint_t SoundFileSamples::ReadSamples(uint8_t *buffer, SampleFormat_t type, uint_
 
           if ((res = file->fread(samplebuffer, format->GetBytesPerFrame(), nframes)) > 0)
           {
-            nframes = (uint_t)res;
+            nframes = res;
 
             BBCDEBUG4(("Read %u frames, extracting channels %u-%u (from 0-%u), converting and copying to destination", nframes, clip.channel + firstchannel, clip.channel + firstchannel + nchannels, format->GetChannels()));
 
@@ -222,7 +222,7 @@ uint_t SoundFileSamples::WriteSamples(const uint8_t *buffer, SampleFormat_t type
 
         if ((res = file->fwrite(samplebuffer, bpf, nframes)) > 0)
         {
-          nframes     = (uint_t)res;
+          nframes     = res;
           n          += nframes;
           buffer     += nframes * nsrcchannels * GetBytesPerSample(type);
           nsrcframes -= nframes;

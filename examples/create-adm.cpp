@@ -5,6 +5,7 @@
 #include <bbcat-base/LoadedVersions.h>
 
 #include <bbcat-audioobjects/ADMData.h>
+#include <bbcat-audioobjects/XMLADMData.h>
 
 using namespace bbcat;
 
@@ -22,9 +23,9 @@ int main(void)
   // print library versions (the actual loaded versions, if dynamically linked)
   printf("Versions:\n%s\n", LoadedVersions::Get().GetVersionsList().c_str());
 
-  ADMData *adm;
+  XMLADMData *adm;  
   // create basic ADM
-  if ((adm = ADMData::Create()) != NULL)
+  if ((adm = XMLADMData::CreateADM()) != NULL)
   {
     ADMData::OBJECTNAMES names;
 
@@ -101,7 +102,8 @@ int main(void)
             params.SetDepth(15.0);
             params.SetDiffuseness(20.0);
             params.SetDelay(25.0);
-            params.SetImportance(5);
+            params.SetObjectImportance(5);
+            params.SetChannelImportance(2);
             params.SetDialogue(1);
             params.SetChannelLock(true);
             params.SetInteract(true);

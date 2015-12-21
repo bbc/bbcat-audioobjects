@@ -26,7 +26,7 @@ examples/ - folder with example C++ files (just type make)
 src/ADMAudioFileSamples.cpp             | Handler for reading audio samples AND position from ADM object and BWF file 
 src/ADMAudioFileSamples.h               |
 
-src/ADMData.cpp                         | Base class for ADM data handlers
+src/ADMData.cpp                         | Base class for ADM data handlers (NOTE: this no longer supports axml and chna chunk handling directly)
 src/ADMData.h                           |
 
 src/ADMFileReader.cpp                   | An ADM file reader
@@ -40,6 +40,9 @@ src/ADMObjects.h                        |
 
 src/ADMRIFFFile.cpp                     | ADM RIFF (BWF) file support
 src/ADMRIFFFile.h                       |
+
+src/ADMXMLGenerator.cpp                 | Simple XML generator for use by ADMData
+src/ADMXMLGenerator.h                   |
 
 src/Makefile.am                         | Makefile for automake
 
@@ -65,6 +68,9 @@ src/SoundObjectFile.h                   |
 
 src/TinyXMLADMData.cpp                  | An implementation of ADM decoding using TinyXML
 src/TinyXMLADMData.h                    |
+
+src/XMLADMData.cpp                      | Extension to ADMData to handle axml and chna chunks encoding and decoding (via explicit implementations like TinyXMLADMData)
+src/XMLADMData.h                        |
 
 src/XMLValue.cpp                        | Representation of XML style values/attributes
 src/XMLValue.h                          |

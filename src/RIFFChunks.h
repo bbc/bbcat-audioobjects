@@ -276,6 +276,9 @@ public:
   RIFFchnaChunk(uint32_t chunk_id) : RIFFChunk(chunk_id) {}
   virtual ~RIFFchnaChunk() {}
 
+  // this chunk is written *after* data chunk
+  virtual bool WriteChunkBeforeSamples() const {return false;}
+
   // provider function register for this object
   static void Register();
 
@@ -378,7 +381,7 @@ public:
   UserRIFFChunk(uint32_t chunk_id, const void *_data, uint64_t _length, bool _beforesamples = false);
   virtual ~UserRIFFChunk() {}
 
-  // this chunk is written *after* data chunk
+  // return where this chunk should be written *before* the data chunk
   virtual bool WriteChunkBeforeSamples() const {return beforesamples;}
 
 protected:

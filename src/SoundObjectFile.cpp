@@ -4,15 +4,18 @@
 
 BBC_AUDIOTOOLBOX_START
 
-SoundObjectFileSamples::SoundObjectFileSamples() : SoundFileSamples()
+SoundObjectFileSamples::SoundObjectFileSamples() : SoundFileSamples(),
+                                                   adm(NULL)
 {
 }
 
-SoundObjectFileSamples::SoundObjectFileSamples(const SoundFileSamples *obj) : SoundFileSamples(obj)
+SoundObjectFileSamples::SoundObjectFileSamples(const SoundFileSamples *obj) : SoundFileSamples(obj),
+                                                                              adm(NULL)
 {
 }
 
-SoundObjectFileSamples::SoundObjectFileSamples(const SoundObjectFileSamples *obj) : SoundFileSamples(obj)
+SoundObjectFileSamples::SoundObjectFileSamples(const SoundObjectFileSamples *obj) : SoundFileSamples(obj),
+                                                                                    adm(obj->adm)
 {
 }
 

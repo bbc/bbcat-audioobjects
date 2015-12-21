@@ -4,7 +4,7 @@
 
 #include <bbcat-base/LoadedVersions.h>
 
-#include <bbcat-audioobjects/ADMData.h>
+#include <bbcat-audioobjects/XMLADMData.h>
 #include <bbcat-audioobjects/RIFFFile.h>
 
 using namespace bbcat;
@@ -20,18 +20,18 @@ BBC_AUDIOTOOLBOX_REQUIRE(TinyXMLADMData);
 
 int main(int argc, char *argv[])
 {
+  // print library versions (the actual loaded versions, if dynamically linked)
+  printf("Versions:\n%s\n", LoadedVersions::Get().GetVersionsList().c_str());
+
   if (argc < 2)
   {
     fprintf(stderr, "Usage: write-separate-adm <filename>\n");
     exit(1);
   }
   
-  // print library versions (the actual loaded versions, if dynamically linked)
-  printf("Versions:\n%s\n", LoadedVersions::Get().GetVersionsList().c_str());
-
   // create basic ADM
-  ADMData *adm;
-  if ((adm = ADMData::Create()) != NULL)
+  XMLADMData *adm;
+  if ((adm = XMLADMData::CreateADM()) != NULL)
   {
     ADMData::OBJECTNAMES names;
 
@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
       names.trackNumber = t;
 
       // create audioTrackUID for chna chunk
-      if ((track = adm->CreateTrack(names.trackNumber + 1)) != NULL)
+      if ((track = adm->CreateTrack(names.trackNumber)) != NULL)
       {
         track->SetSampleRate(48000);
         track->SetBitDepth(24);
@@ -116,7 +116,8 @@ int main(int argc, char *argv[])
             params.SetDepth(15.0);
             params.SetDiffuseness(20.0);
             params.SetDelay(25.0);
-            params.SetImportance(5);
+            params.SetObjectImportance(5);
+            params.SetChannelImportance(2);
             params.SetDialogue(1);
             params.SetChannelLock(true);
             params.SetInteract(true);
@@ -151,7 +152,7 @@ int main(int argc, char *argv[])
     if (file.Create(argv[1], 48000, 16))
     {
       // add the chna and axml chunks from the ADM
-      uint32_t len;
+      uint64_t len;
       const uint8_t *data;
 
       // add chna chunk

@@ -328,13 +328,13 @@ protected:
   void SetTypeInfoInObject(ADMObject *obj) const;
 
 protected:
-  ADMData&       owner;
-  std::string    id;
-  std::string    name;
-  uint_t         typeLabel;
-  std::string    typeDefinition;
-  XMLValues values;
-  bool           standarddef;
+  ADMData&     owner;
+  std::string  id;
+  std::string  name;
+  uint_t       typeLabel;
+  std::string  typeDefinition;
+  XMLValues    values;
+  bool         standarddef;
 
   static std::map<uint_t,std::string> typeLabelMap;
   static std::map<uint_t,std::string> formatLabelMap;
@@ -356,6 +356,9 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   ADMAudioProgramme(ADMData& _owner, const std::string& _id, const std::string& _name) : ADMObject(_owner, _id, _name) {Register();}
+  virtual ~ADMAudioProgramme() {}
+  
+  typedef std::vector<ADMAudioProgramme *> LIST;
 
   /*--------------------------------------------------------------------------------*/
   /** Return textual type name of this object
@@ -460,7 +463,10 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   ADMAudioContent(ADMData& _owner, const std::string& _id, const std::string& _name) : ADMObject(_owner, _id, _name) {Register();}
+  virtual ~ADMAudioContent() {}
 
+  typedef std::vector<ADMAudioContent *> LIST;
+  
   /*--------------------------------------------------------------------------------*/
   /** Return textual type name of this object
    */
@@ -514,7 +520,6 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   const std::vector<ADMAudioObject *>& GetObjectRefs() const {return objectrefs;}
-  virtual std::vector<AudioObject *> GetObjectsList() const {return ConvertList<AudioObject>(objectrefs);}
 
   /*--------------------------------------------------------------------------------*/
   /** Return list of values/attributes from internal variables and list of referenced objects
@@ -565,7 +570,10 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   ADMAudioObject(ADMData& _owner, const std::string& _id, const std::string& _name);
+  virtual ~ADMAudioObject() {}
 
+  typedef std::vector<ADMAudioObject *> LIST;
+  
   /*--------------------------------------------------------------------------------*/
   /** Return textual type name of this object
    */
@@ -635,7 +643,6 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   const std::vector<ADMAudioObject *>& GetObjectRefs() const {return objectrefs;}
-  virtual std::vector<AudioObject *> GetObjectsList() const {return ConvertList<AudioObject>(objectrefs);}
 
   /*--------------------------------------------------------------------------------*/
   /** Add reference to an AudioPackFormat object
@@ -659,16 +666,69 @@ public:
   const std::vector<ADMAudioTrack *>& GetTrackRefs() const {return trackrefs;}
 
   /*--------------------------------------------------------------------------------*/
+  /** Sort tracks
+   */
+  /*--------------------------------------------------------------------------------*/
+  void SortTracks();
+  
+  /*--------------------------------------------------------------------------------*/
   /** Get start channel
    */
   /*--------------------------------------------------------------------------------*/
-  virtual uint_t GetStartChannel() const {return starttrack;}
+  uint_t GetStartChannel()         const {return starttrack;}
+  void   SetStartChannel(uint_t channel) {starttrack = channel;}
 
   /*--------------------------------------------------------------------------------*/
   /** Get number of channels
    */
   /*--------------------------------------------------------------------------------*/
-  virtual uint_t GetChannelCount() const {return (uint_t)trackrefs.size();}
+  uint_t GetChannelCount() const           {return trackcount;}
+  void   SetChannelCount(uint_t nchannels) {trackcount = nchannels;}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Set dialogue type
+   */
+  /*--------------------------------------------------------------------------------*/
+  uint_t GetDialogue() const     {return dialogue;}
+  void   SetDialogue(uint_t val) {dialogue = MIN(val, 2);}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Set importance value
+   */
+  /*--------------------------------------------------------------------------------*/
+  uint_t GetImportance() const     {return importance;}
+  void   SetImportance(uint_t val) {importance = MIN(val, 10);}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Set interact flag
+   */
+  /*--------------------------------------------------------------------------------*/
+  bool   GetInteract() const   {return interact;}
+  void   SetInteract(bool val) {interact = val;}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Set disableducking flag
+   */
+  /*--------------------------------------------------------------------------------*/
+  bool   GetDisableDucking() const   {return disableducking;}
+  void   SetDisableDucking(bool val) {disableducking = val;}
+  
+  /*--------------------------------------------------------------------------------*/
+  /** Process object parameters for rendering
+   *
+   * @param channel channel number (within object)
+   * @param dst object parameters object
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void ProcessObjectParameters(uint_t channel, AudioObjectParameters& dst);
+  
+  /*--------------------------------------------------------------------------------*/
+  /** Use object parameters to set parameters within audio object
+   *
+   * @param src audio object parameters object
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void UpdateAudioObject(const AudioObjectParameters& src);
 
   /*--------------------------------------------------------------------------------*/
   /** Return list of values/attributes from internal variables and list of referenced objects
@@ -724,15 +784,19 @@ public:
 
   // static type id prefix
   static const std::string IDPrefix;
-
+  
 protected:
-  std::vector<ADMAudioObject     *>      objectrefs;
+  std::vector<ADMAudioObject *>          objectrefs;
   std::vector<ADMAudioPackFormat *>      packformatrefs;
-  std::vector<ADMAudioTrack      *>      trackrefs;
-  std::map<uint_t,const ADMAudioTrack *> trackmap;
-  uint_t                                 starttrack;
+  std::vector<ADMAudioTrack *>           trackrefs;
   uint64_t                               startTime;
   uint64_t                               duration;
+  uint_t                                 starttrack;
+  uint_t                                 trackcount;
+  uint_t                                 dialogue;
+  uint_t                                 importance;
+  bool                                   interact;
+  bool                                   disableducking;
   bool                                   startTimeSet;
   bool                                   durationSet;
 };
@@ -747,7 +811,6 @@ public:
    *
    * @param _owner an instance of ADMData that this object should belong to
    * @param _id unique ID for this object (specified as part of the ADM)
-   * @param _name optional human-friendly name of the object
    *
    * @note type passed to base constructor is fixed by static member variable Type 
    */
@@ -757,6 +820,9 @@ public:
     trackNum(0),
     sampleRate(0),
     bitDepth(0) {Register();}
+  virtual ~ADMAudioTrack() {}
+  
+  typedef std::vector<ADMAudioTrack *> LIST;
 
   /*--------------------------------------------------------------------------------*/
   /** Return textual type name of this object
@@ -904,6 +970,9 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   ADMAudioPackFormat(ADMData& _owner, const std::string& _id, const std::string& _name) : ADMObject(_owner, _id, _name) {Register();}
+  virtual ~ADMAudioPackFormat() {}
+  
+  typedef std::vector<ADMAudioPackFormat *> LIST;
 
   /*--------------------------------------------------------------------------------*/
   /** Return textual type name of this object
@@ -1007,7 +1076,7 @@ protected:
 
 protected:
   std::vector<ADMAudioChannelFormat *> channelformatrefs;
-  std::vector<ADMAudioPackFormat    *> packformatrefs;
+  std::vector<ADMAudioPackFormat *>    packformatrefs;
 };
 
 /*----------------------------------------------------------------------------------------------------*/
@@ -1031,6 +1100,9 @@ public:
   /*--------------------------------------------------------------------------------*/
   ADMAudioStreamFormat(ADMData& _owner, const std::string& _id, const std::string& _name) : ADMObject(_owner, _id, _name),
                                                                                             formatLabel(0) {Register();}
+  virtual ~ADMAudioStreamFormat() {}
+  
+  typedef std::vector<ADMAudioStreamFormat *> LIST;
 
   /*--------------------------------------------------------------------------------*/
   /** Return textual type name of this object
@@ -1187,7 +1259,9 @@ public:
   /*--------------------------------------------------------------------------------*/
   ADMAudioChannelFormat(ADMData& _owner, const std::string& _id, const std::string& _name) : ADMObject(_owner, _id, _name) {Register();}
   virtual ~ADMAudioChannelFormat();
-  
+
+  typedef std::vector<ADMAudioChannelFormat *> LIST;
+
   /*--------------------------------------------------------------------------------*/
   /** Return textual type name of this object
    */
@@ -1263,7 +1337,7 @@ public:
    * @return true if object valid
    */
   /*--------------------------------------------------------------------------------*/
-  virtual uint_t GetContainedObjectCount() const {return (uint_t)blockformatrefs.size();}
+  virtual uint_t GetContainedObjectCount() const {return blockformatrefs.size();}
   virtual bool   GetContainedObject(uint_t n, CONTAINEDOBJECT& object) const;
 
   // static type name
@@ -1307,6 +1381,9 @@ public:
   /*--------------------------------------------------------------------------------*/
   ADMAudioTrackFormat(ADMData& _owner, const std::string& _id, const std::string& _name) : ADMObject(_owner, _id, _name),
                                                                                            formatLabel(0) {Register();}
+  virtual ~ADMAudioTrackFormat() {}
+  
+  typedef std::vector<ADMAudioTrackFormat *> LIST;
 
   /*--------------------------------------------------------------------------------*/
   /** Return textual type name of this object
@@ -1411,8 +1488,8 @@ protected:
   }
 
 protected:
-  uint_t      formatLabel;
-  std::string formatDefinition;
+  uint_t                              formatLabel;
+  std::string                         formatDefinition;
   std::vector<ADMAudioStreamFormat *> streamformatrefs;
 };
 
@@ -1434,8 +1511,10 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   ADMAudioBlockFormat();
-  ~ADMAudioBlockFormat() {}
-
+  virtual ~ADMAudioBlockFormat() {}
+  
+  typedef std::vector<ADMAudioBlockFormat *> LIST;
+  
   /*--------------------------------------------------------------------------------*/
   /** Return textual type name of this object
    */
@@ -1598,19 +1677,25 @@ public:
   /** Add audio objects to this object
    */
   /*--------------------------------------------------------------------------------*/
-  bool Add(const ADMAudioObject *objects[], uint_t n);
+  bool Add(const ADMAudioObject *objects[], uint_t n, bool sort = true);
 
   /*--------------------------------------------------------------------------------*/
   /** Add audio objects to this object
    */
   /*--------------------------------------------------------------------------------*/
-  bool Add(const std::vector<const ADMAudioObject *>& objects);
+  bool Add(const std::vector<const ADMAudioObject *>& objects, bool sort = true);
 
   /*--------------------------------------------------------------------------------*/
   /** Add audio objects to this object
    */
   /*--------------------------------------------------------------------------------*/
-  bool Add(const std::vector<const ADMObject *>& objects);
+  bool Add(const std::vector<ADMAudioObject *>& objects, bool sort = true);
+
+  /*--------------------------------------------------------------------------------*/
+  /** Add audio objects to this object
+   */
+  /*--------------------------------------------------------------------------------*/
+  bool Add(const std::vector<const ADMObject *>& objects, bool sort = true);
 
   /*--------------------------------------------------------------------------------*/
   /** Return cursor start time in ns
@@ -1689,13 +1774,13 @@ protected:
 
 protected:
   typedef struct {
-    const ADMAudioObject  *object;              ///< ADMAudioObject object
+    const ADMAudioObject  *audioobject;         ///< ADMAudioObject object
     ADMAudioChannelFormat *channelformat;       ///< ADMAudioChannelFormat object holding block formats
   } AUDIOOBJECT;
 
   static bool Compare(const AUDIOOBJECT& obj1, const AUDIOOBJECT& obj2)
   {
-    return (obj1.object->GetStartTime() < obj2.object->GetStartTime());
+    return (obj1.audioobject->GetStartTime() < obj2.audioobject->GetStartTime());
   }
 
 protected:

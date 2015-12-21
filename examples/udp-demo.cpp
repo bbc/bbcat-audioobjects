@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
         if ((packet = context.packets.GetReadBuffer()) != NULL)
         {
           // data available
-          printf("Packet received at %016" PRINTF_64BIT "uns: %u bytes (delay %016" PRINTF_64BIT "uns)\n", packet->ticks, (uint_t)packet->data.size(), GetNanosecondTicks() - packet->ticks);
+          printf("Packet received at %sns: %u bytes (delay %sns)\n", StringFrom(packet->ticks, "016x").c_str(), (uint_t)packet->data.size(), StringFrom(GetNanosecondTicks() - packet->ticks, "016x").c_str());
 
           context.packets.IncrementRead();
         }

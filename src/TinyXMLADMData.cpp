@@ -10,9 +10,9 @@ BBC_AUDIOTOOLBOX_START
 
 BBC_AUDIOTOOLBOX_KEEP(TinyXMLADMData);
 
-const bool TinyXMLADMData::registered = TinyXMLADMData::Register();
+const bool TinyXMLADMData::__registered = TinyXMLADMData::Register();
 
-TinyXMLADMData::TinyXMLADMData(const std::string& standarddefinitionsfile) : ADMData()
+TinyXMLADMData::TinyXMLADMData(const std::string& standarddefinitionsfile) : XMLADMData()
 {
   LoadStandardDefinitions(standarddefinitionsfile);
 }
@@ -178,8 +178,8 @@ void TinyXMLADMData::ParseValue(const std::string& name, XMLValues& values, void
   if (subnode && (subnode->Type() != TiXmlNode::TINYXML_ELEMENT)) value.value = subnode->Value();
 
   BBCDEBUG3(("%s: %s='%s', attrs:",
-             name.c_str(),
-             value.name.c_str(), value.value.c_str()));
+          name.c_str(),
+          value.name.c_str(), value.value.c_str()));
     
   for (attr = node->ToElement()->FirstAttribute(); attr; attr = attr->Next())
   {

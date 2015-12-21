@@ -1,3 +1,14 @@
+bbcat-audioobjects (0.1.2.1) quantal; urgency=low
+
+  * Split ADMData class into ADMData and XMLADMData classes.  ADMData handles 'in-memory' ADM's whereas XMLADMData handles encoding and decoding of chna and axml chunks.  TinyXMLADMData now derives from XMLADMData
+  * Changed creation of audioTrackUID objects (ADMAudioTrack's) to choose next highest track number by default
+  * Added ADMXMLGenerator as simple XML generator (used by XMLADMData but can be used with just ADMData)
+  * Updated examples after changes to bbcat-control/AudioObjectParameters
+  * Updated Playlist to support pausing and playlist index manipulation
+  * Other minor improvements and fixes
+
+ -- Richard Day <richard.day@bbc.co.uk>  Mon, 21 Dec 2015 14:00:00 +0000
+
 bbcat-audioobjects (0.1.2.0) quantal; urgency=low
 
   * Added Windows build support using CMake

@@ -14,12 +14,7 @@ BBC_AUDIOTOOLBOX_START
 /*--------------------------------------------------------------------------------*/
 /** ADM data class
  *
- * This class forms the base class of ADM reading and writing
- *
  * It CANNOT, by itself decode the XML from axml chunks, that must be done by a derived class.
- *
- * It CAN, however, generate XML (using a very simple method) from a manually created ADM
- *
  */
 /*--------------------------------------------------------------------------------*/
 class ADMData
@@ -33,71 +28,6 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   virtual void Delete();
-
-  /*--------------------------------------------------------------------------------*/
-  /** Read ADM data from the chna and axml RIFF chunks
-   *
-   * @param chna ptr to chna chunk data 
-   * @param chnalength length of chna data
-   * @param axml ptr to axml chunk data (MUST be terminated like a string) 
-   *
-   * @return true if data read successfully
-   *
-   * @note this requires facilities from a derived class
-   */
-  /*--------------------------------------------------------------------------------*/
-  bool Set(const uint8_t *chna, uint_t chnalength, const char *axml);
-
-  /*--------------------------------------------------------------------------------*/
-  /** Read ADM data from the chna RIFF chunk
-   *
-   * @param data ptr to chna chunk data 
-   * @param len length of chna chunk
-   *
-   * @return true if data read successfully
-   */
-  /*--------------------------------------------------------------------------------*/
-  bool SetChna(const uint8_t *data, uint_t len);
-
-  /*--------------------------------------------------------------------------------*/
-  /** Read ADM data from the axml RIFF chunk
-   *
-   * @param data ptr to axml chunk data (MUST be terminated!)
-   *
-   * @return true if data read successfully
-   */
-  /*--------------------------------------------------------------------------------*/
-  bool SetAxml(const char *data);
-
-  /*--------------------------------------------------------------------------------*/
-  /** Read ADM data from explicit XML
-   *
-   * @param data XML data stored as a string
-   *
-   * @return true if data read successfully
-   */
-  /*--------------------------------------------------------------------------------*/
-  bool SetAxml(const std::string& data);
-
-  /*--------------------------------------------------------------------------------*/
-  /** Load CHNA data from file
-   *
-   * @param filename file containing chna in text form
-   *
-   * @return true if data read successfully
-   */
-  /*--------------------------------------------------------------------------------*/
-  bool ReadChnaFromFile(const std::string& filename);
-
-  /*--------------------------------------------------------------------------------*/
-  /** Load ADM data from file
-   *
-   * @param filename file containing XML
-   *
-   * @return true if data read successfully
-   */
-  /*--------------------------------------------------------------------------------*/
-  bool ReadXMLFromFile(const std::string& filename);
 
   /*--------------------------------------------------------------------------------*/
   /** Set default 'pure' mode value
@@ -118,50 +48,10 @@ public:
   bool InPureMode() const {return puremode;}
 
   /*--------------------------------------------------------------------------------*/
-  /** Set default EBU XML output mode
-   */
-  /*--------------------------------------------------------------------------------*/
-  static void SetDefaultEBUXMLMode(bool enable = true) {defaultebuxmlmode = enable;}
-
-  /*--------------------------------------------------------------------------------*/
-  /** Return whether output mode is EBU or ITU XML
-   */
-  /*--------------------------------------------------------------------------------*/
-  bool EBUXMLMode() const {return ebuxmlmode;}
-
-  /*--------------------------------------------------------------------------------*/
-  /** Set whether output mode is EBU or ITU XML
-   */
-  /*--------------------------------------------------------------------------------*/
-  void SetEBUXMLMode(bool enable = true) {ebuxmlmode = enable;}
-  
-  /*--------------------------------------------------------------------------------*/
   /** Finalise ADM
    */
   /*--------------------------------------------------------------------------------*/
   virtual void Finalise();
-
-  /*--------------------------------------------------------------------------------*/
-  /** Create chna chunk data
-   *
-   * @param len reference to length variable to be updated with the size of the chunk
-   *
-   * @return ptr to chunk data
-   */
-  /*--------------------------------------------------------------------------------*/
-  uint8_t    *GetChna(uint32_t& len) const;
-
-  /*--------------------------------------------------------------------------------*/
-  /** Create axml chunk data
-   *
-   * @param indent indent string to use within XML
-   * @param eol end of line string to use within XML
-   * @param ind_level initial indentation level
-   *
-   * @return string containing XML data for axml chunk
-   */
-  /*--------------------------------------------------------------------------------*/
-  std::string GetAxml(const std::string& indent = "\t", const std::string& eol = "\n", uint_t ind_level = 0) const;
 
   /*--------------------------------------------------------------------------------*/
   /** Create an ADM sub-object within this ADM object
@@ -208,7 +98,8 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   ADMAudioProgramme *CreateProgramme(const std::string& name);
-
+  const ADMAudioProgramme::LIST& GetAudioProgrammeList() const {return audioprogrammes;}
+  
   /*--------------------------------------------------------------------------------*/
   /** Create audioContent object
    *
@@ -221,6 +112,7 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   ADMAudioContent *CreateContent(const std::string& name, ADMAudioProgramme *programme = NULL);
+  const ADMAudioContent::LIST& GetAudioContentList() const {return audiocontent;}
 
   /*--------------------------------------------------------------------------------*/
   /** Create audioObject object
@@ -234,6 +126,7 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   ADMAudioObject *CreateObject(const std::string& name, ADMAudioContent *content = NULL);
+  const ADMAudioObject::LIST& GetAudioObjectList() const {return audioobjects;}
 
   /*--------------------------------------------------------------------------------*/
   /** Create audioPackFormat object
@@ -251,7 +144,7 @@ public:
   /*--------------------------------------------------------------------------------*/
   /** Create audioTrack object
    *
-   * @param trackNum track number (0-based)
+   * @param trackNum track number (or Track_Auto to automatically choose track)
    * @param object audioObject object to attach this object to or NULL
    *
    * @note ID will be create automatically
@@ -259,7 +152,8 @@ public:
    * @return ADMAudioTrack object
    */
   /*--------------------------------------------------------------------------------*/
-  ADMAudioTrack *CreateTrack(uint_t trackNum = 0, ADMAudioObject *object = NULL);
+  enum {Track_Auto = 0x10000};
+  ADMAudioTrack *CreateTrack(uint_t trackNum = Track_Auto, ADMAudioObject *object = NULL);
 
   /*--------------------------------------------------------------------------------*/
   /** Create audioChannelFormat object
@@ -285,7 +179,7 @@ public:
    * @note audioBlockFormat object MUST be added to an audioChannelFormat to be useful (but can be added after this call)!
    */
   /*--------------------------------------------------------------------------------*/
-  ADMAudioBlockFormat *CreateBlockFormat(ADMAudioChannelFormat *channelformat);
+  ADMAudioBlockFormat *CreateBlockFormat(ADMAudioChannelFormat *channelFormat);
 
   /*--------------------------------------------------------------------------------*/
   /** Create audioTrackFormat object
@@ -480,43 +374,20 @@ public:
   virtual void Dump(std::string& str, const ADMObject *obj = NULL, const std::string& indent = "  ", const std::string& eol = "\n", uint_t level = 0) const;
 
   /*--------------------------------------------------------------------------------*/
-  /** Create XML representation of ADM
-   *
-   * @param str std::string to be modified with XML
-   * @param indent indentation for each level of objects
-   * @param eol end-of-line string
-   * @param level initial indentation level
-   *
-   * @return total length of XML
-   *
-   * @note for other XML implementaions, this function can be overridden
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual uint64_t GenerateXML(std::string& str, const std::string& indent = "\t", const std::string& eol = "\n", uint_t ind_level = 0, bool complete = false) const;
-
-  /*--------------------------------------------------------------------------------*/
-  /** Create XML representation of ADM
-   *
-   * @param buf buffer to store XML in (or NULL to just get the length)
-   * @param buflen maximum length of buf (excluding terminator)
-   * @param indent indentation for each level of objects
-   * @param eol end-of-line string
-   * @param level initial indentation level
-   *
-   * @return total length of XML
-   *
-   * @note for other XML implementaions, this function can be overridden
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual uint64_t GenerateXMLBuffer(uint8_t *buf, uint64_t buflen, const std::string& indent = "\t", const std::string& eol = "\n", uint_t ind_level = 0, bool complete = false) const;
-
-  /*--------------------------------------------------------------------------------*/
   /** Generate a textual list of references 
    *
    * @param str string to be modified
    */
   /*--------------------------------------------------------------------------------*/
   virtual void GenerateReferenceList(std::string& str) const;
+
+  /*--------------------------------------------------------------------------------*/
+  /** From a list of objects, find all objects that are referenced
+   *
+   * @param list initial list of objects - will be EXPANDED with more objects
+   */
+  /*--------------------------------------------------------------------------------*/
+  void GetReferencedObjects(std::vector<const ADMObject *>& list) const;
 
   /*--------------------------------------------------------------------------------*/
   /** Create ADM from a simple text file
@@ -534,26 +405,7 @@ public:
   /*--------------------------------------------------------------------------------*/
   bool CreateFromFile(const char *filename);
 
-  static const std::string DefaultStandardDefinitionsFile;
-  static ADMData *Create(const std::string& standarddefinitionsfile = "");
-
-  typedef ADMData *(*CREATOR)(const std::string& standarddefinitionsfile, void *context);
-  static void RegisterProvider(CREATOR fn, void *context = NULL);
-
 protected:
-  /*--------------------------------------------------------------------------------*/
-  /** Load standard definitions file into ADM
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual bool LoadStandardDefinitions(const std::string& filename);
-
-  typedef struct
-  {
-    std::string type;
-    std::string id;
-    std::string name;
-  } ADMHEADER;
-
   /*--------------------------------------------------------------------------------*/
   /** Find an unique ID given the specified format string
    *
@@ -567,174 +419,16 @@ protected:
   std::string FindUniqueID(const std::string& type, const std::string& format, uint_t start);
 
   /*--------------------------------------------------------------------------------*/
-  /** Decode XML string as ADM
-   *
-   * @param data ptr to string containing ADM XML (MUST be terminated)
-   *
-   * @return true if XML decoded correctly
+  /** Return next available track number
    */
   /*--------------------------------------------------------------------------------*/
-  virtual bool TranslateXML(const char *data) = 0;
-
-  virtual bool ValidType(const std::string& type) const;
-
-  virtual ADMObject *Parse(const std::string& type, void *userdata);
+  uint_t GetNextTrackNum() const;
 
   /*--------------------------------------------------------------------------------*/
-  /** Parse XML header
+  /** Return whether the specified type is a valid object type
    */
   /*--------------------------------------------------------------------------------*/
-  virtual void ParseHeader(ADMHEADER& header, const std::string& type, void *userdata) = 0;
-
-  /*--------------------------------------------------------------------------------*/
-  /** Parse attributes and subnodes as values
-   *
-   * @param obj object to read values from
-   * @param userdata user suppled data
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void ParseValues(ADMObject *obj, void *userdata) = 0;
-
-  /*--------------------------------------------------------------------------------*/
-  /** Optional post parse handler
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void PostParse(ADMObject *obj, void *userdata)
-  {
-    UNUSED_PARAMETER(obj);
-    UNUSED_PARAMETER(userdata);
-  }
-
-  /*--------------------------------------------------------------------------------*/
-  /** From a list of objects, find all objects that are referenced
-   *
-   * @param list initial list of objects - will be EXPANDED with more objects
-   *
-   */
-  /*--------------------------------------------------------------------------------*/
-  void GetReferencedObjects(std::vector<const ADMObject *>& list) const;
-
-  /*--------------------------------------------------------------------------------*/
-  /** Generic XML creation
-   *
-   * @param xmlcontext user supplied argument representing context data
-   *
-   * @note for other XML implementaions, this function can be overridden
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void GenerateXML(void *xmlcontext) const;
-
-  /*--------------------------------------------------------------------------------*/
-  /** Generic XML creation
-   *
-   * @param obj ADM object to generate XML for
-   * @param xmlcontext user supplied argument representing context data
-   *
-   * @note for other XML implementaions, this function can be overridden
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void GenerateXML(const ADMObject *obj, void *xmlcontext) const;
-
-  /*--------------------------------------------------------------------------------*/
-  /** Start XML
-   *
-   * @param xmlcontext user supplied argument representing context data
-   * @param version XML version
-   * @param encoding XML encoding
-   *
-   * @note for other XML implementaions, this function MUST be overridden
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void StartXML(void *xmlcontext, const std::string& version = "1.0", const std::string& encoding = "UTF-8") const;
-  /*--------------------------------------------------------------------------------*/
-  /** Start an XML object
-   *
-   * @param xmlcontext user supplied argument representing context data
-   * @param name object name
-   *
-   * @note for other XML implementaions, this function MUST be overridden
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void OpenXMLObject(void *xmlcontext, const std::string& name) const;
-  /*--------------------------------------------------------------------------------*/
-  /** Add an attribute to the current XML object
-   *
-   * @param xmlcontext user supplied argument representing context data
-   * @param name attribute name
-   * @param name attribute value
-   *
-   * @note for other XML implementaions, this function MUST be overridden
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void AddXMLAttribute(void *xmlcontext, const std::string& name, const std::string& value) const;
-  /*--------------------------------------------------------------------------------*/
-  /** Add attributes from list of XML values to current object header
-   *
-   * @param xmlcontext user supplied argument representing context data
-   * @param values list of XML values
-   *
-   * @note for other XML implementaions, this function MUST be overridden
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void AddXMLAttributes(void *xmlcontext, const XMLValues& values) const;
-  /*--------------------------------------------------------------------------------*/
-  /** Add values (non-attributres) from list of XML values to object
-   *
-   * @param xmlcontext user supplied argument representing context data
-   * @param values list of XML values
-   *
-   * @note for other XML implementaions, this function MUST be overridden
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void AddXMLValues(void *xmlcontext, const XMLValues& values) const;
-  /*--------------------------------------------------------------------------------*/
-  /** Set XML data
-   *
-   * @param xmlcontext user supplied argument representing context data
-   * @param data data
-   *
-   * @note for other XML implementaions, this function MUST be overridden
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void SetXMLData(void *xmlcontext, const std::string& data) const;
-  /*--------------------------------------------------------------------------------*/
-  /** Close XML object
-   *
-   * @param xmlcontext user supplied argument representing context data
-   *
-   * @note for other XML implementaions, this function MUST be overridden
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void CloseXMLObject(void *xmlcontext) const;
-
-  /*--------------------------------------------------------------------------------*/
-  /** Append string to XML context
-   *
-   * @param xmlcontext user supplied argument representing context data
-   * @param str string to be appended/counted
-   */
-  /*--------------------------------------------------------------------------------*/
-  virtual void AppendXML(void *xmlcontext, const std::string& str) const;
-
-  /*--------------------------------------------------------------------------------*/
-  /** Context structure for generating XML (this object ONLY!)
-   */
-  /*--------------------------------------------------------------------------------*/
-  typedef struct {
-    struct {
-      std::string *str;                 ///< ptr string into which XML is generated (or NULL)
-      char        *buf;                 ///< raw char buffer (PRE-ALLOCATED) to generate XML in
-      uint64_t    buflen;               ///< max length of above length (EXCLUDING terminator)
-    } destination;                      ///< destination control
-    std::string indent;                 ///< indent string for each level
-    std::string eol;                    ///< end-of-line string
-    uint64_t    length;                 ///< length of XML data at completion
-    uint_t      ind_level;              ///< current indentation level
-    bool        opened;                 ///< true if object is started but not ready for data (needs '>')
-    bool        complete;               ///< dump ALL objects, not just programme, content or objects
-    bool        eollast;                ///< string currently ends with an eol
-    std::vector<std::string> stack;     ///< object stack
-  } TEXTXML;
+  bool ValidType(const std::string& type) const;
 
   /*--------------------------------------------------------------------------------*/
   /** Context structure for generating textual dump of ADM
@@ -788,33 +482,39 @@ protected:
   virtual json_spirit::mObject ToJSON() const;
 #endif
 
-protected:
-  typedef struct
-  {
-    CREATOR fn;
-    void    *context;
-  } PROVIDER;
-
-  /*--------------------------------------------------------------------------------*/
-  /** Return provider list, creating as necessary
-   */
-  /*--------------------------------------------------------------------------------*/
-  static std::vector<PROVIDER>& GetProviderList();
-
   typedef std::map<std::string,ADMObject*> ADMOBJECTS_MAP;
   typedef ADMOBJECTS_MAP::iterator         ADMOBJECTS_IT;
   typedef ADMOBJECTS_MAP::const_iterator   ADMOBJECTS_CIT;
 
+  /*--------------------------------------------------------------------------------*/
+  /** Try to add object to list by checking type using dynamic casting
+   */
+  /*--------------------------------------------------------------------------------*/
+  template<typename T>
+  void AddToList(std::vector<T*>& list, ADMObject *obj)
+  {
+    T *p;
+    if ((p = dynamic_cast<T *>(obj)) != NULL) list.push_back(p);
+  }
+
+  template<typename T>
+  void AddToList(std::vector<const T*>& list, const ADMObject *obj)
+  {
+    const T *p;
+    if ((p = dynamic_cast<const T *>(obj)) != NULL) list.push_back(p);
+  }
+
 protected:
+  ADMAudioProgramme::LIST      audioprogrammes;
+  ADMAudioContent::LIST        audiocontent;
+  ADMAudioObject::LIST         audioobjects;
   ADMOBJECTS_MAP               admobjects;
   TRACKLIST                    tracklist;
   std::map<std::string,uint_t> uniqueids;
   bool                         puremode;
-  bool                         ebuxmlmode;
-  
+
   static const std::string     tempidsuffix;
   static bool                  defaultpuremode;
-  static bool                  defaultebuxmlmode;
 };
 
 BBC_AUDIOTOOLBOX_END

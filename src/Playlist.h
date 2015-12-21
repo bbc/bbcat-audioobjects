@@ -47,6 +47,48 @@ public:
   bool IsLoopEnabled() const {return loop_all;}
 
   /*--------------------------------------------------------------------------------*/
+  /** Enable/disable looping of each file
+   */
+  /*--------------------------------------------------------------------------------*/
+  void EnableLoopFile(bool enable = true) {loop_file = enable;}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Get whether looping of each file is enabled
+   */
+  /*--------------------------------------------------------------------------------*/
+  bool IsLoopFileEnabled() const {return loop_all;}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Enable/disable autoplay of each file
+   */
+  /*--------------------------------------------------------------------------------*/
+  void EnableAutoPlay(bool enable) {autoplay = enable;}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Get whether autoplay of each file is enabled
+   */
+  /*--------------------------------------------------------------------------------*/
+  bool IsAutoPlayEnabled() const {return autoplay;}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Pause/unpause audio
+   */
+  /*--------------------------------------------------------------------------------*/
+  void PauseAudio(bool enable = true);
+
+  /*--------------------------------------------------------------------------------*/
+  /** Get whether autoplay of each file is enabled
+   */
+  /*--------------------------------------------------------------------------------*/
+  bool IsAudioPaused() const {return pause;}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Release playback of audio that is current held
+   */
+  /*--------------------------------------------------------------------------------*/
+  void ReleasePlayback() {releaseplayback = true;}
+
+  /*--------------------------------------------------------------------------------*/
   /** Reset to start of playback list
    */
   /*--------------------------------------------------------------------------------*/
@@ -80,7 +122,7 @@ public:
   /** Return number of objects in playlist
    */
   /*--------------------------------------------------------------------------------*/
-  uint_t GetCount() const {return (uint_t)list.size();}
+  uint_t GetCount() const {return list.size();}
 
   /*--------------------------------------------------------------------------------*/
   /** Return current playback position (in samples)
@@ -103,6 +145,30 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   bool SetPlaybackPosition(uint64_t pos, bool force);
+
+  /*--------------------------------------------------------------------------------*/
+  /** Return current index in playlist
+   */
+  /*--------------------------------------------------------------------------------*/
+  uint_t GetPlaybackIndex() const;
+
+  /*--------------------------------------------------------------------------------*/
+  /** Return maximum index in playlist
+   *
+   * @note this is ONE LESS than GetCount() 
+   */
+  /*--------------------------------------------------------------------------------*/
+  uint_t GetPlaybackCount() const;
+  
+  /*--------------------------------------------------------------------------------*/
+  /** Move to specified playlist index
+   *
+   * @note setting force to true may cause clicks!
+   * @note setting force to false causes a fade down *before* and a fade up *after*
+   * changing the position which means this doesn't actually change the position straight away!
+   */
+  /*--------------------------------------------------------------------------------*/
+  bool SetPlaybackIndex(uint_t index, bool force);
 
   /*--------------------------------------------------------------------------------*/
   /** Read samples into buffer
@@ -133,7 +199,11 @@ protected:
   uint_t                          fadesamples;
   uint_t                          fadedowncount;
   uint_t                          fadeupcount;
+  bool                            autoplay;
   bool                            loop_all;
+  bool                            loop_file;
+  bool                            pause;
+  bool                            releaseplayback;
   bool                            positionchange;
 };
 

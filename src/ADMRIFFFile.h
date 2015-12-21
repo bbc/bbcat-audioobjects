@@ -8,7 +8,7 @@
 #include <bbcat-control/AudioObjectCursor.h>
 
 #include "RIFFFile.h"
-#include "ADMData.h"
+#include "XMLADMData.h"
 
 BBC_AUDIOTOOLBOX_START
 
@@ -126,7 +126,7 @@ protected:
 
 protected:
   std::string admfile;
-  ADMData     *adm;
+  XMLADMData  *adm;
   std::vector<ADMTrackCursor *> cursors;        // *only* used during writing an ADM file
 };
 

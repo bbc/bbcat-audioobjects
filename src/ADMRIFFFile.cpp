@@ -34,7 +34,7 @@ bool ADMRIFFFile::Open(const char *filename, const std::string& standarddefiniti
 {
   bool success = false;
 
-  if ((adm = ADMData::Create(standarddefinitionsfile)) != NULL)
+  if ((adm = XMLADMData::CreateADM(standarddefinitionsfile)) != NULL)
   {
     success = RIFFFile::Open(filename);
   }
@@ -55,7 +55,7 @@ bool ADMRIFFFile::CreateExtraChunks()
   if (adm)
   {
     RIFFChunk *chunk;
-    uint32_t  chnalen;
+    uint64_t  chnalen;
     uint8_t   *chna;
     uint_t i, nchannels = GetChannels();
 
@@ -64,9 +64,6 @@ bool ADMRIFFFile::CreateExtraChunks()
     for (i = 0; i < nchannels; i++)
     {
       ADMAudioTrack *track;
-      std::string name;
-
-      Printf(name, "Track %u", i + 1);
 
       // create chna track data
       if ((track = adm->CreateTrack(i)) != NULL)
@@ -126,7 +123,7 @@ bool ADMRIFFFile::CreateADM(const std::string& standarddefinitionsfile)
 
   if (!adm)
   {
-    if ((adm = ADMData::Create(standarddefinitionsfile)) != NULL)
+    if ((adm = XMLADMData::CreateADM(standarddefinitionsfile)) != NULL)
     {
       success = true;
     }
@@ -185,7 +182,7 @@ void ADMRIFFFile::Close(bool abortwrite)
   {
     RIFFChunk *chunk;
     uint64_t  endtime = filesamples ? filesamples->GetAbsolutePositionNS() : 0;
-    uint32_t  chnalen;
+    uint64_t  chnalen;
     uint8_t   *chna;
 
     BBCDEBUG1(("Finalising ADM for '%s'...", file->getfilename().c_str()));
@@ -226,7 +223,7 @@ void ADMRIFFFile::Close(bool abortwrite)
     if ((chunk = GetChunk(axml_ID)) != NULL)
     {
       // first, calculate size of ADM (to save lots of memory allocations)
-      uint64_t admlen = adm->GenerateXMLBuffer(NULL, 0);
+      uint64_t admlen = adm->GetAxmlBuffer(NULL, 0);
 
       BBCDEBUG1(("ADM size is %lu bytes", (ulong_t)admlen));
       
@@ -234,7 +231,7 @@ void ADMRIFFFile::Close(bool abortwrite)
       if (chunk->CreateChunkData(admlen))
       {
         // finally, generate XML into buffer
-        uint64_t admlen1 = adm->GenerateXMLBuffer(chunk->GetDataWritable(), admlen);
+        uint64_t admlen1 = adm->GetAxmlBuffer(chunk->GetDataWritable(), admlen);
         if (admlen1 != admlen) BBCERROR("Generating axml data for real resulted in different size (%lu vs %lu)", (ulong_t)admlen1, (ulong_t)admlen);
       }
       else BBCERROR("Failed to allocate %lu bytes for axml data", (ulong_t)admlen);
@@ -306,7 +303,7 @@ bool ADMRIFFFile::PostReadChunks()
         axml && axml->GetData())
     {
       // decode chunks
-      success = adm->Set(chna->GetData(), (uint_t)chna->GetLength(), (const char *)axml->GetData());
+      success = adm->Set(chna->GetData(), chna->GetLength(), (const char *)axml->GetData());
 
 #if BBCDEBUG_LEVEL >= 4
       { // dump ADM as text
@@ -318,7 +315,7 @@ bool ADMRIFFFile::PostReadChunks()
 
       { // dump ADM as XML
         std::string str;
-        adm->GenerateXML(str);
+        adm->GetAxml(str);
 
         BBCDEBUG("%s", str.c_str());
       }
@@ -383,6 +380,7 @@ bool ADMRIFFFile::PostReadChunks()
               {
                 ADMAudioChannelFormat *channelFormat = channelFormatRefs[j];
                 ADMAudioTrack *track;
+                std::string name;
 
                 // create track
                 if ((track = adm->CreateTrack(j)) != NULL)

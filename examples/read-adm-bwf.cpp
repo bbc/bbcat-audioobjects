@@ -20,15 +20,15 @@ BBC_AUDIOTOOLBOX_REQUIRE(TinyXMLADMData);
 
 int main(int argc, char *argv[])
 {
+  // print library versions (the actual loaded versions, if dynamically linked)
+  printf("Versions:\n%s\n", LoadedVersions::Get().GetVersionsList().c_str());
+
   if (argc < 2)
   {
     fprintf(stderr, "Usage: read-adm-bwf <bwf-file>\n");
     exit(1);
   }
 
-  // print library versions (the actual loaded versions, if dynamically linked)
-  printf("Versions:\n%s\n", LoadedVersions::Get().GetVersionsList().c_str());
-  
   // ADM aware WAV file
   ADMRIFFFile file;
 

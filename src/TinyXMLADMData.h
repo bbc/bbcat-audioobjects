@@ -1,7 +1,7 @@
 #ifndef __TINY_XML_ADM_DATA__
 #define __TINY_XML_ADM_DATA__
 
-#include "ADMData.h"
+#include "XMLADMData.h"
 
 class TiXmlNode;
 
@@ -11,12 +11,12 @@ BBC_AUDIOTOOLBOX_START
 /** An implementation of ADMData using the TinyXML library (GPL)
  */
 /*--------------------------------------------------------------------------------*/
-class TinyXMLADMData : public ADMData
+class TinyXMLADMData : public XMLADMData
 {
 public:
   TinyXMLADMData(const std::string& standarddefinitionsfile);
   virtual ~TinyXMLADMData();
-  
+
 protected:
   /*--------------------------------------------------------------------------------*/
   /** Register function - this is called automatically
@@ -117,14 +117,14 @@ protected:
   /** Creator for this class
    */
   /*--------------------------------------------------------------------------------*/
-  static ADMData *__Creator(const std::string& standarddefinitionsfile, void *context)
+  static XMLADMData *__Creator(const std::string& standarddefinitionsfile, void *context)
   {
     UNUSED_PARAMETER(context);
     return new TinyXMLADMData(standarddefinitionsfile);
   }
 
 protected:
-  static const bool registered;
+  static const bool __registered;
 };
 
 BBC_AUDIOTOOLBOX_END

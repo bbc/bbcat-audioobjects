@@ -7,6 +7,7 @@
 #include <bbcat-control/AudioObjectCursor.h>
 
 #include "SoundFileAttributes.h"
+#include "ADMData.h"
 
 BBC_AUDIOTOOLBOX_START
 
@@ -25,9 +26,13 @@ public:
 
   virtual const std::vector<AudioObjectCursor *>& GetCursors() const {return cursors;}
 
+  virtual void SetADMData(const ADMData *_adm) {adm = _adm;}
+  const ADMData *GetADMData() const {return adm;}
+
   virtual void GetObjectList(AudioObject::LIST& list);
 
 protected:
+  const ADMData                    *adm;
   std::vector<AudioObjectCursor *> cursors;
 };
 

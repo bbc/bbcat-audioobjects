@@ -343,7 +343,11 @@ void RIFFChunk::DeleteData()
 /*--------------------------------------------------------------------------------*/
 void RIFFChunk::RegisterProvider(uint32_t id, RIFFChunk *(*fn)(uint32_t id, void *context), void *context)
 {
-  PROVIDER provider = {fn, context};
+  PROVIDER provider =
+  {
+    fn,          // creator function
+    context,     // user supplied data for creator
+  };
 
   // save creator against chunk ID
   providermap[id] = provider;
@@ -405,12 +409,12 @@ RIFFChunk *RIFFChunk::Create(EnhancedFile *file, const RIFFChunkSizeHandler *siz
 
       if ((chunk = (*provider.fn)(id, provider.context)) != NULL)
       {
-        BBCDEBUG4(("Found provider for chunk '%s'", GetChunkName(id)));
+        BBCDEBUG4(("Found provider for chunk '%s'", GetChunkName(id).c_str()));
                 
         // let object handle the rest of the chunk
         if (chunk->ReadChunk(file, sizehandler))
         {
-          BBCDEBUG4(("Read chunk '%s' successfully", GetChunkName(id)));
+          BBCDEBUG4(("Read chunk '%s' successfully", GetChunkName(id).c_str()));
                     
           success = true;
         }
@@ -419,7 +423,7 @@ RIFFChunk *RIFFChunk::Create(EnhancedFile *file, const RIFFChunkSizeHandler *siz
     else
     {
       // if no provider is available, use the base-class to provide basic functionality
-      BBCDEBUG2(("No handler found for chunk '%s', creating empty one", GetChunkName(id)));
+      BBCDEBUG2(("No handler found for chunk '%s', creating empty one", GetChunkName(id).c_str()));
 
       if ((chunk = new RIFFChunk(id)) != NULL)
       {
@@ -449,6 +453,7 @@ RIFFChunk *RIFFChunk::Create(EnhancedFile *file, const RIFFChunkSizeHandler *siz
  *
  */
 /*--------------------------------------------------------------------------------*/
+
 RIFFChunk *RIFFChunk::Create(uint32_t id)
 {
   RIFFChunk *chunk = NULL;
@@ -463,13 +468,13 @@ RIFFChunk *RIFFChunk::Create(uint32_t id)
 
     if ((chunk = (*provider.fn)(id, provider.context)) != NULL)
     {
-      BBCDEBUG4(("Found provider for chunk '%s'", GetChunkName(id)));
+      BBCDEBUG4(("Found provider for chunk '%s'", GetChunkName(id).c_str()));
     }
   }
   else
   {
     // if no provider is available, use the base-class to provide basic functionality
-    BBCDEBUG2(("No handler found for chunk '%s', creating empty one", GetChunkName(id)));
+    BBCDEBUG2(("No handler found for chunk '%s', creating empty one", GetChunkName(id).c_str()));
 
     chunk = new RIFFChunk(id);
   }
