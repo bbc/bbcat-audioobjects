@@ -84,6 +84,9 @@ TARGET_LINK_LIBRARIES(write-separate-adm bbcat-base bbcat-dsp bbcat-control bbca
 ADD_EXECUTABLE(udp-demo udp-demo.cpp)
 TARGET_LINK_LIBRARIES(udp-demo bbcat-base)
 
+ADD_EXECUTABLE(load-xml load-xml.cpp)
+TARGET_LINK_LIBRARIES(load-xml bbcat-base bbcat-dsp bbcat-control bbcat-audioobjects)
+
 set(GLOBAL_FLAGS
 	${BBCAT_AUDIOOBJECTS_FLAGS})
 

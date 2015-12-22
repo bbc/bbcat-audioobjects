@@ -1587,23 +1587,14 @@ void ADMAudioBlockFormat::SetValues(XMLValues& values)
         XMLValue::ATTRS::const_iterator it2;
         double fval = 0.0;
 
-        /* Parameters are mapped into those used by AudioObjectParameters:
-         *
-         * interpolationtime = jumpPosition ? interpolationLength : duration
-         * interpolate       = (interpolationtime > 0)
-         */
-
-        // read interpolationTime, if it exists
+        // read interpolationLength, if it exists
         if (bval)
         {
           // if jumpPosition is set, read interpolationLength and use it for the interpolationtime
-          if (((it2 = value.attrs.find("interpolationLength")) != value.attrs.end()) && Evaluate(it2->second, fval)) objparameters.SetInterpolationTimeS(fval);
+          if ((it2 = value.attrs.find("interpolationLength")) != value.attrs.end()) Evaluate(it2->second, fval);
         }
-        // else use block duration and interpolationtime
-        else objparameters.SetInterpolationTime(objparameters.GetDuration());
 
-        // finally, set interpolate if interpolationtime is non-zero
-        objparameters.SetInterpolate(objparameters.GetInterpolationTime() > 0);
+        objparameters.SetJumpPosition(bval, fval);
       }
       
       it = values.erase(it);
@@ -1831,21 +1822,14 @@ void ADMAudioBlockFormat::GetValues(XMLValues& objattrs, XMLValues& objvalues, b
     objvalues.AddValue(value);
   }
 
-  if (objparameters.GetInterpolate(bval))
+  if (objparameters.GetJumpPosition(bval, &dval))
   {
     XMLValue value;
 
-    /* Interpret parameters from AudioObjectParameters:
-     *
-     * jumpPosition        = (interpolate && (interpolationtime != duration))
-     * interpolationLength = jumpPosition ? interpolationtime : <notset>
-     */
-    
-    bval &= (objparameters.GetInterpolationTime() != objparameters.GetDuration());
     value.SetValue("jumpPosition", bval);
 
     // set interpolationLength
-    if (bval) value.SetValueAttribute("interpolationLength", objparameters.GetInterpolationTimeS());
+    if (bval) value.SetValueAttribute("interpolationLength", dval);
     
     objvalues.AddValue(value);
   }
