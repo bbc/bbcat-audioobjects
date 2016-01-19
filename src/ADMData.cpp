@@ -146,7 +146,13 @@ ADMObject *ADMData::Create(const std::string& type, const std::string& id, const
       {
         // create track and assign next available track number to it
         ADMAudioTrack *track;
-        if ((track = new ADMAudioTrack(*this, id1)) != NULL) track->SetTrackNum(GetNextTrackNum());
+        uint_t tn = GetNextTrackNum();
+        
+        if ((track = new ADMAudioTrack(*this, id1)) != NULL)
+        {
+          track->SetTrackNum(tn);
+          BBCDEBUG3(("Created audioTrack ID '%s' track %2u", track->GetID().c_str(), track->GetTrackNum()));
+        }
         obj = track;
       }
       else
@@ -476,10 +482,12 @@ ADMAudioTrack *ADMData::CreateTrack(uint_t trackNum, ADMAudioObject *object)
 {
   ADMAudioTrack *track;
 
+  // pick next track number
+  if (trackNum == Track_Auto) trackNum = GetNextTrackNum();
+
   if ((track = new ADMAudioTrack(*this, CreateID(ADMAudioTrack::Type))) != NULL)
   {
-    if (trackNum == Track_Auto) track->SetTrackNum(GetNextTrackNum());
-    else                        track->SetTrackNum(trackNum);
+    track->SetTrackNum(trackNum);
     
     if (object) object->Add(track);
   }
