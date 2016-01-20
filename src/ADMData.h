@@ -300,6 +300,12 @@ public:
   const TRACKLIST& GetTrackList() const {return tracklist;}
 
   /*--------------------------------------------------------------------------------*/
+  /** Return non-ADM XML for a particular node that needs to be preserved
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual const XMLValues *GetNonADMXML(const std::string& node) const;
+  
+  /*--------------------------------------------------------------------------------*/
   /** Structure containing names of ADM objects to create and connect together using CreateObjects()
    *
    * If the required object of the specified name does not exist, it is created
@@ -505,16 +511,17 @@ protected:
   }
 
 protected:
-  ADMAudioProgramme::LIST      audioprogrammes;
-  ADMAudioContent::LIST        audiocontent;
-  ADMAudioObject::LIST         audioobjects;
-  ADMOBJECTS_MAP               admobjects;
-  TRACKLIST                    tracklist;
-  std::map<std::string,uint_t> uniqueids;
-  bool                         puremode;
+  ADMAudioProgramme::LIST         audioprogrammes;
+  ADMAudioContent::LIST           audiocontent;
+  ADMAudioObject::LIST            audioobjects;
+  ADMOBJECTS_MAP                  admobjects;
+  TRACKLIST                       tracklist;
+  std::map<std::string,uint_t>    uniqueids;
+  std::map<std::string,XMLValues> nonadmxml;
+  bool                            puremode;
 
-  static const std::string     tempidsuffix;
-  static bool                  defaultpuremode;
+  static const std::string        tempidsuffix;
+  static bool                     defaultpuremode;
 };
 
 BBC_AUDIOTOOLBOX_END

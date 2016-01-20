@@ -48,7 +48,7 @@ bool TinyXMLADMData::Register()
 bool TinyXMLADMData::TranslateXML(const char *data)
 {
   TiXmlDocument doc;
-  const TiXmlNode *node;
+  const TiXmlNode *node, *formatNode = NULL;
   bool success = false;
 
   BBCDEBUG3(("XML: %s", data));
@@ -56,50 +56,41 @@ bool TinyXMLADMData::TranslateXML(const char *data)
   doc.Parse(data);
 
   // dig to correct location of audioFormatExtended section
-  if ((node = FindElement(&doc, "ebuCoreMain")) != NULL)
+  if (((node = FindElement(&doc, "ebuCoreMain")) != NULL) ||
+      ((node = FindElement(&doc, "ituADM")) != NULL))
   {
-    if ((node = FindElement(node, "coreMetadata")) != NULL)
+    if ((formatNode = FindElement(node, "audioFormatExtended")) == NULL)
     {
-      if ((node = FindElement(node, "format")) != NULL)
+      // collect non-ADM objects from parent node
+      CollectNonADMObjects(node);
+
+      // if format node not a top level, dig deeper
+      if ((node = FindElement(node, "coreMetadata")) != NULL)
       {
-        if ((node = FindElement(node, "audioFormatExtended")) != NULL)
-        {
-          CollectObjects(node);
-                    
-          success = true;
-        }
-        else BBCERROR("Failed to find audioFormatExtended element");
-      }
-      else BBCERROR("Failed to find format element");
-    }
-    else BBCERROR("Failed to find coreMetadata element");
-  }
-  else if ((node = FindElement(&doc, "ituADM")) != NULL)
-  {
-    const TiXmlNode *formatNode;
-    if ((formatNode = FindElement(node, "audioFormatExtended")) != NULL)
-    {
-      CollectObjects(formatNode);
-                    
-      success = true;
-    }
-    else if ((node = FindElement(node, "coreMetadata")) != NULL)
-    {
+        // collect non-ADM objects from parent node
+        CollectNonADMObjects(node);
+
         if ((node = FindElement(node, "format")) != NULL)
         {
-            if ((node = FindElement(node, "audioFormatExtended")) != NULL)
-            {
-                CollectObjects(node);
+          // collect non-ADM objects from parent node
+          CollectNonADMObjects(node);
 
-                success = true;
-            }
-            else BBCERROR("Failed to find audioFormatExtended element");
+          formatNode = FindElement(node, "audioFormatExtended");
         }
         else BBCERROR("Failed to find format element");
+      }
+      else BBCERROR("Failed to find coreMetadata element");
     }
-    else BBCERROR("Failed to find audioFormatExtended element");
+
+    // if format node found, decode it
+    if (formatNode)
+    {
+      CollectObjects(formatNode);
+      
+      success = true;
+    }
   }
-  else BBCERROR("Failed to find ebuCoreMain or ituADM elements");
+  else BBCERROR("Failed to find ebuCoreMain or ituADM nodes");
 
   return success;
 }
@@ -362,6 +353,18 @@ const TiXmlNode *TinyXMLADMData::FindElement(const TiXmlNode *node, const std::s
 /*--------------------------------------------------------------------------------*/
 void TinyXMLADMData::CollectObjects(const TiXmlNode *node)
 {
+  // first collect ADM objects
+  CollectADMObjects(node);
+  // then collect non-ADM objects
+  CollectNonADMObjects(node);
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Recursively collect all ADM objects in tree and parse them
+ */
+/*--------------------------------------------------------------------------------*/
+void TinyXMLADMData::CollectADMObjects(const TiXmlNode *node)
+{
   const TiXmlNode *subnode; 
 
   for (subnode = node->FirstChild(); subnode; subnode = subnode->NextSibling())
@@ -370,10 +373,37 @@ void TinyXMLADMData::CollectObjects(const TiXmlNode *node)
     {
       if (ValidType(subnode->Value()))
       {
-        if (Parse(subnode->Value(), (void *)subnode))
-        {
-          CollectObjects(subnode);
-        }
+        Parse(subnode->Value(), (void *)subnode);
+
+        // ONLY collect ADM objects below this point
+        CollectADMObjects(subnode);
+      }
+    }
+  }
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Recursively collect all non-ADM objects in tree and parse them
+ */
+/*--------------------------------------------------------------------------------*/
+void TinyXMLADMData::CollectNonADMObjects(const TiXmlNode *node)
+{
+  const TiXmlNode *subnode; 
+
+  for (subnode = node->FirstChild(); subnode; subnode = subnode->NextSibling())
+  {
+    if (subnode->Type() == TiXmlNode::TINYXML_ELEMENT)
+    {
+      const std::string& name = subnode->Value();
+      
+      if (!ValidType(name) &&
+          (name != "audioFormatExtended") &&
+          (name != "coreMetadata") &&
+          (name != "format")) // not an ADM type
+      {
+        BBCDEBUG4(("Parsing non-ADM type '%s'", name.c_str()));
+        
+        ParseValue(name, nonadmxml[node->Value()], (void *)subnode);
       }
     }
   }

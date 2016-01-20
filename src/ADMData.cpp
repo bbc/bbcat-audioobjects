@@ -463,6 +463,8 @@ uint_t ADMData::GetNextTrackNum() const
     trackNum = MAX(trackNum, tracklist[i]->GetTrackNum() + 1);
   }
 
+  BBCDEBUG3(("GetNextTrackNum with tracklist of %u items is %u", (uint_t)tracklist.size(), trackNum));
+  
   return trackNum;
 }
 
@@ -472,7 +474,6 @@ uint_t ADMData::GetNextTrackNum() const
  * @param trackNum track number (or Track_Auto to automatically choose track)
  * @param object audioObject object to attach this object to or NULL
  *
- * @note if trackNum is 0, the next track number will be chosen (one higher than the highest track number)
  * @note ID will be create automatically
  *
  * @return ADMAudioTrack object
@@ -958,6 +959,20 @@ void ADMData::GetAudioObjectList(std::vector<const ADMAudioObject *>& list) cons
 
     if ((obj = dynamic_cast<const ADMAudioObject *>(it->second)) != NULL) list.push_back(obj);
   }
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Return non-ADM XML for a particular node that needs to be preserved
+ */
+/*--------------------------------------------------------------------------------*/
+const XMLValues *ADMData::GetNonADMXML(const std::string& node) const
+{
+  std::map<std::string,XMLValues>::const_iterator it;
+  const XMLValues *values = NULL;
+
+  if ((it = nonadmxml.find(node)) != nonadmxml.end()) values = &it->second;
+  
+  return values;
 }
 
 /*--------------------------------------------------------------------------------*/

@@ -68,14 +68,23 @@ void XMLValue::SetSubValues(const XMLValues *_subvalues)
 /*--------------------------------------------------------------------------------*/
 void XMLValue::AddSubValues(const XMLValues& _subvalues)
 {
-  if (!subvalues) subvalues = new XMLValues;
-  if (subvalues)
+  if (_subvalues.size())
   {
-    uint_t i;
-    for (i = 0; i < _subvalues.size(); i++)
+    if (!subvalues) subvalues = new XMLValues;
+    if (subvalues)
     {
-      subvalues->AddValue(_subvalues[i]);
+      uint_t i;
+      for (i = 0; i < _subvalues.size(); i++)
+      {
+        subvalues->AddValue(_subvalues[i]);
+      }
     }
+  }
+  // delete existing list of sub values
+  else if (subvalues)
+  {
+    delete subvalues;
+    subvalues = NULL;
   }
 }
 

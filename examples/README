@@ -8,9 +8,11 @@ write-adm-bwf.cpp - example code for creation of a simple ADM
 
 write-separate-adm.cpp - example code for creation of a simple ADM and then writing the CHNA and AXML chunks to a RIFF file
 
-load-xml.cpp - Example code for loading ADM xml and chna chunks in directly
+load-xml.cpp - example code for loading ADM xml and chna chunks in directly
 
 udp-demo.cpp - example of using UDP port, threading and a lock-free buffer
+
+play-metadata.cpp - example of reading in an XML file and displaying the metadata over time
 
 --------------------------------------------------------------------------------
 Building on Windows (Visual Studio)

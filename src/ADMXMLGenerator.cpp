@@ -33,6 +33,21 @@ namespace ADMXMLGenerator
   } TEXTXML;
 
   /*--------------------------------------------------------------------------------*/
+  /** Encode XML string
+   */
+  /*--------------------------------------------------------------------------------*/
+  std::string EscapeXML(const std::string& _str)
+  {
+    std::string str = _str;
+    str = SearchAndReplace(str, "&",  "&amp;");
+    str = SearchAndReplace(str, "<",  "&lt;");
+    str = SearchAndReplace(str, ">",  "&gt;");
+    str = SearchAndReplace(str, "\"", "&quot;");
+    str = SearchAndReplace(str, "'",  "&apos;");
+    return str;
+  }
+  
+  /*--------------------------------------------------------------------------------*/
   /** Append string to XML context
    *
    * @param xml user supplied argument representing context data
@@ -112,7 +127,7 @@ namespace ADMXMLGenerator
     xml.stack.push_back(name);
     xml.opened = true;
   }
-
+  
   /*--------------------------------------------------------------------------------*/
   /** Add an attribute to the current XML object
    *
@@ -126,7 +141,7 @@ namespace ADMXMLGenerator
   void AddXMLAttribute(TEXTXML& xml, const std::string& name, const std::string& value)
   {
     std::string str;
-    Printf(str, " %s=\"%s\"", name.c_str(), value.c_str());
+    Printf(str, " %s=\"%s\"", name.c_str(), EscapeXML(value).c_str());
 
     AppendXML(xml, str);
   }
@@ -149,7 +164,7 @@ namespace ADMXMLGenerator
       xml.opened = false;
     }
 
-    AppendXML(xml, data);
+    AppendXML(xml, EscapeXML(data));
   }
 
   /*--------------------------------------------------------------------------------*/
@@ -241,6 +256,24 @@ namespace ADMXMLGenerator
         else SetXMLData(xml, value.value);
 
         CloseXMLObject(xml);
+      }
+    }
+  }
+
+  /*--------------------------------------------------------------------------------*/
+  /** Append extra (non-ADM) XML for level in the stack
+   */
+  /*--------------------------------------------------------------------------------*/
+  void AppendExtraXML(TEXTXML& xml)
+  {
+    if (xml.stack.size() && xml.opened)
+    {
+      const XMLValues *values;
+
+      if ((values = xml.adm->GetNonADMXML(xml.stack[xml.stack.size() - 1])) != NULL)
+      {
+        // extra data exists, add it
+        AddXMLValues(xml, *values);
       }
     }
   }
@@ -372,9 +405,16 @@ namespace ADMXMLGenerator
       AddXMLAttribute(xml, "xmlns", "urn:metadata-schema:adm");
     }
 
+    AppendExtraXML(xml);
+
     OpenXMLObject(xml, "coreMetadata");
+    AppendExtraXML(xml);
+
     OpenXMLObject(xml, "format");
+    AppendExtraXML(xml);
+
     OpenXMLObject(xml, "audioFormatExtended");
+    AppendExtraXML(xml);
 
     for (i = 0; i < NUMBEROF(types); i++)
     {

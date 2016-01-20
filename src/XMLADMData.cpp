@@ -8,8 +8,8 @@
 #include <bbcat-base/EnhancedFile.h>
 
 #include "XMLADMData.h"
-#include "RIFFChunk_Definitions.h"
 #include "ADMXMLGenerator.h"
+#include "RIFFChunk_Definitions.h"
 
 // currently the chna chunk is specified as having either 32 or 2048 entries for tracks
 // define CHNA_FIXED_UIDS_LOWER as 0 to disable this behaviour
@@ -178,7 +178,8 @@ bool XMLADMData::SetAxml(const char *data)
 
   if (TranslateXML(data))
   {
-    ConnectReferences();
+    Finalise();
+
     success = true;
   }
 

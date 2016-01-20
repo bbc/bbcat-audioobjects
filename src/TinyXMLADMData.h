@@ -108,10 +108,22 @@ protected:
   virtual const TiXmlNode *FindElement(const TiXmlNode *node, const std::string& name);
 
   /*--------------------------------------------------------------------------------*/
-  /** Recursively collect all objects in tree and parse them
+  /** Recursively collect all objects (ADM and non-ADM) in tree and parse them
    */
   /*--------------------------------------------------------------------------------*/
   virtual void CollectObjects(const TiXmlNode *node);
+
+  /*--------------------------------------------------------------------------------*/
+  /** Recursively collect all ADM objects in tree and parse them
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void CollectADMObjects(const TiXmlNode *node);
+
+  /*--------------------------------------------------------------------------------*/
+  /** Recursively collect all non-ADM objects in tree and parse them
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void CollectNonADMObjects(const TiXmlNode *node);
 
   /*--------------------------------------------------------------------------------*/
   /** Creator for this class
