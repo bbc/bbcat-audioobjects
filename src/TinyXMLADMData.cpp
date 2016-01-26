@@ -59,11 +59,11 @@ bool TinyXMLADMData::TranslateXML(const char *data)
   if (((node = FindElement(&doc, "ebuCoreMain")) != NULL) ||
       ((node = FindElement(&doc, "ituADM")) != NULL))
   {
+    // collect non-ADM objects from parent node
+    CollectNonADMObjects(node);
+
     if ((formatNode = FindElement(node, "audioFormatExtended")) == NULL)
     {
-      // collect non-ADM objects from parent node
-      CollectNonADMObjects(node);
-
       // if format node not a top level, dig deeper
       if ((node = FindElement(node, "coreMetadata")) != NULL)
       {
@@ -389,7 +389,12 @@ void TinyXMLADMData::CollectADMObjects(const TiXmlNode *node)
 void TinyXMLADMData::CollectNonADMObjects(const TiXmlNode *node)
 {
   const TiXmlNode *subnode; 
+  std::string parentname = node->Value();
 
+  // for root node, use empty name
+  if ((parentname == "ebuCoreMain") ||
+      (parentname == "ituADM")) parentname = "";
+  
   for (subnode = node->FirstChild(); subnode; subnode = subnode->NextSibling())
   {
     if (subnode->Type() == TiXmlNode::TINYXML_ELEMENT)
@@ -403,7 +408,7 @@ void TinyXMLADMData::CollectNonADMObjects(const TiXmlNode *node)
       {
         BBCDEBUG4(("Parsing non-ADM type '%s'", name.c_str()));
         
-        ParseValue(name, nonadmxml[node->Value()], (void *)subnode);
+        ParseValue(name, nonadmxml[parentname], (void *)subnode);
       }
     }
   }

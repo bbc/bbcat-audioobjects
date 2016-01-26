@@ -20,6 +20,7 @@ class XMLADMData : public ADMData
 {
 public:
   XMLADMData();
+  XMLADMData(const XMLADMData& obj);
   virtual ~XMLADMData();
 
   /*--------------------------------------------------------------------------------*/

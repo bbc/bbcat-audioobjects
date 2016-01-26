@@ -26,6 +26,11 @@ XMLADMData::XMLADMData() : ADMData(),
 {
 }
 
+XMLADMData::XMLADMData(const XMLADMData& obj) : ADMData(obj),
+                                                ebuxmlmode(obj.ebuxmlmode)
+{
+}
+
 XMLADMData::~XMLADMData()
 {
 }

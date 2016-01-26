@@ -14,6 +14,8 @@ udp-demo.cpp - example of using UDP port, threading and a lock-free buffer
 
 play-metadata.cpp - example of reading in an XML file and displaying the metadata over time
 
+modify-adm-bwf.cpp - example of reading an ADM BWF file, copying and modifying the ADM (adding arbitrary XML) and writing it to a new file along with the original audio
+
 --------------------------------------------------------------------------------
 Building on Windows (Visual Studio)
 

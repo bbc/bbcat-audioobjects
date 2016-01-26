@@ -5,9 +5,9 @@
 
 #include <bbcat-base/misc.h>
 #include <bbcat-control/AudioObjectCursor.h>
+#include "ADMData.h"
 
 #include "SoundFileAttributes.h"
-#include "ADMData.h"
 
 BBC_AUDIOTOOLBOX_START
 
@@ -29,8 +29,18 @@ public:
   virtual void SetADMData(const ADMData *_adm) {adm = _adm;}
   const ADMData *GetADMData() const {return adm;}
 
+  /*--------------------------------------------------------------------------------*/
+  /** Get list of audio objects active at *current* time
+   */
+  /*--------------------------------------------------------------------------------*/
   virtual void GetObjectList(AudioObject::LIST& list);
 
+  /*--------------------------------------------------------------------------------*/
+  /** Seek to current time on all cursors
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void SeekAllCursors();
+  
 protected:
   const ADMData                    *adm;
   std::vector<AudioObjectCursor *> cursors;

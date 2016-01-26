@@ -265,7 +265,7 @@ void ADMRIFFFile::Close(bool abortwrite)
 /*--------------------------------------------------------------------------------*/
 void ADMRIFFFile::PrepareCursors()
 {
-  if (adm && (cursors.size() == 0))
+  if (adm && writing && !cursors.size())
   {
     std::vector<const ADMAudioObject *> objects;
     ADMTrackCursor *cursor;
@@ -278,7 +278,8 @@ void ADMRIFFFile::PrepareCursors()
     for (i = 0; i < nchannels; i++)
     {
       // create track cursor for tracking position during writing
-      if ((cursor = new ADMTrackCursor(i)) != NULL) {
+      if ((cursor = new ADMTrackCursor(i)) != NULL)
+      {
         cursor->Add(objects);
         cursors.push_back(cursor);
       }
@@ -446,10 +447,14 @@ bool ADMRIFFFile::PostReadChunks()
   return success;
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Update current position within the file
+ */
+/*--------------------------------------------------------------------------------*/
 void ADMRIFFFile::UpdateSamplePosition()
 {
 }
-
+  
 /*--------------------------------------------------------------------------------*/
 /** Set parameters of channel during writing
  *
@@ -459,11 +464,8 @@ void ADMRIFFFile::UpdateSamplePosition()
 /*--------------------------------------------------------------------------------*/
 void ADMRIFFFile::SetObjectParameters(uint_t channel, const AudioObjectParameters& objparameters)
 {
-  if (adm && (cursors.size() == 0))
-  {
-    // create cursors and add all objects to them
-    PrepareCursors();
-  }
+  // create cursors if necessary and add all objects to them
+  PrepareCursors();
 
   if (writing && (channel < cursors.size()))
   {

@@ -29,11 +29,17 @@ SoundObjectFileSamples::~SoundObjectFileSamples()
   }
 }   
 
+/*--------------------------------------------------------------------------------*/
+/** Get list of audio objects active at *current* time
+ */
+/*--------------------------------------------------------------------------------*/
 void SoundObjectFileSamples::GetObjectList(AudioObject::LIST& list)
 {
   AudioObject *lastobj = NULL;
   uint_t i;
 
+  SeekAllCursors();
+  
   for (i = 0; i < cursors.size(); i++)
   {
     AudioObject *obj = cursors[i]->GetAudioObject();
@@ -42,6 +48,21 @@ void SoundObjectFileSamples::GetObjectList(AudioObject::LIST& list)
     
     lastobj = obj;
   }  
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Seek to current time on all cursors
+ */
+/*--------------------------------------------------------------------------------*/
+void SoundObjectFileSamples::SeekAllCursors()
+{
+  uint64_t currentns = GetAbsolutePositionNS();
+  uint_t i;
+  
+  for (i = 0; i < cursors.size(); i++)
+  {
+    cursors[i]->Seek(currentns);
+  }
 }
 
 BBC_AUDIOTOOLBOX_END

@@ -43,6 +43,16 @@ ADMObject::ADMObject(ADMData& _owner, const std::string& _id, const std::string&
   }
 }
 
+ADMObject::ADMObject(ADMData& _owner, const ADMObject *obj) : owner(_owner),
+                                                              id(obj->GetID()),
+                                                              name(obj->GetName()),
+                                                              typeLabel(obj->GetTypeLabel()),
+                                                              typeDefinition(obj->GetTypeDefinition()),
+                                                              values(obj->values),
+                                                              standarddef(obj->standarddef)
+{
+}
+
 /*--------------------------------------------------------------------------------*/
 /** Set and Get object ID
  *
@@ -344,6 +354,31 @@ void ADMObject::GetValuesAndReferences(XMLValues& objvalues, std::vector<REFEREN
   }
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Copy a list of references from one ADM to this ADM
+ */
+/*--------------------------------------------------------------------------------*/
+template<typename T>
+void ADMObject::CopyReferencesEx(std::vector<T *>& dst, const std::vector<T *>& src)
+{
+  uint_t i;
+  for (i = 0; i < src.size(); i++)
+  {
+    ADMObject *obj;
+
+    if ((obj = owner.GetWritableObjectByID(src[i]->GetID(), src[i]->GetType())) != NULL)
+    {
+      T *obj2;
+      if ((obj2 = dynamic_cast<T *>(obj)) != NULL)
+      {
+        dst.push_back(obj2);
+      }
+      else BBCERROR("Object '%s' is not of the correct type!", src[i]->ToString().c_str());
+    }
+    else BBCERROR("Failed to find object '%s' is new ADM!", src[i]->ToString().c_str());
+  }
+}
+
 /*----------------------------------------------------------------------------------------------------*/
 
 const std::string ADMAudioProgramme::Type      = "audioProgramme";
@@ -415,6 +450,22 @@ void ADMAudioProgramme::GenerateReferenceList(std::string& str) const
   uint_t i;
 
   for (i = 0; i < contentrefs.size(); i++) GenerateReference(str, contentrefs[i]);
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Copy references from another object
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMAudioProgramme::CopyReferences(const ADMObject *_obj)
+{
+  ADMObject::CopyReferences(_obj);
+
+  const ADMAudioProgramme *obj = dynamic_cast<const ADMAudioProgramme *>(_obj);
+  if (obj)
+  {
+    CopyReferencesEx<>(contentrefs, obj->contentrefs);
+  }
+  else BBCERROR("Cannot copy references from '%s', type is '%s' not '%s'", _obj->ToString().c_str(), _obj->GetType().c_str(), GetType().c_str()); 
 }
 
 /*----------------------------------------------------------------------------------------------------*/
@@ -490,6 +541,22 @@ void ADMAudioContent::GenerateReferenceList(std::string& str) const
   for (i = 0; i < objectrefs.size(); i++) GenerateReference(str, objectrefs[i]);
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Copy references from another object
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMAudioContent::CopyReferences(const ADMObject *_obj)
+{
+  ADMObject::CopyReferences(_obj);
+
+  const ADMAudioContent *obj = dynamic_cast<const ADMAudioContent *>(_obj);
+  if (obj)
+  {
+    CopyReferencesEx<>(objectrefs, obj->objectrefs);
+  }
+  else BBCERROR("Cannot copy references from '%s', type is '%s' not '%s'", _obj->ToString().c_str(), _obj->GetType().c_str(), GetType().c_str()); 
+}
+
 /*----------------------------------------------------------------------------------------------------*/
 
 const std::string ADMAudioObject::Type      = "audioObject";
@@ -508,6 +575,7 @@ const std::string ADMAudioObject::IDPrefix  = "AO_";
 /*--------------------------------------------------------------------------------*/
 ADMAudioObject::ADMAudioObject(ADMData& _owner, const std::string& _id, const std::string& _name) :
   ADMObject(_owner, _id, _name),
+  AudioObject(),
   startTime(0),
   duration(0),
   starttrack(0),
@@ -518,6 +586,23 @@ ADMAudioObject::ADMAudioObject(ADMData& _owner, const std::string& _id, const st
   disableducking(AudioObjectParameters::GetDisableDuckingDefault()),
   startTimeSet(false),
   durationSet(false)
+{
+  Register();
+}
+
+ADMAudioObject::ADMAudioObject(ADMData& _owner, const ADMAudioObject *obj) :
+  ADMObject(_owner, obj),
+  AudioObject(),
+  startTime(obj->startTime),
+  duration(obj->duration),
+  starttrack(obj->starttrack),
+  trackcount(obj->trackcount),
+  dialogue(obj->dialogue),
+  importance(obj->importance),
+  interact(obj->interact),
+  disableducking(obj->disableducking),
+  startTimeSet(obj->startTimeSet),
+  durationSet(obj->durationSet)
 {
   Register();
 }
@@ -719,24 +804,31 @@ ADMAudioChannelFormat *ADMAudioObject::GetChannelFormat(uint_t track) const
 
   for (i = 0; i < trackrefs.size(); i++)
   {
-    BBCDEBUG4(("ADMAudioObject<%s>: trackrefs %u/%u  <%s>: tracknum %u/%u", StringFrom(this).c_str(), i, (uint_t)trackrefs.size(), StringFrom(trackrefs[i]).c_str(), trackrefs[i]->GetTrackNum(), track));
+    BBCDEBUG2(("ADMAudioObject<%s>: %s ('%s') trackrefs %u/%u ADMAudioTrack<%s>: tracknum %u/%u", StringFrom(this).c_str(), GetName().c_str(), GetID().c_str(), i, (uint_t)trackrefs.size(), StringFrom(trackrefs[i]).c_str(), trackrefs[i]->GetTrackNum(), track));
     
     if (trackrefs[i]->GetTrackNum() == track)
     {
       const ADMAudioTrack&                      audiotrack      = *trackrefs[i];
       const std::vector<ADMAudioTrackFormat *>& trackformatrefs = audiotrack.GetTrackFormatRefs();
 
+      BBCDEBUG2(("Found %s<%s>: '%s' ('%s')", trackrefs[i]->GetType().c_str(), StringFrom(trackrefs[i]).c_str(), trackrefs[i]->GetName().c_str(), trackrefs[i]->GetID().c_str()));
+      
       if (trackformatrefs.size() == 1)
       {
         const std::vector<ADMAudioStreamFormat *>& streamformatrefs = trackformatrefs[0]->GetStreamFormatRefs();
+
+        BBCDEBUG2(("Found %s<%s>: '%s' ('%s')", trackformatrefs[0]->GetType().c_str(), StringFrom(trackformatrefs[0]).c_str(), trackformatrefs[0]->GetName().c_str(), trackformatrefs[0]->GetID().c_str()));
 
         if (streamformatrefs.size() == 1)
         {
           const std::vector<ADMAudioChannelFormat *>& channelformatrefs = streamformatrefs[0]->GetChannelFormatRefs();
 
+          BBCDEBUG2(("Found %s<%s>: '%s' ('%s')", streamformatrefs[0]->GetType().c_str(), StringFrom(streamformatrefs[0]).c_str(), streamformatrefs[0]->GetName().c_str(), streamformatrefs[0]->GetID().c_str()));
+
           if (channelformatrefs.size() == 1)
           {
             channelFormat = channelformatrefs[0];
+            BBCDEBUG2(("Found %s<%s>: '%s' ('%s')", channelFormat->GetType().c_str(), StringFrom(channelFormat).c_str(), channelFormat->GetName().c_str(), channelFormat->GetID().c_str()));
           }
           else BBCERROR("Incorrect channelformatrefs in '%s' (%u)!", streamformatrefs[0]->ToString().c_str(), (uint_t)channelformatrefs.size());
         }
@@ -802,6 +894,24 @@ void ADMAudioObject::ToJSON(json_spirit::mObject& obj) const
   }
 }
 #endif
+
+/*--------------------------------------------------------------------------------*/
+/** Copy references from another object
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMAudioObject::CopyReferences(const ADMObject *_obj)
+{
+  ADMObject::CopyReferences(_obj);
+
+  const ADMAudioObject *obj = dynamic_cast<const ADMAudioObject *>(_obj);
+  if (obj)
+  {
+    CopyReferencesEx<>(objectrefs, obj->objectrefs);
+    CopyReferencesEx<>(packformatrefs, obj->packformatrefs);
+    CopyReferencesEx<>(trackrefs, obj->trackrefs);
+  }
+  else BBCERROR("Cannot copy references from '%s', type is '%s' not '%s'", _obj->ToString().c_str(), _obj->GetType().c_str(), GetType().c_str()); 
+}
 
 /*----------------------------------------------------------------------------------------------------*/
 
@@ -897,6 +1007,23 @@ void ADMAudioTrack::GenerateReferenceList(std::string& str) const
 
   for (i = 0; i < trackformatrefs.size(); i++) GenerateReference(str, trackformatrefs[i]);
   for (i = 0; i < packformatrefs.size(); i++) GenerateReference(str, packformatrefs[i]);
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Copy references from another object
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMAudioTrack::CopyReferences(const ADMObject *_obj)
+{
+  ADMObject::CopyReferences(_obj);
+
+  const ADMAudioTrack *obj = dynamic_cast<const ADMAudioTrack *>(_obj);
+  if (obj)
+  {
+    CopyReferencesEx<>(trackformatrefs, obj->trackformatrefs);
+    CopyReferencesEx<>(packformatrefs, obj->packformatrefs);
+  }
+  else BBCERROR("Cannot copy references from '%s', type is '%s' not '%s'", _obj->ToString().c_str(), _obj->GetType().c_str(), GetType().c_str()); 
 }
 
 /*----------------------------------------------------------------------------------------------------*/
@@ -1001,6 +1128,23 @@ void ADMAudioPackFormat::GenerateReferenceList(std::string& str) const
 
   for (i = 0; i < channelformatrefs.size(); i++) GenerateReference(str, channelformatrefs[i]);
   for (i = 0; i < packformatrefs.size(); i++) GenerateReference(str, packformatrefs[i]);
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Copy references from another object
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMAudioPackFormat::CopyReferences(const ADMObject *_obj)
+{
+  ADMObject::CopyReferences(_obj);
+
+  const ADMAudioPackFormat *obj = dynamic_cast<const ADMAudioPackFormat *>(_obj);
+  if (obj)
+  {
+    CopyReferencesEx<>(channelformatrefs, obj->channelformatrefs);
+    CopyReferencesEx<>(packformatrefs, obj->packformatrefs);
+  }
+  else BBCERROR("Cannot copy references from '%s', type is '%s' not '%s'", _obj->ToString().c_str(), _obj->GetType().c_str(), GetType().c_str()); 
 }
 
 /*----------------------------------------------------------------------------------------------------*/
@@ -1163,6 +1307,24 @@ void ADMAudioStreamFormat::GenerateReferenceList(std::string& str) const
   for (i = 0; i < trackformatrefs.size(); i++) GenerateReference(str, trackformatrefs[i]);
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Copy references from another object
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMAudioStreamFormat::CopyReferences(const ADMObject *_obj)
+{
+  ADMObject::CopyReferences(_obj);
+
+  const ADMAudioStreamFormat *obj = dynamic_cast<const ADMAudioStreamFormat *>(_obj);
+  if (obj)
+  {
+    CopyReferencesEx<>(channelformatrefs, obj->channelformatrefs);
+    CopyReferencesEx<>(packformatrefs, obj->packformatrefs);
+    CopyReferencesEx<>(trackformatrefs, obj->trackformatrefs);
+  }
+  else BBCERROR("Cannot copy references from '%s', type is '%s' not '%s'", _obj->ToString().c_str(), _obj->GetType().c_str(), GetType().c_str()); 
+}
+
 /*----------------------------------------------------------------------------------------------------*/
 
 const std::string ADMAudioTrackFormat::Type      = "audioTrackFormat";
@@ -1265,11 +1427,40 @@ void ADMAudioTrackFormat::GenerateReferenceList(std::string& str) const
   for (i = 0; i < streamformatrefs.size(); i++) GenerateReference(str, streamformatrefs[i]);
 }
 
+/*--------------------------------------------------------------------------------*/
+/** Copy references from another object
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMAudioTrackFormat::CopyReferences(const ADMObject *_obj)
+{
+  ADMObject::CopyReferences(_obj);
+
+  const ADMAudioTrackFormat *obj = dynamic_cast<const ADMAudioTrackFormat *>(_obj);
+  if (obj)
+  {
+    CopyReferencesEx<>(streamformatrefs, obj->streamformatrefs);
+  }
+  else BBCERROR("Cannot copy references from '%s', type is '%s' not '%s'", _obj->ToString().c_str(), _obj->GetType().c_str(), GetType().c_str()); 
+}
+
 /*----------------------------------------------------------------------------------------------------*/
 
 const std::string ADMAudioChannelFormat::Type      = "audioChannelFormat";
 const std::string ADMAudioChannelFormat::Reference = Type + "IDRef";
 const std::string ADMAudioChannelFormat::IDPrefix  = "AC_";
+
+ADMAudioChannelFormat::ADMAudioChannelFormat(ADMData& _owner, const ADMAudioChannelFormat *obj) : ADMObject(_owner, obj)
+{
+  Register();
+
+  // copy all blockformats from obj
+  const std::vector<ADMAudioBlockFormat *>& oldblockformatrefs = obj->GetBlockFormatRefs();
+  uint_t i;
+  for (i = 0; i < oldblockformatrefs.size(); i++)
+  {
+    blockformatrefs.push_back(new ADMAudioBlockFormat(oldblockformatrefs[i]));
+  }
+}
 
 ADMAudioChannelFormat::~ADMAudioChannelFormat()
 {
@@ -1477,6 +1668,15 @@ ADMAudioBlockFormat::ADMAudioBlockFormat() :
 {
 }
 
+ADMAudioBlockFormat::ADMAudioBlockFormat(const ADMAudioBlockFormat *obj) :
+  objparameters(obj->objparameters),
+  rtime(obj->rtime),
+  duration(obj->duration),
+  rtimeSet(obj->rtimeSet),
+  durationSet(obj->durationSet)
+{
+}
+
 /*--------------------------------------------------------------------------------*/
 /** Set internal variables from values added to internal list (e.g. from XML)
  */
@@ -1485,53 +1685,65 @@ void ADMAudioBlockFormat::SetValues(XMLValues& values)
 {
   XMLValues::iterator it;
   ParameterSet othervalues;
-  Position     position;
-  bool         cartesian = false;   // if Cartesian member not specified, assume polar
-  
+  Position position, minposition, maxposition;
+  bool     positionset = false, minpositionset = false, maxpositionset = false;    // used to detect which position(s) have been set and detect changes in co-ordinate system
   uint64_t _time;
+  
   if (values.SetValueTime(_time, "rtime"))    SetStartTime(_time);
   if (values.SetValueTime(_time, "duration")) SetDuration(_time);
 
-  // first, find cartesian item and set local variable accordingly
-  for (it = values.begin(); it != values.end();)
-  {
-    const XMLValue& value = *it;
-
-    if (value.name == "cartesian")
-    {
-      Evaluate(value.value, cartesian);
-
-      it = values.erase(it);
-    }
-    else ++it;
-  }
-
-  position.polar = !cartesian;
-  
   for (it = values.begin(); it != values.end();)
   {
     const XMLValue& value = *it;
     
-    if (value.name == "position")
+    if (value.name == "cartesian")
+    {
+      bool val;
+      
+      if (Evaluate(value.value, val)) objparameters.SetCartesian(val);
+
+      it = values.erase(it);
+    }
+    else if (value.name == "position")
     {
       double val;
 
       if (Evaluate(value.value, val))
       {
-        const std::string *coord, *scrlock;
+        const std::string *coord, *bound, *scrlock;
+        Position *pos = &position;      // default is 'normal' position
+        bool     *set = &positionset;
 
-        scrlock = value.GetAttribute("screenEdgeLock");
+        // determine *which* position is being set
+        if ((bound = value.GetAttribute("bound")) != NULL)
+        {
+          if (*bound == "min")
+          {
+            pos = &minposition;
+            set = &minpositionset;
+          }
+          else if (*bound == "max")
+          {
+            pos = &maxposition;
+            set = &maxpositionset;
+          }
+          else BBCERROR("Illegal bound value '%s' for position", bound->c_str());
+        }
         
+        scrlock = value.GetAttribute("screenEdgeLock");
+
         if ((coord = value.GetAttribute("coordinate")) != NULL)
         {
           BBCDEBUG4(("Position type %s value %0.6lf", coord->c_str(), val));
 
-          if      ( position.polar && (*coord == "azimuth"))                {position.pos.az = val; if (scrlock) objparameters.SetScreenEdgeLock(*coord, *scrlock);}
-          else if ( position.polar && (*coord == "elevation"))              {position.pos.el = val; if (scrlock) objparameters.SetScreenEdgeLock(*coord, *scrlock);}
-          else if ( position.polar && (*coord == "distance"))               {position.pos.d  = val;}
-          else if (!position.polar && ((*coord == "x") || (*coord == "X"))) {position.pos.x  = val;}
-          else if (!position.polar && ((*coord == "y") || (*coord == "Y"))) {position.pos.y  = val;}
-          else if (!position.polar && ((*coord == "z") || (*coord == "Z"))) {position.pos.z  = val;}
+          // prevent changing of co-ordinate system for a particular position instance
+          if      ((!*set ||  pos->polar) && (*coord == "azimuth"))                {*set = true; pos->polar = true;  pos->pos.az = val; if (scrlock) objparameters.SetScreenEdgeLock(*coord, *scrlock);}
+          else if ((!*set ||  pos->polar) && (*coord == "elevation"))              {*set = true; pos->polar = true;  pos->pos.el = val; if (scrlock) objparameters.SetScreenEdgeLock(*coord, *scrlock);}
+          else if ((!*set ||  pos->polar) && (*coord == "distance"))               {*set = true; pos->polar = true;  pos->pos.d  = val;}
+          else if ((!*set || !pos->polar) && ((*coord == "x") || (*coord == "X"))) {*set = true; pos->polar = false; pos->pos.x  = val;}
+          else if ((!*set || !pos->polar) && ((*coord == "y") || (*coord == "Y"))) {*set = true; pos->polar = false; pos->pos.y  = val;}
+          else if ((!*set || !pos->polar) && ((*coord == "z") || (*coord == "Z"))) {*set = true; pos->polar = false; pos->pos.z  = val;}
+          else BBCERROR("Illegal co-ordinate '%s' specified (bound '%s', co-ordinate system '%s')", coord->c_str(), bound ? bound->c_str() : "", pos->polar ? "spherical" : "cartesian");
         }
       }
       else BBCERROR("Failed to evaluate '%s' as floating point number for position", value.value.c_str());
@@ -1697,8 +1909,80 @@ void ADMAudioBlockFormat::SetValues(XMLValues& values)
     }
   }
 
-  // set position within the audio object parameters object
-  objparameters.SetPosition(position);
+  // set position(s) within the audio object parameters object
+  if (positionset)    objparameters.SetPosition(position);
+  if (minpositionset) objparameters.SetMinPosition(minposition);
+  if (maxpositionset) objparameters.SetMaxPosition(maxposition);
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Add position information to list of XMLValues
+ *
+ * @param objvalues list of XMLValues to be appended to
+ * @param position position to encode
+ * @param bound bound attribute for position or NULL
+ *
+ * @note screenEdgeLock is encoded ONLY if bound == NULL
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMAudioBlockFormat::GetPositionValues(XMLValues& objvalues, const Position& position, const char *bound) const
+{
+  std::string str;
+
+  if (position.polar)
+  {
+    {
+      XMLValue value;
+      value.SetValue("position", position.pos.az);
+      value.SetValueAttribute("coordinate", "azimuth");
+      if (bound) value.SetValueAttribute("bound", bound);
+      if (!bound && objparameters.GetScreenEdgeLock("azimuth", str)) value.SetValueAttribute("screenEdgeLock", str);
+      objvalues.AddValue(value);
+    }
+    
+    {
+      XMLValue value;
+      value.SetValue("position", position.pos.el);
+      value.SetValueAttribute("coordinate", "elevation");
+      if (bound) value.SetValueAttribute("bound", bound);
+      if (!bound && objparameters.GetScreenEdgeLock("elevation", str)) value.SetValueAttribute("screenEdgeLock", str);
+      objvalues.AddValue(value);
+    }
+
+    {
+      XMLValue value;
+      value.SetValue("position", position.pos.d);
+      value.SetValueAttribute("coordinate", "distance");
+      if (bound) value.SetValueAttribute("bound", bound);
+      objvalues.AddValue(value);
+    }
+  }
+  else
+  {
+    {
+      XMLValue value;
+      value.SetValue("position", position.pos.x, "%0.10lf");
+      value.SetValueAttribute("coordinate", "X");
+      if (bound) value.SetValueAttribute("bound", bound);
+      objvalues.AddValue(value);
+    }
+
+    {
+      XMLValue value;
+      value.SetValue("position", position.pos.y, "%0.10lf");
+      value.SetValueAttribute("coordinate", "Y");
+      if (bound) value.SetValueAttribute("bound", bound);
+      objvalues.AddValue(value);
+    }
+
+    {
+      XMLValue value;
+      value.SetValue("position", position.pos.z, "%0.10lf");
+      value.SetValueAttribute("coordinate", "Z");
+      if (bound) value.SetValueAttribute("bound", bound);
+      objvalues.AddValue(value);
+    }
+  }
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -1731,62 +2015,16 @@ void ADMAudioBlockFormat::GetValues(XMLValues& objattrs, XMLValues& objvalues, b
     objattrs.push_back(value);
   }
   
-  const Position& position = objparameters.GetPosition();
-  {
+  if (objparameters.IsCartesianSet()) {
     XMLValue value;
-    value.SetValue("cartesian", !position.polar);
+    value.SetValue("cartesian", objparameters.GetCartesian());
     objvalues.AddValue(value);
   }
 
-  if (position.polar)
-  {
-    {
-      XMLValue value;
-      value.SetValue("position", position.pos.az);
-      value.SetValueAttribute("coordinate", "azimuth");
-      if (objparameters.GetScreenEdgeLock("azimuth", str)) value.SetValueAttribute("screenEdgeLock", str);
-      objvalues.AddValue(value);
-    }
-    
-    {
-      XMLValue value;
-      value.SetValue("position", position.pos.el);
-      value.SetValueAttribute("coordinate", "elevation");
-      if (objparameters.GetScreenEdgeLock("elevation", str)) value.SetValueAttribute("screenEdgeLock", str);
-      objvalues.AddValue(value);
-    }
-
-    {
-      XMLValue value;
-      value.SetValue("position", position.pos.d);
-      value.SetValueAttribute("coordinate", "distance");
-      objvalues.AddValue(value);
-    }
-  }
-  else
-  {
-    {
-      XMLValue value;
-      value.SetValue("position", position.pos.x, "%0.10lf");
-      value.SetValueAttribute("coordinate", "X");
-      objvalues.AddValue(value);
-    }
-
-    {
-      XMLValue value;
-      value.SetValue("position", position.pos.y, "%0.10lf");
-      value.SetValueAttribute("coordinate", "Y");
-      objvalues.AddValue(value);
-    }
-
-    {
-      XMLValue value;
-      value.SetValue("position", position.pos.z, "%0.10lf");
-      value.SetValueAttribute("coordinate", "Z");
-      objvalues.AddValue(value);
-    }
-  }
-
+  if (objparameters.IsPositionSet())    GetPositionValues(objvalues, objparameters.GetPosition());
+  if (objparameters.IsMinPositionSet()) GetPositionValues(objvalues, objparameters.GetMinPosition(), "min");
+  if (objparameters.IsMaxPositionSet()) GetPositionValues(objvalues, objparameters.GetMaxPosition(), "max");
+  
   if (objparameters.GetGain(dval))
   {
     XMLValue value;
@@ -1994,7 +2232,14 @@ bool ADMTrackCursor::Add(const ADMAudioObject *object, bool sort)
   {
     objectlist.push_back(obj);
 
-    BBCDEBUG3(("Cursor<%s:%u>: Added object '%s', %u blocks", StringFrom(this).c_str(), channel, object->ToString().c_str(), (uint_t)obj.channelformat->GetBlockFormatRefs().size()));
+    BBCDEBUG3(("Cursor<%s:%u>: Added object '%s', channel format '%s', %u blocks, start %s for %s",
+               StringFrom(this).c_str(),
+               channel,
+               object->ToString().c_str(),
+               obj.channelformat->ToString().c_str(),
+               (uint_t)obj.channelformat->GetBlockFormatRefs().size(),
+               obj.channelformat->GetBlockFormatRefs().size() ? GenerateTime(obj.channelformat->GetBlockFormatRefs()[0]->GetStartTime()).c_str() : "0",
+               obj.channelformat->GetBlockFormatRefs().size() ? GenerateTime(obj.channelformat->GetBlockFormatRefs()[obj.channelformat->GetBlockFormatRefs().size() - 1]->GetEndTime()).c_str() : "0"));
 
     added = true;
 
@@ -2178,7 +2423,7 @@ const ADMAudioBlockFormat *ADMTrackCursor::GetBlockFormat() const
 AudioObject *ADMTrackCursor::GetAudioObject() const
 {
   ThreadLock lock(tlock);
-  ADMAudioObject *obj = NULL;
+  AudioObject *obj = NULL;
 
   if ((objectindex < objectlist.size()) && RANGE(currenttime, objectlist[objectindex].audioobject->GetStartTime(), objectlist[objectindex].audioobject->GetEndTime()))
   {

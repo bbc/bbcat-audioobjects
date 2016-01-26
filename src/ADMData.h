@@ -21,7 +21,20 @@ class ADMData
 {
 public:
   ADMData();
+  ADMData(const ADMData& obj);
   virtual ~ADMData();
+
+  /*--------------------------------------------------------------------------------*/
+  /** Assignment operator
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual ADMData& operator = (const ADMData& obj) {Copy(obj); return *this;}
+
+  /*--------------------------------------------------------------------------------*/
+  /** Copy from another ADM
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void Copy(const ADMData& obj);
 
   /*--------------------------------------------------------------------------------*/
   /** Delete all objects within this ADM
@@ -304,6 +317,19 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   virtual const XMLValues *GetNonADMXML(const std::string& node) const;
+
+  /*--------------------------------------------------------------------------------*/
+  /** Create Non ADM XML
+   *
+   * @param node name of XML node to hang additional XML off (or empty for the root ADM node)
+   *
+   * @return a XMLValues structure to add additional XML to
+   *
+   * @note node *must* describe an existing ADM XML node (or use empty for the root ADM node)
+   * @note if node already exists, it will be returned without any creation
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual XMLValues *CreateNonADMXML(const std::string& node);
   
   /*--------------------------------------------------------------------------------*/
   /** Structure containing names of ADM objects to create and connect together using CreateObjects()
@@ -503,6 +529,10 @@ protected:
     if ((p = dynamic_cast<T *>(obj)) != NULL) list.push_back(p);
   }
 
+  /*--------------------------------------------------------------------------------*/
+  /** Try to add object to list by checking type using dynamic casting
+   */
+  /*--------------------------------------------------------------------------------*/
   template<typename T>
   void AddToList(std::vector<const T*>& list, const ADMObject *obj)
   {

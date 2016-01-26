@@ -87,6 +87,10 @@ examples/write-separate-adm.cpp         | Example code for creating a separate A
 
 examples/udp-demo.cpp                   | Simple demonstration of threading and UDP socket handling
 
+examples/play-metadata.cpp              | Example of reading in an XML file and displaying the metadata over time
+
+examples/modify-adm-bwf.cpp             | Example of reading an ADM BWF file, copying and modifying the ADM (adding arbitrary XML) and writing it to a new file along with the original audio
+
 --------------------------------------------------------------------------------
 Building on Windows (Visual Studio)
 

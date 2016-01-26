@@ -9,6 +9,7 @@
 
 #include <bbcat-base/misc.h>
 #include <bbcat-base/ThreadLock.h>
+
 #include <bbcat-control/AudioObjectCursor.h>
 #include <bbcat-control/AudioObjectParameters.h>
 
@@ -51,6 +52,7 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   ADMObject(ADMData& _owner, const std::string& _id, const std::string& _name);
+  ADMObject(ADMData& _owner, const ADMObject *obj);
   virtual ~ADMObject() {}
 
   /*--------------------------------------------------------------------------------*/
@@ -263,6 +265,12 @@ protected:
   virtual bool Add(ADMAudioBlockFormat   *obj) {UNUSED_PARAMETER(obj); return false;}
 
   /*--------------------------------------------------------------------------------*/
+  /** Copy references from another object
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void CopyReferences(const ADMObject *obj) {UNUSED_PARAMETER(obj);}
+                              
+  /*--------------------------------------------------------------------------------*/
   /** Generate a textual reference 
    *
    * @param str string to be modified
@@ -327,6 +335,13 @@ protected:
   /*--------------------------------------------------------------------------------*/
   void SetTypeInfoInObject(ADMObject *obj) const;
 
+  /*--------------------------------------------------------------------------------*/
+  /** Copy a list of references from one ADM to this ADM
+   */
+  /*--------------------------------------------------------------------------------*/
+  template<typename T>
+  void CopyReferencesEx(std::vector<T *>& dst, const std::vector<T *>& src);
+
 protected:
   ADMData&     owner;
   std::string  id;
@@ -356,6 +371,8 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   ADMAudioProgramme(ADMData& _owner, const std::string& _id, const std::string& _name) : ADMObject(_owner, _id, _name) {Register();}
+  ADMAudioProgramme(ADMData& _owner, const ADMAudioProgramme *obj) : ADMObject(_owner, obj),
+                                                                     language(obj->language) {Register();}
   virtual ~ADMAudioProgramme() {}
   
   typedef std::vector<ADMAudioProgramme *> LIST;
@@ -433,6 +450,12 @@ public:
   /*--------------------------------------------------------------------------------*/
   virtual void GenerateReferenceList(std::string& str) const;
 
+  /*--------------------------------------------------------------------------------*/
+  /** Copy references from another object
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void CopyReferences(const ADMObject *obj);
+  
   // static type name
   static const std::string Type;
 
@@ -463,6 +486,8 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   ADMAudioContent(ADMData& _owner, const std::string& _id, const std::string& _name) : ADMObject(_owner, _id, _name) {Register();}
+  ADMAudioContent(ADMData& _owner, const ADMAudioContent *obj) : ADMObject(_owner, obj),
+                                                                 language(obj->language) {Register();}
   virtual ~ADMAudioContent() {}
 
   typedef std::vector<ADMAudioContent *> LIST;
@@ -540,6 +565,12 @@ public:
   /*--------------------------------------------------------------------------------*/
   virtual void GenerateReferenceList(std::string& str) const;
 
+  /*--------------------------------------------------------------------------------*/
+  /** Copy references from another object
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void CopyReferences(const ADMObject *obj);
+
   // static type name
   static const std::string Type;
 
@@ -570,6 +601,7 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   ADMAudioObject(ADMData& _owner, const std::string& _id, const std::string& _name);
+  ADMAudioObject(ADMData& _owner, const ADMAudioObject *obj);
   virtual ~ADMAudioObject() {}
 
   typedef std::vector<ADMAudioObject *> LIST;
@@ -776,6 +808,12 @@ public:
   virtual void ToJSON(json_spirit::mObject& obj) const;
 #endif
 
+  /*--------------------------------------------------------------------------------*/
+  /** Copy references from another object
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void CopyReferences(const ADMObject *obj);
+
   // static type name
   static const std::string Type;
 
@@ -820,6 +858,11 @@ public:
     trackNum(0),
     sampleRate(0),
     bitDepth(0) {Register();}
+  ADMAudioTrack(ADMData& _owner, const ADMAudioTrack *obj) :
+    ADMObject(_owner, obj),
+    trackNum(obj->trackNum),
+    sampleRate(obj->sampleRate),
+    bitDepth(obj->bitDepth) {Register();}
   virtual ~ADMAudioTrack() {}
   
   typedef std::vector<ADMAudioTrack *> LIST;
@@ -916,6 +959,12 @@ public:
   /*--------------------------------------------------------------------------------*/
   virtual void GenerateReferenceList(std::string& str) const;
 
+  /*--------------------------------------------------------------------------------*/
+  /** Copy references from another object
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void CopyReferences(const ADMObject *obj);
+
   // static type name
   static const std::string Type;
 
@@ -970,6 +1019,7 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   ADMAudioPackFormat(ADMData& _owner, const std::string& _id, const std::string& _name) : ADMObject(_owner, _id, _name) {Register();}
+  ADMAudioPackFormat(ADMData& _owner, const ADMAudioPackFormat *obj) : ADMObject(_owner, obj) {Register();}
   virtual ~ADMAudioPackFormat() {}
   
   typedef std::vector<ADMAudioPackFormat *> LIST;
@@ -1038,6 +1088,12 @@ public:
   /*--------------------------------------------------------------------------------*/
   virtual void GenerateReferenceList(std::string& str) const;
 
+  /*--------------------------------------------------------------------------------*/
+  /** Copy references from another object
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void CopyReferences(const ADMObject *obj);
+
   // static type name
   static const std::string Type;
 
@@ -1100,6 +1156,9 @@ public:
   /*--------------------------------------------------------------------------------*/
   ADMAudioStreamFormat(ADMData& _owner, const std::string& _id, const std::string& _name) : ADMObject(_owner, _id, _name),
                                                                                             formatLabel(0) {Register();}
+  ADMAudioStreamFormat(ADMData& _owner, const ADMAudioStreamFormat *obj) : ADMObject(_owner, obj),
+                                                                           formatLabel(obj->formatLabel),
+                                                                           formatDefinition(obj->formatDefinition) {Register();}
   virtual ~ADMAudioStreamFormat() {}
   
   typedef std::vector<ADMAudioStreamFormat *> LIST;
@@ -1194,6 +1253,12 @@ public:
   /*--------------------------------------------------------------------------------*/
   virtual void GenerateReferenceList(std::string& str) const;
 
+  /*--------------------------------------------------------------------------------*/
+  /** Copy references from another object
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void CopyReferences(const ADMObject *obj);
+
   // static type name
   static const std::string Type;
 
@@ -1258,6 +1323,7 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   ADMAudioChannelFormat(ADMData& _owner, const std::string& _id, const std::string& _name) : ADMObject(_owner, _id, _name) {Register();}
+  ADMAudioChannelFormat(ADMData& _owner, const ADMAudioChannelFormat *obj);
   virtual ~ADMAudioChannelFormat();
 
   typedef std::vector<ADMAudioChannelFormat *> LIST;
@@ -1381,6 +1447,9 @@ public:
   /*--------------------------------------------------------------------------------*/
   ADMAudioTrackFormat(ADMData& _owner, const std::string& _id, const std::string& _name) : ADMObject(_owner, _id, _name),
                                                                                            formatLabel(0) {Register();}
+  ADMAudioTrackFormat(ADMData& _owner, const ADMAudioTrackFormat *obj) : ADMObject(_owner, obj),
+                                                                         formatLabel(obj->formatLabel),
+                                                                         formatDefinition(obj->formatDefinition) {Register();}
   virtual ~ADMAudioTrackFormat() {}
   
   typedef std::vector<ADMAudioTrackFormat *> LIST;
@@ -1453,6 +1522,12 @@ public:
   /*--------------------------------------------------------------------------------*/
   virtual void GenerateReferenceList(std::string& str) const;
 
+  /*--------------------------------------------------------------------------------*/
+  /** Copy references from another object
+   */
+  /*--------------------------------------------------------------------------------*/
+  virtual void CopyReferences(const ADMObject *obj);
+
   // static type name
   static const std::string Type;
 
@@ -1511,6 +1586,7 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   ADMAudioBlockFormat();
+  ADMAudioBlockFormat(const ADMAudioBlockFormat *obj);
   virtual ~ADMAudioBlockFormat() {}
   
   typedef std::vector<ADMAudioBlockFormat *> LIST;
@@ -1644,6 +1720,19 @@ public:
   // static type id prefix
   static const std::string IDPrefix;
 
+protected:
+  /*--------------------------------------------------------------------------------*/
+  /** Add position information to list of XMLValues
+   *
+   * @param objvalues list of XMLValues to be appended to
+   * @param position position to encode
+   * @param bound bound attribute for position or NULL
+   *
+   * @note screenEdgeLock is encoded ONLY if bound == NULL
+   */
+  /*--------------------------------------------------------------------------------*/
+  void GetPositionValues(XMLValues& objvalues, const Position& position, const char *bound = NULL) const;
+  
 protected:
   AudioObjectParameters       objparameters;
   uint64_t                    rtime;

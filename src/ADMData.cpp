@@ -18,9 +18,65 @@ ADMData::ADMData() : puremode(defaultpuremode)
 {
 }
 
+ADMData::ADMData(const ADMData& obj) : puremode(defaultpuremode)
+{
+  Copy(obj);
+}
+
 ADMData::~ADMData()
 {
   Delete();
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Copy from another ADM
+ */
+/*--------------------------------------------------------------------------------*/
+void ADMData::Copy(const ADMData& obj)
+{
+  ADMOBJECTS_MAP::const_iterator it;
+
+  Delete();
+  
+  uniqueids = obj.uniqueids;
+  nonadmxml = obj.nonadmxml;
+  puremode  = obj.puremode;
+ 
+  // 1st pass: copy all objects
+  for (it = obj.admobjects.begin(); it != obj.admobjects.end(); ++it)
+  {
+    const ADMObject    *oldobj = it->second;
+    const std::string& type    = oldobj->GetType();
+    ADMObject *newobj = NULL;
+    
+    if      (type == ADMAudioProgramme::Type)     newobj = new ADMAudioProgramme(*this, dynamic_cast<const ADMAudioProgramme *>(oldobj));
+    else if (type == ADMAudioContent::Type)       newobj = new ADMAudioContent(*this, dynamic_cast<const ADMAudioContent *>(oldobj));
+    else if (type == ADMAudioObject::Type)        newobj = new ADMAudioObject(*this, dynamic_cast<const ADMAudioObject *>(oldobj));
+    else if (type == ADMAudioPackFormat::Type)    newobj = new ADMAudioPackFormat(*this, dynamic_cast<const ADMAudioPackFormat *>(oldobj));
+    else if (type == ADMAudioChannelFormat::Type) newobj = new ADMAudioChannelFormat(*this, dynamic_cast<const ADMAudioChannelFormat *>(oldobj));
+    else if (type == ADMAudioStreamFormat::Type)  newobj = new ADMAudioStreamFormat(*this, dynamic_cast<const ADMAudioStreamFormat *>(oldobj));
+    else if (type == ADMAudioTrackFormat::Type)   newobj = new ADMAudioTrackFormat(*this, dynamic_cast<const ADMAudioTrackFormat *>(oldobj));
+    else if (type == ADMAudioTrack::Type)         newobj = new ADMAudioTrack(*this, dynamic_cast<const ADMAudioTrack *>(oldobj));
+
+    if (newobj)
+    {
+      BBCDEBUG3(("Copied object %s successfully to %s", oldobj->ToString().c_str(), newobj->ToString().c_str()));
+    }
+  }
+
+  // 2nd pass: connect all references
+  for (it = obj.admobjects.begin(); it != obj.admobjects.end(); ++it)
+  {
+    ADMOBJECTS_MAP::iterator it2;
+
+    // use key for original list of objects to find equivalent object in new list
+    if ((it2 = admobjects.find(it->first)) != admobjects.end())
+    {
+      // duplicate references from original object (requires all objects to exist in new list)
+      it2->second->CopyReferences(it->second);
+    }
+    else BBCERROR("Failed to find copied object '%s' in new list", it->first.c_str());
+  }
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -43,6 +99,7 @@ void ADMData::Delete()
   admobjects.clear();
   tracklist.clear();
   uniqueids.clear();
+  nonadmxml.clear();
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -971,6 +1028,28 @@ const XMLValues *ADMData::GetNonADMXML(const std::string& node) const
   const XMLValues *values = NULL;
 
   if ((it = nonadmxml.find(node)) != nonadmxml.end()) values = &it->second;
+  
+  return values;
+}
+
+/*--------------------------------------------------------------------------------*/
+/** Create Non ADM XML
+ *
+ * @param node name of XML node to hang additional XML off (or empty for root node)
+ *
+ * @return a XMLValues structure to add additional XML to
+ *
+ * @note if node already exists, it will be returned without any creation
+ */
+/*--------------------------------------------------------------------------------*/
+XMLValues *ADMData::CreateNonADMXML(const std::string& node)
+{
+  std::map<std::string,XMLValues>::iterator it;
+  XMLValues *values = NULL;
+
+  // find or create
+  if ((it = nonadmxml.find(node)) != nonadmxml.end()) values = &it->second;
+  else                                                values = &nonadmxml[node];
   
   return values;
 }

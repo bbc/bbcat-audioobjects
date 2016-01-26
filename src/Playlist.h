@@ -56,7 +56,7 @@ public:
   /** Get whether looping of each file is enabled
    */
   /*--------------------------------------------------------------------------------*/
-  bool IsLoopFileEnabled() const {return loop_all;}
+  bool IsLoopFileEnabled() const {return loop_file;}
 
   /*--------------------------------------------------------------------------------*/
   /** Enable/disable autoplay of each file

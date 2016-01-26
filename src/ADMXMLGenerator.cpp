@@ -269,8 +269,13 @@ namespace ADMXMLGenerator
     if (xml.stack.size() && xml.opened)
     {
       const XMLValues *values;
+      std::string parentname = xml.stack[xml.stack.size() - 1];
 
-      if ((values = xml.adm->GetNonADMXML(xml.stack[xml.stack.size() - 1])) != NULL)
+      // for root node, use empty name
+      if ((parentname == "ebuCoreMain") ||
+          (parentname == "ituADM")) parentname = "";
+
+      if ((values = xml.adm->GetNonADMXML(parentname)) != NULL)
       {
         // extra data exists, add it
         AddXMLValues(xml, *values);
