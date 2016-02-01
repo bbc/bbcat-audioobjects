@@ -1690,7 +1690,11 @@ void ADMAudioBlockFormat::SetValues(XMLValues& values)
   uint64_t _time;
   
   if (values.SetValueTime(_time, "rtime"))    SetStartTime(_time);
-  if (values.SetValueTime(_time, "duration")) SetDuration(_time);
+  if (values.SetValueTime(_time, "duration"))
+  {
+    SetDuration(_time);
+    objparameters.SetInterpolationTime(_time);
+  }
 
   for (it = values.begin(); it != values.end();)
   {
