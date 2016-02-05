@@ -4,8 +4,8 @@
 #include <vector>
 
 #include <bbcat-base/misc.h>
-#include <bbcat-control/AudioObjectCursor.h>
 #include "ADMData.h"
+#include <bbcat-control/AudioObjectCursor.h>
 
 #include "SoundFileAttributes.h"
 

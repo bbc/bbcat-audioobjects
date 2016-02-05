@@ -122,7 +122,7 @@ public:
   /** Return number of objects in playlist
    */
   /*--------------------------------------------------------------------------------*/
-  uint_t GetCount() const {return list.size();}
+  uint_t GetCount() const {return (uint_t)list.size();}
 
   /*--------------------------------------------------------------------------------*/
   /** Return current playback position (in samples)

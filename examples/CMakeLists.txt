@@ -22,8 +22,8 @@ set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${INSTALL_CMAKE_DIR})
 if(MSVC)
 	# enable /bigobj so Visual Studio doesn't whinge
     SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /bigobj")
-	# stop unsafe warnings and ensure STL is exported
-	ADD_DEFINITIONS("-D_CRT_SECURE_NO_WARNINGS -D_WINSOCK_DEPRECATED_NO_WARNINGS -DEXP_STL")
+	# stop unsafe warnings, ensure STL is exported and prevent std::min()/std::max() causing errors
+	ADD_DEFINITIONS("-D_CRT_SECURE_NO_WARNINGS -D_WINSOCK_DEPRECATED_NO_WARNINGS -DEXP_STL -DNOMINMAX")
 endif()
 
 # TBD: Switch between GNU compiler and clang on Linux platforms
@@ -87,8 +87,14 @@ TARGET_LINK_LIBRARIES(udp-demo bbcat-base)
 ADD_EXECUTABLE(load-xml load-xml.cpp)
 TARGET_LINK_LIBRARIES(load-xml bbcat-base bbcat-dsp bbcat-control bbcat-audioobjects)
 
+ADD_EXECUTABLE(map-adm-bwf map-adm-bwf.cpp)
+TARGET_LINK_LIBRARIES(map-adm-bwf bbcat-base bbcat-dsp bbcat-control bbcat-audioobjects)
+
 ADD_EXECUTABLE(modify-adm-bwf modify-adm-bwf.cpp)
 TARGET_LINK_LIBRARIES(modify-adm-bwf bbcat-base bbcat-dsp bbcat-control bbcat-audioobjects)
+
+ADD_EXECUTABLE(play-metadata play-metadata.cpp)
+TARGET_LINK_LIBRARIES(play-metadata bbcat-base bbcat-dsp bbcat-control bbcat-audioobjects)
 
 set(GLOBAL_FLAGS
 	${BBCAT_AUDIOOBJECTS_FLAGS})

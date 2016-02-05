@@ -62,7 +62,7 @@ bool RIFFFile::ReadChunks(uint64_t maxlength)
         {
           maxlength = ds64->GetRIFFSize();
 
-          BBCDEBUG2(("Updated RIFF size to %lu bytes", (ulong_t)maxlength));
+          BBCDEBUG2(("Updated RIFF size to %s bytes", StringFrom(maxlength).c_str()));
         }
       }
 
@@ -201,7 +201,7 @@ bool RIFFFile::Create(const char *filename, uint32_t samplerate, uint_t nchannel
             {
               // tell ds64 chunk the maximum number of chunks that might need a table entry
               // this can be calculated from the number of chunks created
-              ds64->SetTableCount(chunklist.size() - 5);        // none of the above chunks need a table entry (RIFF and data chunks have dedicated entries in the ds64 chunk)
+              ds64->SetTableCount((uint32_t)chunklist.size() - 5);        // none of the above chunks need a table entry (RIFF and data chunks have dedicated entries in the ds64 chunk)
             }
 
             WriteChunks(false);
@@ -256,7 +256,7 @@ void RIFFFile::WriteChunks(bool closing)
     // write chunk if it can be (ALL chunks are re-written on close anyway)
     if ((chunk->GetID() != data_ID) && chunk->WriteChunkBeforeSamples())
     {
-      BBCDEBUG2(("%s: %s chunk '%s' size %lu bytes at %lu (actually %lu bytes)", closing ? "Closing" : "Creating", chunk->WriteThisChunk() ? "Writing" : "SKIPPING", chunk->GetName(), (ulong_t)chunk->GetLength(), (ulong_t)file->ftell(), (ulong_t)chunk->GetLengthOnFile()));
+      BBCDEBUG2(("%s: %s chunk '%s' size %s bytes at %s (actually %s bytes)", closing ? "Closing" : "Creating", chunk->WriteThisChunk() ? "Writing" : "SKIPPING", chunk->GetName(), StringFrom(chunk->GetLength()).c_str(), StringFrom(file->ftell()).c_str(), StringFrom(chunk->GetLengthOnFile()).c_str()));
       chunk->WriteChunk(file);
     }
   }
@@ -264,7 +264,7 @@ void RIFFFile::WriteChunks(bool closing)
   // now write (proto) data chunk
   if ((chunk = GetChunk(data_ID)) != NULL)
   {
-    BBCDEBUG2(("%s: %s chunk '%s' size %lu bytes at %lu (actually %lu bytes)", closing ? "Closing" : "Creating", chunk->WriteThisChunk() ? "Writing" : "SKIPPING", chunk->GetName(), (ulong_t)chunk->GetLength(), (ulong_t)file->ftell(), (ulong_t)chunk->GetLengthOnFile()));
+    BBCDEBUG2(("%s: %s chunk '%s' size %s bytes at %s (actually %s bytes)", closing ? "Closing" : "Creating", chunk->WriteThisChunk() ? "Writing" : "SKIPPING", chunk->GetName(), StringFrom(chunk->GetLength()).c_str(), StringFrom(file->ftell()).c_str(), StringFrom(chunk->GetLengthOnFile()).c_str()));
     chunk->WriteChunk(file);
   }
 
@@ -277,7 +277,7 @@ void RIFFFile::WriteChunks(bool closing)
 
       if ((chunk->GetID() != data_ID) && !chunk->WriteChunkBeforeSamples())
       {
-        BBCDEBUG2(("%s: %s chunk '%s' size %lu bytes at %lu (actually %lu bytes)", closing ? "Closing" : "Creating", chunk->WriteThisChunk() ? "Writing" : "SKIPPING", chunk->GetName(), (ulong_t)chunk->GetLength(), (ulong_t)file->ftell(), (ulong_t)chunk->GetLengthOnFile()));
+        BBCDEBUG2(("%s: %s chunk '%s' size %s bytes at %s (actually %s bytes)", closing ? "Closing" : "Creating", chunk->WriteThisChunk() ? "Writing" : "SKIPPING", chunk->GetName(), StringFrom(chunk->GetLength()).c_str(), StringFrom(file->ftell()).c_str(), StringFrom(chunk->GetLengthOnFile()).c_str()));
         chunk->WriteChunk(file);
       }
     }
@@ -329,7 +329,7 @@ void RIFFFile::Close(bool abortwrite)
         {
           bytes = chunk->GetLengthOnFile();
 
-          BBCDEBUG3(("Chunk '%s' has length %lu bytes", chunk->GetName(), (ulong_t)bytes));
+          BBCDEBUG3(("Chunk '%s' has length %s bytes", chunk->GetName(), StringFrom(bytes).c_str()));
           totalbytes += bytes;
         }
 
@@ -367,7 +367,7 @@ void RIFFFile::Close(bool abortwrite)
         }
       }
 
-      BBCDEBUG3(("Total size %lu bytes", (ulong_t)totalbytes));
+      BBCDEBUG3(("Total size %s bytes", StringFrom(totalbytes).c_str()));
 
       // set total length of RIFF chunk
       chunkmap[RIFF_ID]->CreateChunkData(NULL, totalbytes);

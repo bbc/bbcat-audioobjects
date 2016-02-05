@@ -35,7 +35,7 @@ public:
    * @note this requires facilities from a derived class
    */
   /*--------------------------------------------------------------------------------*/
-  bool Set(const uint8_t *chna, uint_t chnalength, const char *axml);
+  bool Set(const uint8_t *chna, uint64_t chnalength, const char *axml);
 
   /*--------------------------------------------------------------------------------*/
   /** Read ADM data from the chna RIFF chunk
@@ -46,7 +46,7 @@ public:
    * @return true if data read successfully
    */
   /*--------------------------------------------------------------------------------*/
-  bool SetChna(const uint8_t *data, uint_t len);
+  bool SetChna(const uint8_t *data, uint64_t len);
 
   /*--------------------------------------------------------------------------------*/
   /** Read ADM data from the axml RIFF chunk

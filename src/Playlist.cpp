@@ -134,7 +134,7 @@ uint_t Playlist::GetMaxOutputChannels() const
   {
     uint_t file_channels = list[i]->GetChannels();
 
-    channels = MAX(channels, file_channels);
+    channels = std::max(channels, file_channels);
   }
 
   return channels;
@@ -164,13 +164,13 @@ bool Playlist::SetPlaybackPosition(uint64_t pos, bool force)
   ThreadLock lock(tlock);
   bool success = false;
 
-  pos = MIN(pos, playlistlength);
+  pos = std::min(pos, playlistlength);
 
   if (!Empty())
   {
     if (force || pause)
     {
-      BBCDEBUG2(("Warning: forcing move to %lu", (ulong_t)pos));
+      BBCDEBUG2(("Warning: forcing move to %s", StringFrom(pos).c_str()));
       
       // clear fade down
       fadedowncount = 0;
@@ -188,7 +188,7 @@ bool Playlist::SetPlaybackPosition(uint64_t pos, bool force)
     else
     {
       // fade down first
-      BBCDEBUG2(("Set new position request for position %lu samples", (ulong_t)pos));
+      BBCDEBUG3(("Set new position request for position %s samples", StringFrom(pos).c_str()));
 
       // start fade down
       fadedowncount  = fadesamples;
@@ -212,10 +212,10 @@ bool Playlist::SetPlaybackPositionEx(uint64_t pos)
   bool success = false;
 
   // if looping is enabled, do not allow movement beyond last sample of playlist
-  uint64_t len = loop_all ? subz<>(playlistlength, (uint64_t)1) : playlistlength;
+  uint64_t len = loop_all ? limited::subz(playlistlength, (uint64_t)1) : playlistlength;
 
   // limit position
-  pos = MIN(pos, len); 
+  pos = std::min(pos, len); 
             
   // move back if necessary
   while ((it != list.begin()) && (pos < filestartpos))
@@ -249,7 +249,7 @@ bool Playlist::SetPlaybackPositionEx(uint64_t pos)
 /*--------------------------------------------------------------------------------*/
 uint_t Playlist::GetPlaybackIndex() const
 {
-  return it - list.begin();
+  return (uint_t)(it - list.begin());
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -260,7 +260,7 @@ uint_t Playlist::GetPlaybackIndex() const
 /*--------------------------------------------------------------------------------*/
 uint_t Playlist::GetPlaybackCount() const
 {
-  return subz<>((uint_t)list.size(), 1U);
+  return limited::subz((uint_t)list.size(), 1U);
 }
   
 /*--------------------------------------------------------------------------------*/
@@ -281,7 +281,7 @@ bool Playlist::SetPlaybackIndex(uint_t index, bool force)
     uint64_t pos = 0;
     uint_t   i;
 
-    index = MIN(index, GetPlaybackCount());
+    index = std::min(index, GetPlaybackCount());
 
     // find position of start of specified file
     for (i = 0; i < index; i++)
@@ -289,7 +289,7 @@ bool Playlist::SetPlaybackIndex(uint_t index, bool force)
       pos += list[i]->GetSampleLength();
     }
 
-    BBCDEBUG2(("SetPlaybackIndex %u pos %lu", index, (ulong_t)pos));
+    BBCDEBUG2(("SetPlaybackIndex %u pos %s", index, StringFrom(pos).c_str()));
   
     // now just request change of position
     success = SetPlaybackPosition(pos, force);
@@ -358,7 +358,7 @@ uint_t Playlist::ReadSamples(Sample_t *dst, uint_t channel, uint_t channels, uin
         BBCDEBUG3(("Fading down: %u frames left, coeff %0.3f", fadedowncount, (Sample_t)(fadedowncount - 1) / (Sample_t)fadesamples));
 
         // fading down, limit to fadedowncount and fade after reading
-        nread = file->ReadSamples(dst, channel, channels, MIN(frames, fadedowncount));
+        nread = file->ReadSamples(dst, channel, channels, std::min(frames, fadedowncount));
         BBCDEBUG3(("Read %u/%u/%u frames from file (fadedown)", nread, frames, fadedowncount));
 
         // fade read audio
@@ -376,7 +376,7 @@ uint_t Playlist::ReadSamples(Sample_t *dst, uint_t channel, uint_t channels, uin
       }
       else if (positionchange)
       {
-        BBCDEBUG3(("Changing position to %lu samples", (ulong_t)newposition));
+        BBCDEBUG3(("Changing position to %s samples", StringFrom(newposition).c_str()));
 
         // actually set the new position now that audio is faded down
         SetPlaybackPositionEx(newposition);
@@ -397,7 +397,7 @@ uint_t Playlist::ReadSamples(Sample_t *dst, uint_t channel, uint_t channels, uin
         BBCDEBUG3(("Fading up: %u frames left, coeff %0.3f", fadeupcount, (Sample_t)(fadesamples - fadeupcount) / (Sample_t)fadesamples));
 
         // fading up, limit to fadeupcount and fade after reading
-        nread = file->ReadSamples(dst, channel, channels, MIN(frames, fadeupcount));
+        nread = file->ReadSamples(dst, channel, channels, std::min(frames, fadeupcount));
         BBCDEBUG3(("Read %u/%u/%u frames from file (fadeup)", nread, frames, fadeupcount));
 
         // fade read audio

@@ -91,6 +91,8 @@ examples/play-metadata.cpp              | Example of reading in an XML file and 
 
 examples/modify-adm-bwf.cpp             | Example of reading an ADM BWF file, copying and modifying the ADM (adding arbitrary XML) and writing it to a new file along with the original audio
 
+examples/map-adm-bwf.cpp				| Uses dot to generate an SVG map of the ADM of a BWF file
+
 --------------------------------------------------------------------------------
 Building on Windows (Visual Studio)
 

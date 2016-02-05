@@ -6,9 +6,9 @@
 
 #define BBCDEBUG_LEVEL 1
 #include <bbcat-base/EnhancedFile.h>
+#include "ADMXMLGenerator.h"
 
 #include "XMLADMData.h"
-#include "ADMXMLGenerator.h"
 #include "RIFFChunk_Definitions.h"
 
 // currently the chna chunk is specified as having either 32 or 2048 entries for tracks
@@ -105,10 +105,10 @@ bool XMLADMData::LoadStandardDefinitions(const std::string& filename)
  * @return true if data read successfully
  */
 /*--------------------------------------------------------------------------------*/
-bool XMLADMData::SetChna(const uint8_t *data, uint_t len)
+bool XMLADMData::SetChna(const uint8_t *data, uint64_t len)
 {
   const CHNA_CHUNK& chna = *(const CHNA_CHUNK *)data;
-  uint_t maxuids = (len - sizeof(CHNA_CHUNK)) / sizeof(chna.UIDs[0]);   // calculate maximum number of UIDs given chunk length
+  uint_t maxuids = (uint_t)((len - sizeof(CHNA_CHUNK)) / sizeof(chna.UIDs[0]));   // calculate maximum number of UIDs given chunk length
   std::string terminator;
   bool success = true;
 
@@ -340,7 +340,7 @@ bool XMLADMData::ReadXMLFromFile(const std::string& filename)
 
       delete[] buffer;
     }
-    else BBCERROR("Failed to allocate %lu chars for file '%s'", (ulong_t)(len + 1), filename.c_str());
+    else BBCERROR("Failed to allocate %s chars for file '%s'", StringFrom(len + 1).c_str(), filename.c_str());
 
     fp.fclose();
   }
@@ -359,7 +359,7 @@ bool XMLADMData::ReadXMLFromFile(const std::string& filename)
  * @return true if data read successfully
  */
 /*--------------------------------------------------------------------------------*/
-bool XMLADMData::Set(const uint8_t *chna, uint_t chnalength, const char *axml)
+bool XMLADMData::Set(const uint8_t *chna, uint64_t chnalength, const char *axml)
 {
   return (SetChna(chna, chnalength) && SetAxml(axml));
 }
@@ -375,7 +375,7 @@ bool XMLADMData::Set(const uint8_t *chna, uint_t chnalength, const char *axml)
 uint8_t *XMLADMData::GetChna(uint64_t& len) const
 {
   CHNA_CHUNK *p = NULL;
-  uint_t nuids = tracklist.size();
+  uint_t nuids = (uint_t)tracklist.size();
 
 #if CHNA_FIXED_UIDS_LOWER > 0
   nuids = (nuids <= CHNA_FIXED_UIDS_LOWER) ? CHNA_FIXED_UIDS_LOWER : CHNA_FIXED_UIDS_UPPER;

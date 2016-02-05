@@ -110,8 +110,7 @@ void TinyXMLADMData::ParseHeader(ADMHEADER& header, const std::string& type, voi
   const TiXmlAttribute *attr; 
 
   header.type = type;
-  header.id   = "";
-  Printf(header.id, "%08lx", (ulong_t)GetNanosecondTicks());
+  header.id   = StringFrom(GetNanosecondTicks(), "016x");
   
   for (attr = node->ToElement()->FirstAttribute(); attr; attr = attr->Next())
   {

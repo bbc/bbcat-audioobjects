@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
           // read samples (start channel and interleaving are handled by handler)
           while ((handler.GetSamplePosition() < 16384) && ((n = handler.ReadSamples(&samples[0], 0, handler.GetChannels(), nsamples)) > 0))     // arbitrary stop point of 16384!
           {
-            printf("%u/%u sample frames read, sample position %lu/%lu\n", n, nsamples, (ulong_t)handler.GetSamplePosition(), (ulong_t)handler.GetSampleLength());
+            printf("%u/%u sample frames read, sample position %s/%s\n", n, nsamples, StringFrom(handler.GetSamplePosition()).c_str(), StringFrom(handler.GetSampleLength()).c_str());
           }
         }
       }

@@ -71,8 +71,8 @@ public:
   uint64_t GetAbsoluteSamplePosition()   const {return clip.start + samplepos;}
   uint64_t GetAbsoluteSampleLength()     const {return clip.start + clip.nsamples;}
 
-  void     SetSamplePosition(uint64_t pos)         {samplepos = MIN(pos, clip.nsamples); UpdatePosition();}
-  void     SetAbsoluteSamplePosition(uint64_t pos) {samplepos = LIMIT(pos, clip.start, clip.start + clip.nsamples) - clip.start; UpdatePosition();}
+  void     SetSamplePosition(uint64_t pos)         {samplepos = std::min(pos, clip.nsamples); UpdatePosition();}
+  void     SetAbsoluteSamplePosition(uint64_t pos) {samplepos = limited::limit(pos, clip.start, clip.start + clip.nsamples) - clip.start; UpdatePosition();}
 
   uint64_t GetPositionNS()              const {return timebase.Calc(GetSamplePosition());}
   double   GetPositionSeconds()         const {return timebase.CalcSeconds(GetSamplePosition());}

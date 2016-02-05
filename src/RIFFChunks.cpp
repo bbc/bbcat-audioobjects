@@ -278,7 +278,7 @@ void RIFFds64Chunk::SetTableCount(uint32_t count)
       memset(newdata, 0, newlength);
 
       // copy over old data
-      memcpy(newdata, data, MIN(length, newlength));
+      memcpy(newdata, data, std::min(length, newlength));
       delete[] data;
 
       data   = newdata;
@@ -380,7 +380,7 @@ uint64_t RIFFds64Chunk::GetChunkSize(uint32_t id, uint64_t original_length) cons
       }
     }
 
-    if (length != original_length) BBCDEBUG2(("Updated chunk size of 0x%08lx to %lu bytes", (ulong_t)id, (ulong_t)length));
+    if (length != original_length) BBCDEBUG2(("Updated chunk size of 0x%08lx to %s bytes", (ulong_t)id, StringFrom(length).c_str()));
   }
 
   return length;
@@ -417,7 +417,7 @@ void RIFFfmtChunk::ByteSwapData(bool writing)
     BYTESWAP_VAR(chunk.BlockAlign);
     BYTESWAP_VAR(chunk.BitsPerSample);
 
-    if ((chunk.Format == WAVE_FORMAT_EXTENSIBLE) && (length >= sizeof(WAVEFORMAT_EXTENSIBLE_CHUNK)))
+    if ((chunk.Format == BBCAT_WAVE_FORMAT_EXTENSIBLE) && (length >= sizeof(WAVEFORMAT_EXTENSIBLE_CHUNK)))
     {
       WAVEFORMAT_EXTENSIBLE_CHUNK& exchunk = *(WAVEFORMAT_EXTENSIBLE_CHUNK *)data;
 
@@ -433,9 +433,9 @@ bool RIFFfmtChunk::ProcessChunkData()
   const WAVEFORMAT_CHUNK& chunk = *(const WAVEFORMAT_CHUNK *)data;
   bool success = false;
 
-  if ((chunk.Format == WAVE_FORMAT_PCM)  ||
-      (chunk.Format == WAVE_FORMAT_IEEE) ||
-      (chunk.Format == WAVE_FORMAT_EXTENSIBLE))
+  if ((chunk.Format == BBCAT_WAVE_FORMAT_PCM)  ||
+      (chunk.Format == BBCAT_WAVE_FORMAT_IEEE) ||
+      (chunk.Format == BBCAT_WAVE_FORMAT_EXTENSIBLE))
   {
     // cannot handle anything other that PCM samples
     const WAVEFORMAT_EXTENSIBLE_CHUNK& exchunk = *(const WAVEFORMAT_EXTENSIBLE_CHUNK *)data;
@@ -443,13 +443,13 @@ bool RIFFfmtChunk::ProcessChunkData()
 
     BBCDEBUG2(("Reading format data"));
 
-    if ((chunk.Format == WAVE_FORMAT_EXTENSIBLE) &&
+    if ((chunk.Format == BBCAT_WAVE_FORMAT_EXTENSIBLE) &&
         (length >= sizeof(exchunk))   &&
         (exchunk.ExtensionSize >= 22) &&
         (exchunk.Samples.ValidBitsPerSample > 0))
     {
       // explicit bits per sample specified by exchunk
-      _bitspersample = MIN(_bitspersample, exchunk.Samples.ValidBitsPerSample);
+      _bitspersample = std::min(_bitspersample, (uint_t)exchunk.Samples.ValidBitsPerSample);
     }
 
     // set parameters within SoundFormat according to data from this chunk
@@ -457,7 +457,7 @@ bool RIFFfmtChunk::ProcessChunkData()
     SetChannels(chunk.Channels);
 
     // best guess at sample data format
-    if (chunk.Format == WAVE_FORMAT_IEEE)
+    if (chunk.Format == BBCAT_WAVE_FORMAT_IEEE)
     {
       SetSampleFormat((_bitspersample == 32) ? SampleFormat_Float : SampleFormat_Double);
     }
@@ -495,7 +495,7 @@ bool RIFFfmtChunk::CreateWriteData()
 
     memset(&chunk, 0, sizeof(chunk));
 
-    chunk.Format         = RANGE(format, _SampleFormat_Float_First, _SampleFormat_Float_Last) ? WAVE_FORMAT_IEEE : WAVE_FORMAT_PCM;
+    chunk.Format         = limited::inrange(format, _SampleFormat_Float_First, _SampleFormat_Float_Last) ? BBCAT_WAVE_FORMAT_IEEE : BBCAT_WAVE_FORMAT_PCM;
     chunk.SampleRate     = samplerate;
     chunk.Channels       = channels;
     chunk.BytesPerSecond = samplerate * channels * bytespersample;

@@ -167,7 +167,7 @@ public:
    * @return chunk count
    */
   /*--------------------------------------------------------------------------------*/
-  uint_t GetChunkCount() const {return chunklist.size();}
+  uint_t GetChunkCount() const {return (uint_t)chunklist.size();}
 
   /*--------------------------------------------------------------------------------*/
   /** Return chunk at specifiec index

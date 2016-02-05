@@ -225,16 +225,16 @@ void ADMRIFFFile::Close(bool abortwrite)
       // first, calculate size of ADM (to save lots of memory allocations)
       uint64_t admlen = adm->GetAxmlBuffer(NULL, 0);
 
-      BBCDEBUG1(("ADM size is %lu bytes", (ulong_t)admlen));
+      BBCDEBUG1(("ADM size is %s bytes", StringFrom(admlen).c_str()));
       
       // allocate chunk data
       if (chunk->CreateChunkData(admlen))
       {
         // finally, generate XML into buffer
         uint64_t admlen1 = adm->GetAxmlBuffer(chunk->GetDataWritable(), admlen);
-        if (admlen1 != admlen) BBCERROR("Generating axml data for real resulted in different size (%lu vs %lu)", (ulong_t)admlen1, (ulong_t)admlen);
+        if (admlen1 != admlen) BBCERROR("Generating axml data for real resulted in different size (%s vs %s)", StringFrom(admlen1).c_str(), StringFrom(admlen).c_str());
       }
-      else BBCERROR("Failed to allocate %lu bytes for axml data", (ulong_t)admlen);
+      else BBCERROR("Failed to allocate %s bytes for axml data", StringFrom(admlen).c_str());
     }
     else BBCERROR("Failed to add axml chunk");
   }
@@ -425,7 +425,7 @@ bool ADMRIFFFile::PostReadChunks()
         // set default time limits on audio object
         if (object && filesamples)
         {
-          BBCDEBUG("Setting duration to %luns", (ulong_t)filesamples->GetLengthNS());
+          BBCDEBUG("Setting duration to %sns", StringFrom(filesamples->GetLengthNS()).c_str());
           object->SetDuration(filesamples->GetLengthNS());
         }
       }

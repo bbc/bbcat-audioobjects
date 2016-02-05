@@ -10,6 +10,8 @@ write-separate-adm.cpp - example code for creation of a simple ADM and then writ
 
 load-xml.cpp - example code for loading ADM xml and chna chunks in directly
 
+map-adm-bwf.cpp - use dot to generate an SVG map of the ADM of a BWF file
+
 udp-demo.cpp - example of using UDP port, threading and a lock-free buffer
 
 play-metadata.cpp - example of reading in an XML file and displaying the metadata over time

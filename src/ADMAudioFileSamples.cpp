@@ -10,7 +10,7 @@ ADMAudioFileSamples::ADMAudioFileSamples(const SoundFileSamples *isamples, const
 
   // save initial limits of channels and time
   initialclip = GetClip();
-  BBCDEBUG2(("Initial clip is %lu for %lu, tracks %u for %u", (ulong_t)initialclip.start, (ulong_t)initialclip.nsamples, initialclip.channel, initialclip.nchannels));
+  BBCDEBUG2(("Initial clip is %s for %s, tracks %u for %u", StringFrom(initialclip.start).c_str(), StringFrom(initialclip.nsamples).c_str(), initialclip.channel, initialclip.nchannels));
 
   for (i = 0; i < n; i++)
   {
@@ -26,7 +26,7 @@ ADMAudioFileSamples::ADMAudioFileSamples(const ADMAudioFileSamples *isamples) : 
 
   // save initial limits of channels and time
   initialclip = GetClip();
-  BBCDEBUG2(("Initial clip is %lu for %lu, tracks %u for %u", (ulong_t)initialclip.start, (ulong_t)initialclip.nsamples, initialclip.channel, initialclip.nchannels));
+  BBCDEBUG2(("Initial clip is %s for %s, tracks %u for %u", StringFrom(initialclip.start).c_str(), StringFrom(initialclip.nsamples).c_str(), initialclip.channel, initialclip.nchannels));
 
   for (i = 0; i < isamples->cursors.size(); i++)
   {
@@ -66,28 +66,28 @@ bool ADMAudioFileSamples::Add(const ADMAudioObject *obj)
           endTime   = startTime + obj->GetDuration();
         }
 
-        BBCDEBUG2(("Add object from %lu to %lu on track %u...", (ulong_t)startTime, (ulong_t)endTime, cursor->GetChannel() + 1));
+        BBCDEBUG2(("Add object from %s to %s on track %u...", StringFrom(startTime).c_str(), StringFrom(endTime).c_str(), cursor->GetChannel() + 1));
 
         if (endTime > startTime)
         {
           if (objects.size() == 0)
           {
             // first object brings the audio time limits INWARDS to that of the object
-            startTime = MAX(startTime, initialclip.start);
-            endTime   = MIN(endTime,   initialclip.start + initialclip.nsamples);
+            startTime = std::max(startTime, initialclip.start);
+            endTime   = std::min(endTime,   initialclip.start + initialclip.nsamples);
           }
           else
           {
             // subsequent objects push the audio time limits OUTWARDS to that of the object (keeping within the original clip)
-            startTime = MIN(startTime, MAX(clip.start, initialclip.start));
-            endTime   = MAX(endTime,   MIN(clip.start + clip.nsamples, initialclip.start + initialclip.nsamples));
+            startTime = std::min(startTime, std::max(clip.start, initialclip.start));
+            endTime   = std::max(endTime,   std::min(clip.start + clip.nsamples, initialclip.start + initialclip.nsamples));
           }
         }
 
         clip.start    = startTime;
         clip.nsamples = endTime - startTime,
 
-        BBCDEBUG2(("...clip now from %lu to %lu", (ulong_t)startTime, (ulong_t)endTime));
+        BBCDEBUG2(("...clip now from %s to %s", StringFrom(startTime).c_str(), StringFrom(endTime).c_str()));
 
         SetClip(clip);
 

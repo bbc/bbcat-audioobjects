@@ -3,6 +3,11 @@
 
 #include <bbcat-base/misc.h>
 
+#ifdef COMPILER_MSVC
+#pragma warning( push )
+#pragma warning( disable : 4200 )
+#endif
+
 BBC_AUDIOTOOLBOX_START
 
 typedef PACKEDSTRUCT
@@ -123,9 +128,12 @@ typedef PACKEDSTRUCT
   uint8_t      GUID[16];
 } WAVEFORMAT_EXTENSIBLE_CHUNK;
 
-#define WAVE_FORMAT_PCM        0x0001
-#define WAVE_FORMAT_IEEE       0x0003
-#define WAVE_FORMAT_EXTENSIBLE 0xfffe
+enum
+{
+  BBCAT_WAVE_FORMAT_PCM        = 0x0001,
+  BBCAT_WAVE_FORMAT_IEEE       = 0x0003,
+  BBCAT_WAVE_FORMAT_EXTENSIBLE = 0xfffe,
+};
 #define fmt_ID                 IFFID("fmt ")
 
 #define data_ID IFFID("data")
@@ -150,5 +158,9 @@ typedef PACKEDSTRUCT
 #define JUNK_ID IFFID("JUNK")
 
 BBC_AUDIOTOOLBOX_END
+
+#ifdef COMPILER_MSVC
+#pragma warning( pop )
+#endif
 
 #endif

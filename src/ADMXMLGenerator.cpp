@@ -118,7 +118,7 @@ namespace ADMXMLGenerator
     std::string str;
     Printf(str,
            "%s<%s",
-           CreateIndent(xml.indent, xml.ind_level + xml.stack.size()).c_str(),
+           CreateIndent(xml.indent, xml.ind_level + (uint_t)xml.stack.size()).c_str(),
            name.c_str());
 
     AppendXML(xml, str);
@@ -185,7 +185,7 @@ namespace ADMXMLGenerator
     }
     else
     {
-      if (xml.eollast) AppendXML(xml, CreateIndent(xml.indent, xml.ind_level + xml.stack.size() - 1));
+      if (xml.eollast) AppendXML(xml, CreateIndent(xml.indent, xml.ind_level + (uint_t)xml.stack.size() - 1));
 
       std::string str;
       Printf(str, "</%s>%s", xml.stack.back().c_str(), xml.eol.c_str());

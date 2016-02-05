@@ -4,8 +4,7 @@
 
 #include <bbcat-base/LoadedVersions.h>
 
-#include <bbcat-audioobjects/XMLADMData.h>
-#include <bbcat-audioobjects/RIFFFile.h>
+#include <bbcat-audioobjects/ADMRIFFFile.h>
 
 using namespace bbcat;
 

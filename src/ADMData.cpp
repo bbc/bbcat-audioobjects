@@ -517,7 +517,7 @@ uint_t ADMData::GetNextTrackNum() const
 
   for (i = 0; i < tracklist.size(); i++)
   {
-    trackNum = MAX(trackNum, tracklist[i]->GetTrackNum() + 1);
+    trackNum = std::max(trackNum, tracklist[i]->GetTrackNum() + 1);
   }
 
   BBCDEBUG3(("GetNextTrackNum with tracklist of %u items is %u", (uint_t)tracklist.size(), trackNum));
@@ -823,8 +823,8 @@ void ADMData::UpdateAudioObjectLimits()
           uint64_t bend   = blockformat->GetEndTime(audioobj);
 
           // update start and end times
-          start = first ? bstart : MIN(start, bstart);
-          end   = first ? bend   : MAX(end, bend);
+          start = first ? bstart : std::min(start, bstart);
+          end   = first ? bend   : std::max(end, bend);
 
           first = false;
         }
@@ -846,10 +846,10 @@ void ADMData::UpdateAudioObjectLimits()
       // if unable to move audio object, set the new start as the original start
       if (!canmove) start = originalstart;
 
-      BBCDEBUG2(("Updating object '%s' start %lu -> %lu end %lu -> %lu (canmove: %s)",
+      BBCDEBUG2(("Updating object '%s' start %s -> %s end %s -> %s (canmove: %s)",
               audioobj->GetName().c_str(),
-              (ulong_t)audioobj->GetStartTime(), (ulong_t)start,
-              (ulong_t)audioobj->GetEndTime(),   (ulong_t)end,
+              StringFrom(audioobj->GetStartTime()).c_str(), StringFrom(start).c_str(),
+              StringFrom(audioobj->GetEndTime()).c_str(),   StringFrom(end).c_str(),
               canmove ? "yes" : "no"));
 
       audioobj->SetStartTime(start);
@@ -859,7 +859,7 @@ void ADMData::UpdateAudioObjectLimits()
       {
         uint64_t diff = start - originalstart;
 
-        BBCDEBUG2(("Shifting all block formats by %lu", (ulong_t)diff));
+        BBCDEBUG2(("Shifting all block formats by %s", StringFrom(diff).c_str()));
 
         // modify every block format so that the first one starts at zero
         for (i = 0; i < list.size(); i++)

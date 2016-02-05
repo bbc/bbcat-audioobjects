@@ -87,12 +87,12 @@ void SoundFileSamples::SetFile(const RefCount<EnhancedFile>& file, uint64_t pos,
 void SoundFileSamples::SetClip(const Clip_t& newclip)
 {
   clip = newclip;
-  clip.start     = MIN(clip.start,     totalsamples);
-  clip.nsamples  = MIN(clip.nsamples,  totalsamples - clip.start);
-  clip.channel   = MIN(clip.channel,   format->GetChannels());
-  clip.nchannels = MIN(clip.nchannels, format->GetChannels() - clip.channel);
+  clip.start     = std::min(clip.start,     totalsamples);
+  clip.nsamples  = std::min(clip.nsamples,  totalsamples - clip.start);
+  clip.channel   = std::min(clip.channel,   format->GetChannels());
+  clip.nchannels = std::min(clip.nchannels, format->GetChannels() - clip.channel);
 
-  samplepos = MIN(samplepos, clip.nsamples);
+  samplepos = std::min(samplepos, clip.nsamples);
   UpdatePosition();
 }
 
@@ -103,35 +103,35 @@ uint_t SoundFileSamples::ReadSamples(uint8_t *buffer, SampleFormat_t type, uint_
 
   if (file && file->isopen() && samplebuffer)
   {
-    frames = MIN(frames, clip.nsamples - samplepos);
+    frames = (uint_t)std::min((uint64_t)frames, clip.nsamples - samplepos);
 
     if (!frames)
     {
-      BBCDEBUG3(("No sample data left (pos = %lu, nsamples = %lu)!", (ulong_t)samplepos, (ulong_t)clip.nsamples));
+      BBCDEBUG3(("No sample data left (pos = %s, nsamples = %s)!", StringFrom(samplepos).c_str(), StringFrom(clip.nsamples).c_str()));
     }
 
-    firstchannel = MIN(firstchannel, clip.nchannels);
-    nchannels    = MIN(nchannels,    clip.nchannels - firstchannel);
+    firstchannel = std::min(firstchannel, clip.nchannels);
+    nchannels    = std::min(nchannels,    clip.nchannels - firstchannel);
 
-    dstchannel   = MIN(dstchannel,   ndstchannels);
-    nchannels    = MIN(nchannels,    ndstchannels - dstchannel);
+    dstchannel   = std::min(dstchannel,   ndstchannels);
+    nchannels    = std::min(nchannels,    ndstchannels - dstchannel);
 
     n = 0;
     if (nchannels)
     {
       while (frames)
       {
-        uint_t nframes = MIN(frames, samplebufferframes);
+        uint_t nframes = std::min(frames, samplebufferframes);
         size_t res;
 
-        BBCDEBUG4(("Seeking to %lu", (ulong_t)(filepos + (clip.start + samplepos) * format->GetBytesPerFrame())));
+        BBCDEBUG4(("Seeking to %s", StringFrom(filepos + (clip.start + samplepos) * format->GetBytesPerFrame()).c_str()));
         if (file->fseek(filepos + samplepos * format->GetBytesPerFrame(), SEEK_SET) == 0)
         {
           BBCDEBUG4(("Reading %u x %u bytes", nframes, format->GetBytesPerFrame()));
 
           if ((res = file->fread(samplebuffer, format->GetBytesPerFrame(), nframes)) > 0)
           {
-            nframes = res;
+            nframes = (uint_t)res;
 
             BBCDEBUG4(("Read %u frames, extracting channels %u-%u (from 0-%u), converting and copying to destination", nframes, clip.channel + firstchannel, clip.channel + firstchannel + nchannels, format->GetChannels()));
 
@@ -188,18 +188,18 @@ uint_t SoundFileSamples::WriteSamples(const uint8_t *buffer, SampleFormat_t type
   {
     uint_t bpf = format->GetBytesPerFrame();
 
-    firstchannel = MIN(firstchannel, clip.nchannels);
-    nchannels    = MIN(nchannels,    clip.nchannels - firstchannel);
+    firstchannel = std::min(firstchannel, clip.nchannels);
+    nchannels    = std::min(nchannels,    clip.nchannels - firstchannel);
 
-    srcchannel   = MIN(srcchannel,   nsrcchannels);
-    nchannels    = MIN(nchannels,    nsrcchannels - srcchannel);
+    srcchannel   = std::min(srcchannel,   nsrcchannels);
+    nchannels    = std::min(nchannels,    nsrcchannels - srcchannel);
 
     n = 0;
     if (nchannels)
     {
       while (nsrcframes)
       {
-        uint_t nframes = MIN(nsrcframes, samplebufferframes);
+        uint_t nframes = std::min(nsrcframes, samplebufferframes);
         size_t res;
 
         if (nchannels < format->GetChannels())
@@ -222,14 +222,14 @@ uint_t SoundFileSamples::WriteSamples(const uint8_t *buffer, SampleFormat_t type
 
         if ((res = file->fwrite(samplebuffer, bpf, nframes)) > 0)
         {
-          nframes     = res;
+          nframes     = (uint_t)res;
           n          += nframes;
           buffer     += nframes * nsrcchannels * GetBytesPerSample(type);
           nsrcframes -= nframes;
           samplepos  += nframes;
 
-          totalsamples  = MAX(totalsamples,  samplepos);
-          clip.nsamples = MAX(clip.nsamples, totalsamples - clip.start);
+          totalsamples  = std::max(totalsamples,  samplepos);
+          clip.nsamples = std::max(clip.nsamples, totalsamples - clip.start);
 
           totalbytes    = totalsamples * format->GetBytesPerFrame();
         }

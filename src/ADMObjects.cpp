@@ -673,7 +673,7 @@ void ADMAudioObject::SortTracks()
 {
   std::sort(trackrefs.begin(), trackrefs.end(), &ADMAudioTrack::Compare);
   starttrack = trackrefs[0]->GetTrackNum();
-  trackcount = trackrefs.size();
+  trackcount = (uint_t)trackrefs.size();
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -1509,8 +1509,8 @@ void ADMAudioChannelFormat::SortBlockFormats()
 /*--------------------------------------------------------------------------------*/
 bool ADMAudioChannelFormat::Add(ADMAudioBlockFormat *obj)
 {
-  uint_t n = blockformatrefs.size();
   uint64_t t = obj->GetStartTime();
+  uint_t   n = (uint_t)blockformatrefs.size();
 
   // insert obj into list ordered by time
 
@@ -1551,7 +1551,7 @@ bool ADMAudioChannelFormat::Add(ADMAudioBlockFormat *obj)
   {
     // start at the middle of the list and use a binary search
     uint_t inc = (n + 1) >> 1;      // round up division
-    uint_t pos = MIN(inc, n - 2);                                 // start in the middle but ensure the last position is never checked (no point)
+    uint_t pos = std::min(inc, n - 2);                                 // start in the middle but ensure the last position is never checked (no point)
     uint_t count = 0;
 
     // break out when the new object is between the current and next item
@@ -1568,7 +1568,7 @@ bool ADMAudioChannelFormat::Add(ADMAudioBlockFormat *obj)
         else            pos  = 0;
       }
       // else move forward by the increment, limiting to the end but one item
-      else pos = MIN(pos + inc, n - 2);
+      else pos = std::min(pos + inc, n - 2);
 
       count++;
     }
@@ -1695,7 +1695,7 @@ void ADMAudioBlockFormat::SetValues(XMLValues& values)
     SetDuration(_time);
     objparameters.SetInterpolationTime(_time);
   }
-
+  
   for (it = values.begin(); it != values.end();)
   {
     const XMLValue& value = *it;
@@ -2362,9 +2362,9 @@ uint64_t ADMTrackCursor::GetStartTime() const
 
     if (blockformats.size() > 0)
     {
-      BBCDEBUG3(("Object %u/%u start %lu BlockFormat %u/%u start %lu",
-                 0, (uint_t)objectlist.size(),   (ulong_t)objectdata.audioobject->GetStartTime(),
-                 0, (uint_t)blockformats.size(), (ulong_t)blockformats[0]->GetStartTime()));
+      BBCDEBUG3(("Object %u/%u start %s BlockFormat %u/%u start %s",
+                 0, objectlist.size(),   StringFrom(objectdata.audioobject->GetStartTime()).c_str(),
+                 0, blockformats.size(), StringFrom(blockformats[0]->GetStartTime()).c_str()));
             
       t = blockformats[0]->GetStartTime(objectdata.audioobject);
     }
@@ -2389,9 +2389,9 @@ uint64_t ADMTrackCursor::GetEndTime() const
 
     if (blockformats.size() > 0)
     {
-      BBCDEBUG3(("Object %u/%u start %lu BlockFormat %u/%u start %lu duration %lu",
-                 (uint_t)(objectlist.size() - 1),   (uint_t)objectlist.size(),   (ulong_t)objectdata.audioobject->GetStartTime(),
-                 (uint_t)(blockformats.size() - 1), (uint_t)blockformats.size(), (ulong_t)blockformats[0]->GetStartTime(), (ulong_t)blockformats[0]->GetDuration()));
+      BBCDEBUG3(("Object %u/%u start %s BlockFormat %u/%u start %s duration %s",
+                 (uint_t)(objectlist.size() - 1),   (uint_t)objectlist.size(),   StringFrom(objectdata.audioobject->GetStartTime()).c_str(),
+                 (uint_t)(blockformats.size() - 1), (uint_t)blockformats.size(), StringFrom(blockformats[0]->GetStartTime()).c_str(), StringFrom(blockformats[0]->GetDuration()).c_str()));
 
       t = blockformats[blockformats.size() - 1]->GetEndTime(objectdata.audioobject);
     }
@@ -2427,9 +2427,9 @@ const ADMAudioBlockFormat *ADMTrackCursor::GetBlockFormat() const
 AudioObject *ADMTrackCursor::GetAudioObject() const
 {
   ThreadLock lock(tlock);
-  AudioObject *obj = NULL;
+  ADMAudioObject *obj = NULL;
 
-  if ((objectindex < objectlist.size()) && RANGE(currenttime, objectlist[objectindex].audioobject->GetStartTime(), objectlist[objectindex].audioobject->GetEndTime()))
+  if ((objectindex < objectlist.size()) && limited::inrange(currenttime, objectlist[objectindex].audioobject->GetStartTime(), objectlist[objectindex].audioobject->GetEndTime()))
   {
     obj = const_cast<ADMAudioObject *>(objectlist[objectindex].audioobject);
   }
@@ -2470,7 +2470,7 @@ ADMAudioBlockFormat *ADMTrackCursor::StartBlockFormat(uint64_t t)
     blockformat->SetStartTime(t, objectdata.audioobject);
     objectdata.channelformat->Add(blockformat);
     
-    blockindex         = objectdata.channelformat->GetBlockFormatRefs().size() - 1;
+    blockindex         = (uint_t)(objectdata.channelformat->GetBlockFormatRefs().size() - 1);
     blockformatstarted = true;
 
     BBCDEBUG3(("Cursor<%s:%u>: Created new blockformat %u at %0.3lfs for object '%s', channelformat '%s'", StringFrom(this).c_str(), channel, blockindex, (double)t * 1.0e-9, objectdata.audioobject->ToString().c_str(), objectdata.channelformat->ToString().c_str()));
@@ -2598,7 +2598,7 @@ bool ADMTrackCursor::Seek(uint64_t t)
 
       // if the blockformat list is not empty, set the bockindex to the last one
       const std::vector<ADMAudioBlockFormat *>& blockformats = objectlist[objectindex].channelformat->GetBlockFormatRefs();
-      if (blockformats.size() > 0) blockindex = blockformats.size() - 1;
+      if (blockformats.size() > 0) blockindex = (uint_t)(blockformats.size() - 1);
     }
     while (((objectindex + 1) < objectlist.size()) && (t >= objectlist[objectindex + 1].audioobject->GetStartTime()))
     {

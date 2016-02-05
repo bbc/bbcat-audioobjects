@@ -23,7 +23,8 @@ int main(void)
   // print library versions (the actual loaded versions, if dynamically linked)
   printf("Versions:\n%s\n", LoadedVersions::Get().GetVersionsList().c_str());
 
-  XMLADMData *adm;  
+  XMLADMData *adm;
+  
   // create basic ADM
   if ((adm = XMLADMData::CreateADM()) != NULL)
   {

@@ -61,7 +61,7 @@ bool RIFFChunk::ReadChunk(EnhancedFile *file, const RIFFChunkSizeHandler *sizeha
     // save file position
     datapos = file->ftell();
 
-    BBCDEBUG2(("Chunk '%s' is %lu bytes long", GetName(), (ulong_t)length));
+    BBCDEBUG2(("Chunk '%s' is %s bytes long", GetName(), StringFrom(length).c_str()));
 
     // Process chunk
     switch (GetChunkHandling())
@@ -74,7 +74,7 @@ bool RIFFChunk::ReadChunk(EnhancedFile *file, const RIFFChunkSizeHandler *sizeha
         if (file->fseek(datapos + length + (length & align), SEEK_SET) == 0) success = true;
         else
         {
-          BBCERROR("Failed to seek to end of chunk '%s' (position %lu), error %s", GetName(), (ulong_t)(datapos + length), strerror(file->ferror()));
+          BBCERROR("Failed to seek to end of chunk '%s' (position %s), error %s", GetName(), StringFrom(datapos + length).c_str(), strerror(file->ferror()));
         }
                 
         break;
@@ -102,11 +102,11 @@ bool RIFFChunk::ReadChunk(EnhancedFile *file, const RIFFChunkSizeHandler *sizeha
         else
         {
           // failed to read data, skip over it for next chunk
-          BBCERROR("Failed to read %lu bytes of chunk '%s', error %s", (ulong_t)length, GetName(), strerror(file->ferror()));
+          BBCERROR("Failed to read %s bytes of chunk '%s', error %s", StringFrom(length).c_str(), GetName(), strerror(file->ferror()));
 
           if (file->fseek(datapos + length + (length & align), SEEK_SET) != 0)
           {
-            BBCERROR("Failed to seek to end of chunk '%s' (position %lu) (after chunk read failure), error %s", GetName(), (ulong_t)(datapos + length), strerror(file->ferror()));
+            BBCERROR("Failed to seek to end of chunk '%s' (position %s) (after chunk read failure), error %s", GetName(), StringFrom(datapos + length).c_str(), strerror(file->ferror()));
           }
         }
         break;
@@ -150,11 +150,11 @@ bool RIFFChunk::ReadData(EnhancedFile *file)
           }
           else success = true;
         }
-        else BBCERROR("Failed to read %lu bytes for chunk '%s' data, error %s", (ulong_t)length, GetName(), strerror(file->ferror()));
+        else BBCERROR("Failed to read %s bytes for chunk '%s' data, error %s", StringFrom(length).c_str(), GetName(), strerror(file->ferror()));
       }
-      else BBCERROR("Failed to seek to position %lu to read %lu bytes for chunk '%s' data, error %s", (ulong_t)datapos, (ulong_t)length, GetName(), strerror(file->ferror()));
+      else BBCERROR("Failed to seek to position %s to read %s bytes for chunk '%s' data, error %s", StringFrom(datapos).c_str(), StringFrom(length).c_str(), GetName(), strerror(file->ferror()));
     }
-    else BBCERROR("Failed to allocate %lu bytes for chunk '%s' data", (ulong_t)length, GetName());
+    else BBCERROR("Failed to allocate %s bytes for chunk '%s' data", StringFrom(length).c_str(), GetName());
   }
   else success = true;
 
@@ -177,7 +177,7 @@ bool RIFFChunk::WriteChunk(EnhancedFile *file)
   {
     // if chunk is marked as RIFF64, explicit store 0xffffffff as the length
     const uint32_t maxsize = RIFF_MaxSize;
-    uint32_t data[] = {GetWriteID(), (uint32_t)(riff64 ? maxsize : MIN(length, maxsize))};
+    uint32_t data[] = {GetWriteID(), (uint32_t)(riff64 ? maxsize : std::min(length, (uint64_t)maxsize))};
 
     // treat ID as big-endian, length is little-endian
     ByteSwap(data[0], SWAP_FOR_BE);

@@ -662,8 +662,8 @@ public:
   /** Set and Get endTime
    */
   /*--------------------------------------------------------------------------------*/
-  virtual void SetEndTime(uint64_t t) {duration = (t < ADMObject::MaxTime) ? subz<>(t, startTime) : 0;}
-  virtual uint64_t GetEndTime() const {return duration ? addm<>(startTime, duration) : ADMObject::MaxTime;}
+  virtual void SetEndTime(uint64_t t) {duration = (t < ADMObject::MaxTime) ? limited::subz(t, startTime) : 0;}
+  virtual uint64_t GetEndTime() const {return duration ? limited::addm(startTime, duration) : ADMObject::MaxTime;}
 
   /*--------------------------------------------------------------------------------*/
   /** Add reference to an AudioObject object
@@ -722,14 +722,14 @@ public:
    */
   /*--------------------------------------------------------------------------------*/
   uint_t GetDialogue() const     {return dialogue;}
-  void   SetDialogue(uint_t val) {dialogue = MIN(val, 2);}
+  void   SetDialogue(uint_t val) {dialogue = std::min(val, 2u);}
 
   /*--------------------------------------------------------------------------------*/
   /** Set importance value
    */
   /*--------------------------------------------------------------------------------*/
   uint_t GetImportance() const     {return importance;}
-  void   SetImportance(uint_t val) {importance = MIN(val, 10);}
+  void   SetImportance(uint_t val) {importance = std::min(val, 10u);}
 
   /*--------------------------------------------------------------------------------*/
   /** Set interact flag
@@ -1403,7 +1403,7 @@ public:
    * @return true if object valid
    */
   /*--------------------------------------------------------------------------------*/
-  virtual uint_t GetContainedObjectCount() const {return blockformatrefs.size();}
+  virtual uint_t GetContainedObjectCount() const {return (uint_t)blockformatrefs.size();}
   virtual bool   GetContainedObject(uint_t n, CONTAINEDOBJECT& object) const;
 
   // static type name
@@ -1637,8 +1637,8 @@ public:
    * @param obj audio object this block is being used with
    */
   /*--------------------------------------------------------------------------------*/
-  void SetStartTime(uint64_t t, const ADMAudioObject *obj = NULL) {SetRTime(obj ? subz<>(t, obj->GetStartTime()) : t);}
-  uint64_t GetStartTime(const ADMAudioObject *obj = NULL) const {return obj ? addm<>(obj->GetStartTime(), rtime) : rtime;}
+  void SetStartTime(uint64_t t, const ADMAudioObject *obj = NULL) {SetRTime(obj ? limited::subz(t, obj->GetStartTime()) : t);}
+  uint64_t GetStartTime(const ADMAudioObject *obj = NULL) const {return obj ? limited::addm(obj->GetStartTime(), rtime) : rtime;}
 
   /*--------------------------------------------------------------------------------*/
   /** Set and Get block end time (absolute)
@@ -1646,8 +1646,8 @@ public:
    * @param obj audio object this block is being used with
    */
   /*--------------------------------------------------------------------------------*/
-  void SetEndTime(uint64_t t, const ADMAudioObject *obj = NULL) {SetDuration((t < ADMObject::MaxTime) ? subz<>(t, GetStartTime(obj)) : 0);}
-  uint64_t GetEndTime(const ADMAudioObject *obj = NULL) const {return duration ? addm<>(GetStartTime(obj), duration) : ADMObject::MaxTime;}
+  void SetEndTime(uint64_t t, const ADMAudioObject *obj = NULL) {SetDuration((t < ADMObject::MaxTime) ? limited::subz(t, GetStartTime(obj)) : 0);}
+  uint64_t GetEndTime(const ADMAudioObject *obj = NULL) const {return duration ? limited::addm(GetStartTime(obj), duration) : ADMObject::MaxTime;}
 
   /*--------------------------------------------------------------------------------*/
   /** Return list of values/attributes from internal variables and list of referenced objects
