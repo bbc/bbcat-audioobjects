@@ -1,13 +1,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <algorithm>
 
 #include <bbcat-base/LoadedVersions.h>
 
 #include <bbcat-audioobjects/ADMRIFFFile.h>
-#include <bbcat-audioobjects/ADMAudioFileSamples.h>
 
 using namespace bbcat;
 
@@ -180,19 +180,15 @@ int main(int argc, char *argv[])
                     !obj2->IsStandardDefinition() ||
                     (objects.find(obj1) != objects.end()))
                 {
-                  bool link = false;
-
                   if (objects.find(obj1) == objects.end())
                   {
                     GenerateDisplay(lines, obj1);
                     objects[obj1] = true;
-                    link = true;
                   }
                   if (objects.find(obj2) == objects.end())
                   {
                     GenerateDisplay(lines, obj2);
                     objects[obj2] = true;
-                    link = true;
                   }
 
                   std::string line;
@@ -221,7 +217,7 @@ int main(int argc, char *argv[])
           printf("Creating SVG graph...\n");
           std::string cmd;
           Printf(cmd, "dot -Tsvg -o \"%s.svg\" -Gepsilon=1.0 -Gmaxiter=1000 \"%s.dot\"", argv[i], argv[i]);
-          system(cmd.c_str());
+          if (system(cmd.c_str()) != 0) fprintf(stderr, "Command '%s' failed\n", cmd.c_str());
         }
         else fprintf(stderr, "Failed to open file '%s' for writing\n", filename.c_str());
       }

@@ -4,7 +4,6 @@
 
 #include <bbcat-base/LoadedVersions.h>
 
-#include <bbcat-audioobjects/ADMObjects.h>
 #include <bbcat-audioobjects/XMLADMData.h>
 
 using namespace bbcat;
@@ -46,7 +45,7 @@ int main(int argc, char *argv[])
       {
         cursors.push_back(new ADMTrackCursor(i));
         cursors[i]->Add(adm->GetAudioObjectList());
-        maxtime = MAX(maxtime, cursors[i]->GetEndTime());
+        maxtime = std::max(maxtime, cursors[i]->GetEndTime());
       }
 
       printf("Length is %s\n", GenerateTime(maxtime).c_str());
@@ -66,7 +65,7 @@ int main(int argc, char *argv[])
               if (params != channels[i])
               {
                 channels[i] = params;
-                printf("Time %s Channel %2u Position %s\n", GenerateTime(t).c_str(), i, channels[i].GetPosition().ToString().c_str());
+                printf("Time %s Channel %2u: %s\n", GenerateTime(t).c_str(), i, channels[i].ToString().c_str());
               }
             }
             else printf("No valid parameters for channel %2u at %s\n", i, GenerateTime(t).c_str());
